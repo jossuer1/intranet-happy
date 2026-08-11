@@ -1,0 +1,44 @@
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+}
+
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f5f6f8;
+  padding: 20px;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 430px;
+  border: none;
+  border-radius: 12px;
+}
+
+.logo-placeholder {
+  width: 90px;
+  height: 90px;
+  margin: 0 auto;
+  border-radius: 12px;
+  background-color: #e9ecef;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  color: #6c757d;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.form-control {
+  padding: 10px 12px;
+}
+
+.btn {
+  padding: 10px;
+}
