@@ -72,6 +72,11 @@ function Paso4Bancarios({
               <option value="">Seleccione Banco...</option>
               <option value="1">Banco Pichincha</option>
               <option value="2">Banco Guayaquil</option>
+              <option value="3">Banco del Pacífico</option>
+              <option value="4">Produbanco</option>
+              <option value="5">Banco Internacional</option>
+              <option value="6">Banco del Austro</option>
+              <option value="7">Cooperativa JEP</option>
             </select>
           </div>
           <div className="col-md-4">
@@ -79,7 +84,7 @@ function Paso4Bancarios({
               type="text"
               name="numeroCuenta"
               className="form-control form-control-sm"
-              placeholder="N° de Cuenta"
+              placeholder="Ej. 2200123456"
               value={item.numeroCuenta}
               onChange={(e) => handleBancoChange(index, e)}
               required

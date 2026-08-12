@@ -1,131 +1,125 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
+import Swal from "sweetalert2";
 import CrearUsuarioWizard from "./CrearUsuarioWizard";
+import EditarUsuarioCard from "../components/usuarios/EditarUsuarioCard";
+import TablaUsuarios from "../components/usuarios/TablaUsuarios";
+import AppLayout from "../components/layout/AppLayout";
+import SectionHeader from "../components/layout/SectionHeader";
 
 function GestionUsuarios() {
+  const location = useLocation();
   const navigate = useNavigate();
-  const [tabActiva, setTabActiva] = useState("tabla");
 
-  const [usuarios] = useState([
+  // Determinar la vista basada en la subruta
+  const esCrear = location.pathname === "/gestion-usuarios/crear";
+
+  const [usuarioSeleccionado, setUsuarioSeleccionado] = useState(null);
+
+  const [usuarios, setUsuarios] = useState([
     {
       id: 1,
       nombre: "Juan Pérez",
+      nombres: "Juan Pérez",
       correo: "juan.perez@empresa.com",
-      rol: "Administrador",
+      correoEmpresa: "juan.perez@empresa.com",
       estado: "Activo",
+      cargo: "Analista de Sistemas",
+      departamento: "Tecnología",
     },
     {
       id: 2,
       nombre: "María López",
+      nombres: "María López",
       correo: "maria.lopez@empresa.com",
-      rol: "Usuario",
+      correoEmpresa: "maria.lopez@empresa.com",
       estado: "Activo",
+      cargo: "Analista de Soporte",
+      departamento: "Tecnología",
     },
   ]);
 
+  const abrirEdicion = (usuario) => {
+    setUsuarioSeleccionado(usuario);
+  };
+
+  const cancelarEdicion = () => {
+    setUsuarioSeleccionado(null);
+  };
+
+  const guardarEdicion = (formData) => {
+    setUsuarios((prev) =>
+      prev.map((u) =>
+        u.id === usuarioSeleccionado.id
+          ? {
+              ...u,
+              ...formData,
+              nombre: formData.nombres,
+              correo: formData.correoEmpresa,
+            }
+          : u,
+      ),
+    );
+    setUsuarioSeleccionado(null);
+    Swal.fire({
+      toast: true,
+      position: "top-end",
+      icon: "success",
+      title: "Usuario actualizado",
+      showConfirmButton: false,
+      timer: 2000,
+      timerProgressBar: true,
+    });
+  };
+
   return (
-    <div className="bg-light min-vh-100 d-flex flex-column">
-      <nav className="navbar navbar-expand bg-white shadow-sm px-4 py-2">
-        <div className="container-fluid d-flex justify-content-between align-items-center">
-          <div className="d-flex align-items-center gap-3">
-            <button
-              className="btn btn-outline-secondary btn-sm"
-              onClick={() => navigate("/dashboard")}
-            >
-              ← Volver al Dashboard
-            </button>
-            <h5 className="mb-0 fw-bold text-secondary">Gestión de Usuarios</h5>
-          </div>
-        </div>
-      </nav>
+    <AppLayout>
+      <SectionHeader titulo="Gestión de Usuarios" volverA="/dashboard" />
 
-      <div className="container-fluid flex-grow-1 my-4 px-4">
-        <div className="row h-100">
-          <div className="col-12 col-md-3 col-lg-2 mb-4">
-            <div className="card shadow-sm border-0">
-              <div className="card-body p-3">
-                <p className="text-uppercase text-muted fw-bold small mb-2">
-                  Opciones
-                </p>
-                <div className="nav flex-column nav-pills">
-                  <button
-                    className={`nav-link text-start mb-2 ${tabActiva === "tabla" ? "active" : "text-dark"}`}
-                    onClick={() => setTabActiva("tabla")}
-                  >
-                    👥 Ver usuarios
-                  </button>
-                  <button
-                    className={`nav-link text-start ${tabActiva === "crear" ? "active" : "text-dark"}`}
-                    onClick={() => setTabActiva("crear")}
-                  >
-                    ➕ Crear usuario
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="col-12 col-md-9 col-lg-10">
-            {tabActiva === "tabla" && (
-              <div className="card shadow-sm border-0">
-                <div className="card-body p-4">
-                  <div className="d-flex justify-content-between align-items-center mb-4">
+      <div className="container-fluid flex-grow-1 mt-2 mb-4 px-4">
+        <div className="w-100">
+          {/* MODO CREACIÓN */}
+          {esCrear ? (
+            <CrearUsuarioWizard
+              onCancelar={() => navigate("/gestion-usuarios")}
+              onGuardarExitoso={() => navigate("/gestion-usuarios")}
+            />
+          ) : usuarioSeleccionado ? (
+            /* MODO EDICIÓN */
+            <EditarUsuarioCard
+              usuario={usuarioSeleccionado}
+              onGuardar={guardarEdicion}
+              onCancelar={cancelarEdicion}
+            />
+          ) : (
+            /* MODO TABLA / LISTA GENERAL */
+            <div className="card shadow-sm border-0 rounded-3">
+              <div className="card-body p-4">
+                <div className="d-flex justify-content-between align-items-center mb-4">
+                  <div>
                     <h5 className="card-title fw-bold m-0">
                       Lista de Usuarios
                     </h5>
-                    <button
-                      className="btn btn-primary btn-sm"
-                      onClick={() => setTabActiva("crear")}
-                    >
-                      + Nuevo usuario
-                    </button>
+                    <small className="text-muted">
+                      Administra y revisa los accesos de los empleados
+                    </small>
                   </div>
-                  <div className="table-responsive">
-                    <table className="table table-hover align-middle">
-                      <thead className="table-light">
-                        <tr>
-                          <th>#</th>
-                          <th>Nombre</th>
-                          <th>Correo</th>
-                          <th>Rol</th>
-                          <th>Estado</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {usuarios.map((usr) => (
-                          <tr key={usr.id}>
-                            <td>{usr.id}</td>
-                            <td className="fw-semibold">{usr.nombre}</td>
-                            <td>{usr.correo}</td>
-                            <td>
-                              <span className="badge bg-info text-dark">
-                                {usr.rol}
-                              </span>
-                            </td>
-                            <td>
-                              <span className="badge bg-success">
-                                {usr.estado}
-                              </span>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                  <button
+                    className="btn btn-sm text-white bg-brand border-0 d-flex align-items-center gap-2 px-3 py-2"
+                    onClick={() => navigate("/gestion-usuarios/crear")}
+                  >
+                    <i className="bi bi-person-plus"></i>
+                    <span>Nuevo usuario</span>
+                  </button>
                 </div>
-              </div>
-            )}
 
-            {tabActiva === "crear" && (
-              <CrearUsuarioWizard
-                onCancelar={() => setTabActiva("tabla")}
-                onGuardarExitoso={() => setTabActiva("tabla")}
-              />
-            )}
-          </div>
+                <TablaUsuarios usuarios={usuarios} onEditar={abrirEdicion} />
+              </div>
+            </div>
+          )}
         </div>
       </div>
-    </div>
+    </AppLayout>
   );
 }
 

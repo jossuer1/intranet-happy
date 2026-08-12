@@ -40,7 +40,7 @@ function Paso5Titulos({
               type="text"
               name="institucionEducativaSuperior"
               className="form-control form-control-sm"
-              placeholder="Institución Educativa Superior"
+              placeholder="Ej. Escuela Politécnica Nacional"
               value={item.institucionEducativaSuperior}
               onChange={(e) => handleTituloChange(index, e)}
             />

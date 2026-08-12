@@ -61,6 +61,7 @@ function Paso1Personal({ formData, handleChange, handleImagenChange }) {
                 type="text"
                 name="nombres"
                 className="form-control"
+                placeholder="Ej. Juan Pérez"
                 value={formData.nombres}
                 onChange={handleChange}
                 required
@@ -72,6 +73,7 @@ function Paso1Personal({ formData, handleChange, handleImagenChange }) {
                 type="text"
                 name="cedula"
                 className="form-control"
+                placeholder="Ej. 1726384950"
                 value={formData.cedula}
                 onChange={handleChange}
                 required
@@ -83,6 +85,7 @@ function Paso1Personal({ formData, handleChange, handleImagenChange }) {
                 type="email"
                 name="correoEmpresa"
                 className="form-control"
+                placeholder="Ej. juan.perez@empresa.com"
                 value={formData.correoEmpresa}
                 onChange={handleChange}
                 required
@@ -94,11 +97,12 @@ function Paso1Personal({ formData, handleChange, handleImagenChange }) {
                 type="email"
                 name="correoPersonal"
                 className="form-control"
+                placeholder="Ej. juan.perez@gmail.com"
                 value={formData.correoPersonal}
                 onChange={handleChange}
               />
             </div>
-            <div className="col-md-4">
+            <div className="col-md-3">
               <label className="form-label">Fecha Nacimiento</label>
               <input
                 type="date"
@@ -109,7 +113,7 @@ function Paso1Personal({ formData, handleChange, handleImagenChange }) {
                 required
               />
             </div>
-            <div className="col-md-4">
+            <div className="col-md-3">
               <label className="form-label">Género</label>
               <select
                 name="idGenero"
@@ -120,9 +124,11 @@ function Paso1Personal({ formData, handleChange, handleImagenChange }) {
                 <option value="">Seleccione...</option>
                 <option value="1">Masculino</option>
                 <option value="2">Femenino</option>
+                <option value="3">No binario</option>
+                <option value="4">Otro / Prefiero no decir</option>
               </select>
             </div>
-            <div className="col-md-4">
+            <div className="col-md-3">
               <label className="form-label">Estado Civil</label>
               <select
                 name="idEstadoCivil"
@@ -135,6 +141,29 @@ function Paso1Personal({ formData, handleChange, handleImagenChange }) {
                 <option value="2">Casado/a</option>
                 <option value="3">Divorciado/a</option>
                 <option value="4">Viudo/a</option>
+                <option value="5">Unión de Hecho</option>
+              </select>
+            </div>
+            <div className="col-md-3">
+              <label className="form-label">Generación</label>
+              <select
+                name="generacion"
+                className="form-select"
+                value={formData.generacion}
+                onChange={handleChange}
+              >
+                <option value="">Seleccione...</option>
+                <option value="baby_boomers">Baby Boomers (1946 - 1964)</option>
+                <option value="gen_x">Generación X (1965 - 1980)</option>
+                <option value="millennials">
+                  Millennials / Gen Y (1981 - 1996)
+                </option>
+                <option value="gen_z">
+                  Generación Z / Centennials (1997 - 2012)
+                </option>
+                <option value="gen_alpha">
+                  Generación Alfa (2013 en adelante)
+                </option>
               </select>
             </div>
           </div>

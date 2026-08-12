@@ -33,7 +33,7 @@ function Paso3Familia({
                 type="text"
                 name="nombreHijo"
                 className="form-control form-control-sm"
-                placeholder="Nombre del hijo/a"
+                placeholder="Ej. Mateo Pérez"
                 value={item.nombreHijo}
                 onChange={(e) => handleFamiliarChange(index, e)}
                 required
@@ -86,7 +86,7 @@ function Paso3Familia({
                 type="text"
                 name="nombre"
                 className="form-control form-control-sm"
-                placeholder="Nombre"
+                placeholder="Ej. Maria López"
                 value={item.nombre}
                 onChange={(e) => handleContactoChange(index, e)}
                 required
@@ -97,22 +97,28 @@ function Paso3Familia({
                 type="text"
                 name="numeroCelular"
                 className="form-control form-control-sm"
-                placeholder="Teléfono"
+                placeholder="Ej. 0998765432"
                 value={item.numeroCelular}
                 onChange={(e) => handleContactoChange(index, e)}
                 required
               />
             </div>
             <div className="col-md-3">
-              <input
-                type="text"
+              <select
                 name="parentesco"
-                className="form-control form-control-sm"
-                placeholder="Parentesco"
+                className="form-select form-select-sm"
                 value={item.parentesco}
                 onChange={(e) => handleContactoChange(index, e)}
                 required
-              />
+              >
+                <option value="">Seleccione Parentesco...</option>
+                <option value="Cónyuge">Cónyuge / Esposo(a)</option>
+                <option value="Padre/Madre">Padre / Madre</option>
+                <option value="Hermano/a">Hermano / Hermana</option>
+                <option value="Hijo/a">Hijo / Hija</option>
+                <option value="Amigo/a">Amigo / Amiga</option>
+                <option value="Otro">Otro</option>
+              </select>
             </div>
             <div className="col-md-2 text-end">
               <button
