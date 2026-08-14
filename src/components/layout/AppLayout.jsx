@@ -22,10 +22,10 @@ const MODULOS_EMPLEADO = [
     icono: "bi-calendar-check",
   },
   {
-    key: "mis-permisos",
-    titulo: "Mis Permisos",
-    ruta: "/mis-permisos",
-    icono: "bi-file-earmark-text",
+    key: "registro-asistencia",
+    titulo: "Marcación / Asistencia", // Reemplaza a Mis Permisos
+    ruta: "/registro-asistencia",
+    icono: "bi-clock-history",
   },
 ];
 
@@ -39,6 +39,9 @@ function AppLayout({ children, usuarioRol = "RRHH" }) {
   const [openGestionNovedades, setOpenGestionNovedades] = useState(
     location.pathname.startsWith("/gestion-novedades"),
   );
+  const [openGestionVacaciones, setOpenGestionVacaciones] = useState(
+    location.pathname.startsWith("/gestion-vacaciones"),
+  );
 
   const esAdminORRHH = usuarioRol === "RRHH" || usuarioRol === "ADMIN";
 
@@ -46,6 +49,9 @@ function AppLayout({ children, usuarioRol = "RRHH" }) {
     location.pathname.startsWith("/gestion-usuarios");
   const esGestionNovedadesActivo =
     location.pathname.startsWith("/gestion-novedades");
+  const esGestionVacacionesActivo = location.pathname.startsWith(
+    "/gestion-vacaciones",
+  );
 
   return (
     <div className="bg-light min-vh-100 d-flex flex-column">
@@ -118,8 +124,7 @@ function AppLayout({ children, usuarioRol = "RRHH" }) {
                         <button
                           type="button"
                           className={`nav-link w-100 text-start border-0 py-1 px-3 rounded-2 small d-flex align-items-center gap-2 ${
-                            location.pathname === "/gestion-usuarios" ||
-                            location.pathname === "/gestion-usuarios/lista"
+                            location.pathname === "/gestion-usuarios"
                               ? "bg-brand text-white fw-semibold"
                               : "text-muted bg-transparent"
                           }`}
@@ -147,7 +152,7 @@ function AppLayout({ children, usuarioRol = "RRHH" }) {
                   )}
                 </li>
 
-                {/* MENÚ DESPLEGABLE: GESTIÓN DE NOVEDADES */}
+                {/* GESTIÓN DE NOVEDADES */}
                 <li className="nav-item">
                   <button
                     type="button"
@@ -169,7 +174,6 @@ function AppLayout({ children, usuarioRol = "RRHH" }) {
                     ></i>
                   </button>
 
-                  {/* Subopciones (Banners Activos y Publicar Banner) */}
                   {openGestionNovedades && (
                     <ul className="nav nav-pills flex-column ms-3 mt-1 ps-2 border-start gap-1">
                       <li className="nav-item">
@@ -207,20 +211,60 @@ function AppLayout({ children, usuarioRol = "RRHH" }) {
                   )}
                 </li>
 
-                {/* REPORTES RH */}
+                {/* GESTIÓN DE VACACIONES */}
                 <li className="nav-item">
                   <button
                     type="button"
-                    className={`nav-link w-100 text-start border-0 d-flex align-items-center gap-2 py-2 px-3 rounded-2 ${
-                      location.pathname === "/reportes-rh"
-                        ? "bg-brand text-white fw-semibold"
+                    className={`nav-link w-100 text-start border-0 d-flex align-items-center justify-content-between py-2 px-3 rounded-2 ${
+                      esGestionVacacionesActivo
+                        ? "text-brand fw-semibold bg-brand-soft"
                         : "text-dark bg-transparent"
                     }`}
-                    onClick={() => navigate("/reportes-rh")}
+                    onClick={() =>
+                      setOpenGestionVacaciones(!openGestionVacaciones)
+                    }
                   >
-                    <i className="bi bi-bar-chart-line fs-5"></i>
-                    <span>Reportes RH</span>
+                    <div className="d-flex align-items-center gap-2">
+                      <i className="bi bi-calendar2-range fs-5"></i>
+                      <span>Gestión Vacaciones</span>
+                    </div>
+                    <i
+                      className={`bi bi-chevron-${openGestionVacaciones ? "down" : "right"} small`}
+                    ></i>
                   </button>
+
+                  {openGestionVacaciones && (
+                    <ul className="nav nav-pills flex-column ms-3 mt-1 ps-2 border-start gap-1">
+                      <li className="nav-item">
+                        <button
+                          type="button"
+                          className={`nav-link w-100 text-start border-0 py-1 px-3 rounded-2 small d-flex align-items-center gap-2 ${
+                            location.pathname === "/gestion-vacaciones"
+                              ? "bg-brand text-white fw-semibold"
+                              : "text-muted bg-transparent"
+                          }`}
+                          onClick={() => navigate("/gestion-vacaciones")}
+                        >
+                          <i className="bi bi-card-checklist"></i>
+                          <span>Gestión Vacaciones</span>
+                        </button>
+                      </li>
+                      <li className="nav-item">
+                        <button
+                          type="button"
+                          className={`nav-link w-100 text-start border-0 py-1 px-3 rounded-2 small d-flex align-items-center gap-2 ${
+                            location.pathname === "/gestion-vacaciones/saldos"
+                              ? "bg-brand text-white fw-semibold"
+                              : "text-muted bg-transparent"
+                          }`}
+                          onClick={() => navigate("/gestion-vacaciones/saldos")}
+                        >
+                          <i className="bi bi-wallet2"></i>
+                          <span>Saldos Personal</span>
+                        </button>
+                      </li>
+                    </ul>
+                  )}
                 </li>
               </ul>
             </div>
