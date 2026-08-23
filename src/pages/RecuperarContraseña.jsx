@@ -1,13 +1,49 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import Swal from "sweetalert2";
+import { solicitarRecuperacion } from "../services/apiService";
 
 function RecuperarContrasena() {
   const [correo, setCorreo] = useState("");
+  const [cargando, setCargando] = useState(false);
+  const navigate = useNavigate();
 
-  const manejarRecuperacion = (e) => {
+  const Toast = Swal.mixin({
+    toast: true,
+    position: "top-end",
+    showConfirmButton: false,
+    timer: 3000,
+    timerProgressBar: true,
+    didOpen: (toast) => {
+      toast.addEventListener("mouseenter", Swal.stopTimer);
+      toast.addEventListener("mouseleave", Swal.resumeTimer);
+    },
+  });
+
+  const manejarRecuperacion = async (e) => {
     e.preventDefault();
+    setCargando(true);
 
-    console.log("Correo para recuperación:", correo);
+    try {
+      // Llamada a la API (si existe el endpoint)
+      const respuesta = await solicitarRecuperacion(correo);
+
+      // Simulación exitosa por el momento
+      Toast.fire({
+        icon: "success",
+        title: "Instrucciones enviadas al correo registrado",
+      });
+
+      // Redirigir al login después de un momento
+      setTimeout(() => navigate("/login"), 2000);
+    } catch (error) {
+      Toast.fire({
+        icon: "error",
+        title: "No se pudo procesar la solicitud",
+      });
+    } finally {
+      setCargando(false);
+    }
   };
 
   return (
@@ -40,11 +76,16 @@ function RecuperarContrasena() {
                 value={correo}
                 onChange={(e) => setCorreo(e.target.value)}
                 required
+                disabled={cargando}
               />
             </div>
 
-            <button type="submit" className="btn btn-primary w-100 mb-3">
-              Enviar instrucciones
+            <button
+              type="submit"
+              className="btn btn-primary w-100 mb-3"
+              disabled={cargando}
+            >
+              {cargando ? "Enviando..." : "Enviar instrucciones"}
             </button>
 
             <div className="text-center">

@@ -32,9 +32,14 @@ function TablaUsuarios({ usuarios = [], onEditar }) {
 
   const filteredItems = usuarios.filter((item) => {
     const search = filterText.toLowerCase();
+    const nombre = (item.nombres || item.nombre || "").toLowerCase();
+    const correo = (item.correoEmpresa || item.correo || "").toLowerCase();
+    const cedula = (item.cedula || "").toLowerCase();
+
     return (
-      item.nombre?.toLowerCase().includes(search) ||
-      item.correo?.toLowerCase().includes(search)
+      nombre.includes(search) ||
+      correo.includes(search) ||
+      cedula.includes(search)
     );
   });
 
@@ -46,33 +51,51 @@ function TablaUsuarios({ usuarios = [], onEditar }) {
     },
     {
       name: "Usuario",
-      selector: (row) => row.nombre,
+      selector: (row) => row.nombres || row.nombre || "Sin nombre",
       sortable: true,
-      cell: (row) => <span className="fw-semibold">{row.nombre}</span>,
+      cell: (row) => (
+        <div className="py-1">
+          <span className="fw-semibold d-block">
+            {row.nombres || row.nombre || "N/A"}
+          </span>
+          {row.cedula && (
+            <small className="text-muted d-block">C.I: {row.cedula}</small>
+          )}
+        </div>
+      ),
     },
     {
       name: "Correo",
-      selector: (row) => row.correo,
+      selector: (row) => row.correoEmpresa || row.correo || "N/A",
+      sortable: true,
+    },
+    {
+      name: "Cargo",
+      selector: (row) => row.cargo || row.nombreCargo || "N/A",
       sortable: true,
     },
     {
       name: "Estado",
       selector: (row) => row.estado,
       sortable: true,
-      width: "130px",
-      cell: (row) => (
-        <span
-          className={`badge ${
-            row.estado === "Activo" ? "bg-success" : "bg-secondary"
-          }`}
-        >
-          {row.estado}
-        </span>
-      ),
+      width: "120px",
+      cell: (row) => {
+        const esActivo =
+          row.estado === "Activo" ||
+          row.estado === 1 ||
+          row.estado === true ||
+          row.idEstado === 1;
+
+        return (
+          <span className={`badge ${esActivo ? "bg-success" : "bg-secondary"}`}>
+            {esActivo ? "Activo" : "Inactivo"}
+          </span>
+        );
+      },
     },
     {
       name: "",
-      width: "90px",
+      width: "100px",
       cell: (row) => (
         <button
           type="button"
@@ -105,8 +128,8 @@ function TablaUsuarios({ usuarios = [], onEditar }) {
           <input
             type="text"
             className="form-control form-control-sm"
-            style={{ maxWidth: "260px" }}
-            placeholder="Buscar por nombre o correo..."
+            style={{ maxWidth: "280px" }}
+            placeholder="Buscar por nombre, correo o cédula..."
             value={filterText}
             onChange={(e) => setFilterText(e.target.value)}
           />

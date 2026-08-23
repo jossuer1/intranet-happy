@@ -1,6 +1,8 @@
+import { useEffect, useState } from "react";
 import AppLayout from "../../components/layout/AppLayout";
 import SectionHeader from "../../components/layout/SectionHeader";
-import { usuarioActualMock } from "../../mocks/usuarioActualMock";
+import { calcularEdad, obtenerGeneracion } from "../../utils/dateUtils";
+import { useAuthStore } from "../../store/useAuthStore";
 
 function Campo({ label, valor }) {
   return (
@@ -12,16 +14,71 @@ function Campo({ label, valor }) {
 }
 
 function MiPerfil() {
-  // TODO: cuando exista backend, reemplazar por el usuario autenticado
-  const usuario = usuarioActualMock;
+  const { user, fetchPerfil } = useAuthStore((state) => ({
+    user: state.user,
+    fetchPerfil: state.fetchPerfil,
+  }));
 
-  // Render para iniciales si no tiene foto
-  const iniciales = (usuario.nombres || "??")
+  const [loading, setLoading] = useState(!user);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const cargarDatos = async () => {
+      try {
+        setLoading(true);
+        await fetchPerfil();
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (!user) {
+      cargarDatos();
+    }
+  }, [user, fetchPerfil]);
+
+  if (loading) {
+    return (
+      <AppLayout>
+        <SectionHeader titulo="Mi Perfil" volverA="/dashboard" />
+        <div className="container my-5 text-center">
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Cargando...</span>
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (error || !user) {
+    return (
+      <AppLayout>
+        <SectionHeader titulo="Mi Perfil" volverA="/dashboard" />
+        <div className="container my-5">
+          <div className="alert alert-danger" role="alert">
+            {error || "No se encontró la información del usuario."}
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  const iniciales = (user.nombres || "??")
     .split(" ")
     .slice(0, 2)
     .map((p) => p[0])
     .join("")
     .toUpperCase();
+
+  // Cálculo de edad y generación basado en fechaNacimiento
+  const edadCalculada = user.fechaNacimiento
+    ? `${calcularEdad(user.fechaNacimiento)} años`
+    : null;
+  const generacionCalculada = user.fechaNacimiento
+    ? obtenerGeneracion(user.fechaNacimiento)
+    : null;
 
   return (
     <AppLayout>
@@ -32,11 +89,11 @@ function MiPerfil() {
           <div className="col-12 col-lg-10">
             <div className="card shadow-sm border-0">
               <div className="card-body p-4">
-                {/* ENCABEZADO DE PERFIL CON FOTO / AVATAR */}
+                {/* ENCABEZADO DE PERFIL */}
                 <div className="d-flex align-items-center gap-3 mb-4">
-                  {usuario.fotoPreview || usuario.fotoUrl ? (
+                  {user.fotoPreview || user.fotoUrl ? (
                     <img
-                      src={usuario.fotoPreview || usuario.fotoUrl}
+                      src={user.fotoPreview || user.fotoUrl}
                       alt="Foto de perfil"
                       className="rounded-circle object-fit-cover border border-2 border-primary shadow-sm"
                       style={{ width: "64px", height: "64px" }}
@@ -54,10 +111,10 @@ function MiPerfil() {
                     </div>
                   )}
                   <div>
-                    <h5 className="fw-bold mb-0">{usuario.nombres}</h5>
+                    <h5 className="fw-bold mb-0">{user.nombres}</h5>
                     <p className="text-muted mb-0 small">
-                      {usuario.cargo || usuario.nombreCargo}{" "}
-                      {usuario.departamento ? `· ${usuario.departamento}` : ""}
+                      {user.cargo || user.nombreCargo}{" "}
+                      {user.departamento ? `· ${user.departamento}` : ""}
                     </p>
                   </div>
                 </div>
@@ -69,28 +126,24 @@ function MiPerfil() {
                   1. Información Personal
                 </h6>
                 <div className="row">
-                  <Campo label="Nombres completos" valor={usuario.nombres} />
-                  <Campo label="Cédula" valor={usuario.cedula} />
+                  <Campo label="Nombres completos" valor={user.nombres} />
+                  <Campo label="Cédula" valor={user.cedula} />
                   <Campo
                     label="Fecha de nacimiento"
-                    valor={usuario.fechaNacimiento}
+                    valor={user.fechaNacimiento}
                   />
-                  <Campo
-                    label="Correo personal"
-                    valor={usuario.correoPersonal}
-                  />
-                  <Campo
-                    label="Género"
-                    valor={usuario.genero || usuario.idGenero}
-                  />
+
+                  {/* Campos dinámicos agregados */}
+                  <Campo label="Edad" valor={edadCalculada} />
+                  <Campo label="Generación" valor={generacionCalculada} />
+
+                  <Campo label="Correo personal" valor={user.correoPersonal} />
+                  <Campo label="Género" valor={user.genero || user.idGenero} />
                   <Campo
                     label="Estado civil"
-                    valor={usuario.estadoCivil || usuario.idEstadoCivil}
+                    valor={user.estadoCivil || user.idEstadoCivil}
                   />
-                  <Campo
-                    label="Etnia"
-                    valor={usuario.etnia || usuario.idEtnia}
-                  />
+                  <Campo label="Etnia" valor={user.etnia || user.idEtnia} />
                 </div>
 
                 <hr className="my-4 text-muted opacity-25" />
@@ -100,32 +153,20 @@ function MiPerfil() {
                   2. Datos Laborales y Ubicación
                 </h6>
                 <div className="row">
-                  <Campo label="Correo empresa" valor={usuario.correoEmpresa} />
-                  <Campo
-                    label="Cargo"
-                    valor={usuario.cargo || usuario.nombreCargo}
-                  />
-                  <Campo label="Departamento" valor={usuario.departamento} />
-                  <Campo
-                    label="Fecha de ingreso"
-                    valor={usuario.fechaIngreso}
-                  />
+                  <Campo label="Correo empresa" valor={user.correoEmpresa} />
+                  <Campo label="Cargo" valor={user.cargo || user.nombreCargo} />
+                  <Campo label="Departamento" valor={user.departamento} />
+                  <Campo label="Fecha de ingreso" valor={user.fechaIngreso} />
                   <Campo
                     label="Dirección de domicilio"
-                    valor={usuario.direccion}
+                    valor={user.direccion}
                   />
-                  <Campo
-                    label="Ciudad"
-                    valor={usuario.ciudad || usuario.idCiudad}
-                  />
+                  <Campo label="Ciudad" valor={user.ciudad || user.idCiudad} />
                   <Campo
                     label="Celular personal"
-                    valor={usuario.celularPersonal}
+                    valor={user.celularPersonal}
                   />
-                  <Campo
-                    label="Celular empresa"
-                    valor={usuario.celularEmpresa}
-                  />
+                  <Campo label="Celular empresa" valor={user.celularEmpresa} />
                 </div>
 
                 <hr className="my-4 text-muted opacity-25" />
@@ -135,12 +176,11 @@ function MiPerfil() {
                   3. Información Familiar y Contactos
                 </h6>
 
-                {/* Hijos */}
                 <div className="mb-3">
                   <p className="text-uppercase text-muted fw-bold small mb-2">
                     Hijos Registrados
                   </p>
-                  {usuario.familiares && usuario.familiares.length > 0 ? (
+                  {user.familiares && user.familiares.length > 0 ? (
                     <div className="table-responsive">
                       <table className="table table-sm table-borderless bg-light rounded align-middle">
                         <thead>
@@ -150,8 +190,8 @@ function MiPerfil() {
                           </tr>
                         </thead>
                         <tbody>
-                          {usuario.familiares.map((fam, idx) => (
-                            <tr key={idx}>
+                          {user.familiares.map((fam, idx) => (
+                            <tr key={fam.id || idx}>
                               <td className="fw-medium">{fam.nombreHijo}</td>
                               <td>{fam.fechaNacimiento}</td>
                             </tr>
@@ -164,13 +204,12 @@ function MiPerfil() {
                   )}
                 </div>
 
-                {/* Contactos de emergencia */}
                 <div className="mb-2">
                   <p className="text-uppercase text-muted fw-bold small mb-2">
                     Contactos de Emergencia
                   </p>
-                  {usuario.contactosEmergencia &&
-                  usuario.contactosEmergencia.length > 0 ? (
+                  {user.contactosEmergencia &&
+                  user.contactosEmergencia.length > 0 ? (
                     <div className="table-responsive">
                       <table className="table table-sm table-borderless bg-light rounded align-middle">
                         <thead>
@@ -181,8 +220,8 @@ function MiPerfil() {
                           </tr>
                         </thead>
                         <tbody>
-                          {usuario.contactosEmergencia.map((c, idx) => (
-                            <tr key={idx}>
+                          {user.contactosEmergencia.map((c, idx) => (
+                            <tr key={c.id || idx}>
                               <td className="fw-medium">{c.nombre}</td>
                               <td>{c.parentesco || c.relacion}</td>
                               <td>{c.numeroCelular || c.telefono}</td>
@@ -208,8 +247,8 @@ function MiPerfil() {
                   <Campo
                     label="¿Acumula décimos?"
                     valor={
-                      String(usuario.acumulaDecimos) === "1" ||
-                      usuario.acumulaDecimos === 1
+                      String(user.acumulaDecimos) === "1" ||
+                      user.acumulaDecimos === 1
                         ? "Sí"
                         : "No"
                     }
@@ -219,7 +258,7 @@ function MiPerfil() {
                 <p className="text-uppercase text-muted fw-bold small mb-2">
                   Cuentas Bancarias
                 </p>
-                {usuario.datosBancarios && usuario.datosBancarios.length > 0 ? (
+                {user.datosBancarios && user.datosBancarios.length > 0 ? (
                   <div className="table-responsive mb-2">
                     <table className="table table-sm table-borderless bg-light rounded align-middle">
                       <thead>
@@ -230,8 +269,8 @@ function MiPerfil() {
                         </tr>
                       </thead>
                       <tbody>
-                        {usuario.datosBancarios.map((b, idx) => (
-                          <tr key={idx}>
+                        {user.datosBancarios.map((b, idx) => (
+                          <tr key={b.id || idx}>
                             <td className="fw-medium">
                               {b.banco || b.idBanco}
                             </td>
@@ -258,7 +297,7 @@ function MiPerfil() {
                 <h6 className="fw-bold text-primary mb-3">
                   5. Formación Académica
                 </h6>
-                {usuario.titulos && usuario.titulos.length > 0 ? (
+                {user.titulos && user.titulos.length > 0 ? (
                   <div className="table-responsive">
                     <table className="table table-sm table-borderless bg-light rounded align-middle">
                       <thead>
@@ -268,8 +307,8 @@ function MiPerfil() {
                         </tr>
                       </thead>
                       <tbody>
-                        {usuario.titulos.map((t, idx) => (
-                          <tr key={idx}>
+                        {user.titulos.map((t, idx) => (
+                          <tr key={t.id || idx}>
                             <td className="fw-medium">{t.titulo}</td>
                             <td>{t.institucionEducativaSuperior || "N/A"}</td>
                           </tr>

@@ -7,13 +7,15 @@ import Paso2Laboral from "../components/usuarios/Paso2Laboral";
 import Paso3Familia from "../components/usuarios/Paso3Familia";
 import Paso4Bancarios from "../components/usuarios/Paso4Bancarios";
 import Paso5Titulos from "../components/usuarios/Paso5Titulos";
+import { crearUsuario } from "../services/apiService";
 
 function CrearUsuarioWizard({ onCancelar, onGuardarExitoso }) {
   const [pasoActual, setPasoActual] = useState(1);
+  const [cargando, setCargando] = useState(false);
 
   const [formData, setFormData] = useState({
-    fotoFile: null, // Para enviar el archivo al servidor (FormData)
-    fotoPreview: null, // URL temporal para mostrar en el cliente
+    fotoFile: null,
+    fotoPreview: null,
     nombres: "",
     cedula: "",
     correoEmpresa: "",
@@ -47,12 +49,12 @@ function CrearUsuarioWizard({ onCancelar, onGuardarExitoso }) {
       setFormData((prev) => ({
         ...prev,
         fotoFile: file,
-        fotoPreview: URL.createObjectURL(file), // Genera la URL temporal local
+        fotoPreview: URL.createObjectURL(file),
       }));
     }
   };
 
-  // --- Handlers para Paso 3 ---
+  // --- Handlers Paso 3 ---
   const agregarFamiliar = () =>
     setFormData((prev) => ({
       ...prev,
@@ -96,7 +98,7 @@ function CrearUsuarioWizard({ onCancelar, onGuardarExitoso }) {
     setFormData({ ...formData, contactosEmergencia: nuevos });
   };
 
-  // --- Handlers para Paso 4 ---
+  // --- Handlers Paso 4 ---
   const agregarCuentaBancaria = () =>
     setFormData((prev) => ({
       ...prev,
@@ -119,7 +121,7 @@ function CrearUsuarioWizard({ onCancelar, onGuardarExitoso }) {
     setFormData({ ...formData, datosBancarios: nuevas });
   };
 
-  // --- Handlers para Paso 5 ---
+  // --- Handlers Paso 5 ---
   const agregarTitulo = () =>
     setFormData((prev) => ({
       ...prev,
@@ -149,18 +151,62 @@ function CrearUsuarioWizard({ onCancelar, onGuardarExitoso }) {
 
   const anteriorPaso = () => setPasoActual((prev) => Math.max(prev - 1, 1));
 
-  const handleSubmitFinal = (e) => {
+  const handleSubmitFinal = async (e) => {
     e.preventDefault();
-    console.log("Payload para backend:", formData);
+    setCargando(true);
 
-    Swal.fire({
-      icon: "success",
-      title: "Usuario registrado",
-      text: "El registro ha finalizado correctamente.",
-      confirmButtonText: "Aceptar",
-    }).then(() => {
-      if (onGuardarExitoso) onGuardarExitoso();
-    });
+    const payload = {
+      ...formData,
+      idGenero: formData.idGenero ? Number(formData.idGenero) : null,
+      idEtnia: formData.idEtnia ? Number(formData.idEtnia) : null,
+      idEstadoCivil: formData.idEstadoCivil
+        ? Number(formData.idEstadoCivil)
+        : null,
+      idCiudad: formData.idCiudad ? Number(formData.idCiudad) : null,
+      idCargo: formData.idCargo ? Number(formData.idCargo) : null,
+      numeroHijos: Number(formData.numeroHijos || 0),
+      acumulaDecimos: Number(formData.acumulaDecimos || 0),
+      datosBancarios: formData.datosBancarios.map((b) => ({
+        ...b,
+        idBanco: Number(b.idBanco),
+      })),
+    };
+
+    delete payload.fotoPreview;
+    delete payload.fotoFile;
+
+    try {
+      let dataToSend = payload;
+
+      // Si hay archivo de imagen presente, preparamos FormData
+      if (formData.fotoFile) {
+        const data = new FormData();
+        data.append("foto", formData.fotoFile);
+        data.append("usuario", JSON.stringify(payload));
+        dataToSend = data;
+      }
+
+      await crearUsuario(dataToSend);
+
+      Swal.fire({
+        icon: "success",
+        title: "Usuario registrado",
+        text: "El registro ha finalizado correctamente.",
+        confirmButtonText: "Aceptar",
+      }).then(() => {
+        if (onGuardarExitoso) onGuardarExitoso();
+      });
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: "Error al registrar",
+        text:
+          error.message ||
+          "Ocurrió un problema al enviar la información al servidor.",
+      });
+    } finally {
+      setCargando(false);
+    }
   };
 
   return (
@@ -219,6 +265,7 @@ function CrearUsuarioWizard({ onCancelar, onGuardarExitoso }) {
                 type="button"
                 className="btn btn-outline-secondary"
                 onClick={anteriorPaso}
+                disabled={cargando}
               >
                 Anterior
               </button>
@@ -227,6 +274,7 @@ function CrearUsuarioWizard({ onCancelar, onGuardarExitoso }) {
                 type="button"
                 className="btn btn-outline-danger"
                 onClick={onCancelar}
+                disabled={cargando}
               >
                 Cancelar
               </button>
@@ -237,8 +285,12 @@ function CrearUsuarioWizard({ onCancelar, onGuardarExitoso }) {
                 Siguiente
               </button>
             ) : (
-              <button type="submit" className="btn btn-success">
-                Guardar Usuario Completo
+              <button
+                type="submit"
+                className="btn btn-success"
+                disabled={cargando}
+              >
+                {cargando ? "Guardando..." : "Guardar Usuario Completo"}
               </button>
             )}
           </div>
