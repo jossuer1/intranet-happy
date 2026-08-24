@@ -4,7 +4,7 @@ function Paso1Personal({ formData, handleChange, handleImagenChange }) {
       <h5 className="mb-4 text-secondary">Paso 1: Información Personal</h5>
 
       <div className="row g-4 align-items-start">
-        {/* COLUMNA IZQUIERDA: SECCIÓN DE FOTO DE PERFIL */}
+        {/* COLUMNA IZQUIERDA: FOTO DE PERFIL */}
         <div className="col-12 col-md-4 col-lg-3 text-center">
           <div className="card border-0 bg-light p-3 shadow-sm rounded-3">
             <div className="mb-3 d-flex justify-content-center">
@@ -26,8 +26,6 @@ function Paso1Personal({ formData, handleChange, handleImagenChange }) {
             </div>
 
             <label className="form-label fw-bold mb-2">Foto de Perfil</label>
-
-            {/* Input de archivo estilizado */}
             <input
               type="file"
               id="fotoInput"
@@ -42,7 +40,6 @@ function Paso1Personal({ formData, handleChange, handleImagenChange }) {
             >
               {formData.fotoPreview ? "Cambiar Imagen" : "Subir Imagen"}
             </label>
-
             <small
               className="text-muted d-block"
               style={{ fontSize: "0.75rem" }}
@@ -52,21 +49,37 @@ function Paso1Personal({ formData, handleChange, handleImagenChange }) {
           </div>
         </div>
 
-        {/* COLUMNA DERECHA: CAMPOS DEL FORMULARIO */}
+        {/* COLUMNA DERECHA: CAMPOS DE TEXTO */}
         <div className="col-12 col-md-8 col-lg-9">
           <div className="row g-3">
+            {/* NOMBRE */}
             <div className="col-md-6">
-              <label className="form-label">Nombres Completos</label>
+              <label className="form-label">Nombre</label>
               <input
                 type="text"
-                name="nombres"
+                name="nombre"
                 className="form-control"
-                placeholder="Ej. Juan Pérez"
-                value={formData.nombres}
+                placeholder="Ej. Juan Carlos"
+                value={formData.nombre}
                 onChange={handleChange}
                 required
               />
             </div>
+
+            {/* APELLIDO */}
+            <div className="col-md-6">
+              <label className="form-label">Apellido</label>
+              <input
+                type="text"
+                name="apellido"
+                className="form-control"
+                placeholder="Ej. Pérez Gómez"
+                value={formData.apellido}
+                onChange={handleChange}
+                required
+              />
+            </div>
+
             <div className="col-md-6">
               <label className="form-label">Cédula</label>
               <input
@@ -79,6 +92,8 @@ function Paso1Personal({ formData, handleChange, handleImagenChange }) {
                 required
               />
             </div>
+
+            {/* CORREO EMPRESARIAL (Ya no es obligatorio) */}
             <div className="col-md-6">
               <label className="form-label">Correo Empresarial</label>
               <input
@@ -88,9 +103,9 @@ function Paso1Personal({ formData, handleChange, handleImagenChange }) {
                 placeholder="Ej. juan.perez@empresa.com"
                 value={formData.correoEmpresa}
                 onChange={handleChange}
-                required
               />
             </div>
+
             <div className="col-md-6">
               <label className="form-label">Correo Personal</label>
               <input
@@ -102,7 +117,7 @@ function Paso1Personal({ formData, handleChange, handleImagenChange }) {
                 onChange={handleChange}
               />
             </div>
-            <div className="col-md-3">
+            <div className="col-md-6">
               <label className="form-label">Fecha Nacimiento</label>
               <input
                 type="date"
@@ -113,7 +128,7 @@ function Paso1Personal({ formData, handleChange, handleImagenChange }) {
                 required
               />
             </div>
-            <div className="col-md-3">
+            <div className="col-md-6">
               <label className="form-label">Género</label>
               <select
                 name="idGenero"
@@ -124,11 +139,9 @@ function Paso1Personal({ formData, handleChange, handleImagenChange }) {
                 <option value="">Seleccione...</option>
                 <option value="1">Masculino</option>
                 <option value="2">Femenino</option>
-                <option value="3">No binario</option>
-                <option value="4">Otro / Prefiero no decir</option>
               </select>
             </div>
-            <div className="col-md-3">
+            <div className="col-md-6">
               <label className="form-label">Estado Civil</label>
               <select
                 name="idEstadoCivil"
@@ -141,29 +154,6 @@ function Paso1Personal({ formData, handleChange, handleImagenChange }) {
                 <option value="2">Casado/a</option>
                 <option value="3">Divorciado/a</option>
                 <option value="4">Viudo/a</option>
-                <option value="5">Unión de Hecho</option>
-              </select>
-            </div>
-            <div className="col-md-3">
-              <label className="form-label">Generación</label>
-              <select
-                name="generacion"
-                className="form-select"
-                value={formData.generacion}
-                onChange={handleChange}
-              >
-                <option value="">Seleccione...</option>
-                <option value="baby_boomers">Baby Boomers (1946 - 1964)</option>
-                <option value="gen_x">Generación X (1965 - 1980)</option>
-                <option value="millennials">
-                  Millennials / Gen Y (1981 - 1996)
-                </option>
-                <option value="gen_z">
-                  Generación Z / Centennials (1997 - 2012)
-                </option>
-                <option value="gen_alpha">
-                  Generación Alfa (2013 en adelante)
-                </option>
               </select>
             </div>
           </div>

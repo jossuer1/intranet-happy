@@ -75,6 +75,22 @@ function TablaUsuarios({ usuarios = [], onEditar }) {
       sortable: true,
     },
     {
+      name: "Vacaciones",
+      selector: (row) => (row.tieneVacaciones === false ? "No" : "Sí"),
+      sortable: true,
+      width: "130px",
+      cell: (row) => {
+        const tiene = row.tieneVacaciones !== false;
+        return (
+          <span
+            className={`badge ${tiene ? "bg-info-subtle text-info-emphasis border border-info-subtle" : "bg-light text-muted border"}`}
+          >
+            {tiene ? "Habilitadas" : "No aplica"}
+          </span>
+        );
+      },
+    },
+    {
       name: "Estado",
       selector: (row) => row.estado,
       sortable: true,

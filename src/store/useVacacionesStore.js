@@ -6,7 +6,7 @@ import {
   getHistorialVacaciones,
   registrarDescuentoVacaciones,
   registrarAjusteVacaciones,
-} from "../services/api";
+} from "../services/apiService";
 
 export const useVacacionesStore = create((set, get) => ({
   misVacaciones: [],

@@ -2,9 +2,9 @@ import React, { useState, useEffect } from "react";
 import Swal from "sweetalert2";
 import AppLayout from "../components/layout/AppLayout";
 import {
-  getResumenVacaciones, // O getHistorialVacaciones / endpoint de empleados
-  registrarVacaciones, // POST para registrar el descuento por fechas
-  acreditarDias, // POST/PUT para sumar días por antigüedad o ajuste
+  getResumenVacaciones,
+  registrarDescuentoVacaciones,
+  registrarAjusteVacaciones,
 } from "../services/apiService";
 
 function GestionVacaciones() {
@@ -49,6 +49,14 @@ function GestionVacaciones() {
   };
 
   const abrirModal = (usuario) => {
+    if (usuario.tieneVacaciones === false) {
+      Swal.fire(
+        "Sin beneficio de vacaciones",
+        "Este colaborador no tiene habilitado el beneficio de vacaciones. Actívalo primero desde Gestión de Usuarios.",
+        "info",
+      );
+      return;
+    }
     setUsuarioSeleccionado(usuario);
     setTipoOperacion("DESCUENTO");
     setFechaInicio("");
@@ -58,7 +66,10 @@ function GestionVacaciones() {
   };
 
   const guardarRegistro = async () => {
-    const idEmpleado = usuarioSeleccionado.idEmpleado || usuarioSeleccionado.id;
+    const idUsuario =
+      usuarioSeleccionado.idUsuario ||
+      usuarioSeleccionado.idEmpleado ||
+      usuarioSeleccionado.id;
     const diasAfectados =
       tipoOperacion === "DESCUENTO"
         ? calcularDiasRango()
@@ -73,27 +84,33 @@ function GestionVacaciones() {
       return;
     }
 
+    if (!motivo.trim()) {
+      Swal.fire(
+        "Atención",
+        "El motivo / observación es obligatorio.",
+        "warning",
+      );
+      return;
+    }
+
     try {
       setProcesando(true);
 
       if (tipoOperacion === "DESCUENTO") {
-        const payload = {
-          idEmpleado,
+        // Debe calzar con VacacionDescuentoCrearDto del backend.
+        await registrarDescuentoVacaciones({
+          idUsuario: Number(idUsuario),
           fechaInicio,
           fechaFin,
+          motivo,
+        });
+      } else {
+        // Debe calzar con VacacionAjusteCrearDto del backend.
+        await registrarAjusteVacaciones({
+          idUsuario: Number(idUsuario),
           dias: diasAfectados,
           motivo,
-          fechaMovimiento: new Date().toISOString().split("T")[0],
-        };
-        await registrarVacaciones(payload);
-      } else {
-        const payload = {
-          idEmpleado,
-          diasAcreditar: Number(diasAcreditar),
-          motivo,
-          fechaMovimiento: new Date().toISOString().split("T")[0],
-        };
-        await acreditarDias(payload);
+        });
       }
 
       Swal.fire({
@@ -165,40 +182,61 @@ function GestionVacaciones() {
                 </tr>
               </thead>
               <tbody>
-                {personal.map((item) => (
-                  <tr key={item.idEmpleado || item.id}>
-                    <td className="fw-semibold text-dark">{item.nombre}</td>
-                    <td>
-                      <span className="badge bg-light text-dark border fw-normal">
-                        {item.departamento}
-                      </span>
-                    </td>
-                    <td>
-                      <small className="text-muted">{item.fechaIngreso}</small>
-                    </td>
-                    <td className="text-center text-success fw-semibold">
-                      +{item.diasGanados} días
-                    </td>
-                    <td className="text-center text-danger fw-semibold">
-                      -{item.diasTomados} días
-                    </td>
-                    <td className="text-center">
-                      <span className="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-1 fw-bold">
-                        {item.saldoDisponible} días libres
-                      </span>
-                    </td>
-                    <td className="text-end">
-                      <button
-                        type="button"
-                        className="btn btn-sm btn-outline-primary rounded-3 px-3"
-                        onClick={() => abrirModal(item)}
-                      >
-                        <i className="bi bi-pencil-square me-1"></i>
-                        Gestionar
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                {personal.map((item) => {
+                  const sinBeneficio = item.tieneVacaciones === false;
+                  return (
+                    <tr
+                      key={item.idUsuario || item.idEmpleado || item.id}
+                      className={sinBeneficio ? "opacity-50" : ""}
+                    >
+                      <td className="fw-semibold text-dark">{item.nombre}</td>
+                      <td>
+                        <span className="badge bg-light text-dark border fw-normal">
+                          {item.departamento || "—"}
+                        </span>
+                      </td>
+                      <td>
+                        <small className="text-muted">
+                          {item.fechaIngreso
+                            ? String(item.fechaIngreso).split("T")[0]
+                            : "—"}
+                        </small>
+                      </td>
+                      {sinBeneficio ? (
+                        <td colSpan={3} className="text-center">
+                          <span className="badge bg-secondary-subtle text-secondary border">
+                            Sin beneficio de vacaciones
+                          </span>
+                        </td>
+                      ) : (
+                        <>
+                          <td className="text-center text-success fw-semibold">
+                            +{item.diasGanados} días
+                          </td>
+                          <td className="text-center text-danger fw-semibold">
+                            -{item.diasTomados} días
+                          </td>
+                          <td className="text-center">
+                            <span className="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-1 fw-bold">
+                              {item.saldoDisponible} días libres
+                            </span>
+                          </td>
+                        </>
+                      )}
+                      <td className="text-end">
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-outline-primary rounded-3 px-3"
+                          disabled={sinBeneficio}
+                          onClick={() => abrirModal(item)}
+                        >
+                          <i className="bi bi-pencil-square me-1"></i>
+                          Gestionar
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

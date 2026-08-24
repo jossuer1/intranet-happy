@@ -49,7 +49,8 @@ function SaldosPersonal() {
       const payload = {
         idUsuario: Number(targetId),
         dias: Number(diasAcreditar),
-        observacion:
+        // El DTO real del backend (VacacionAjusteCrearDto) espera "motivo", no "observacion".
+        motivo:
           observacion || "Acreditación de días por antigüedad/ajuste",
       };
 
@@ -154,12 +155,19 @@ function SaldosPersonal() {
                         item.departamento ||
                         item.nombreDepartamento ||
                         "General";
-                      const saldo =
-                        item.saldoActual ?? item.diasDisponibles ?? 0;
-                      const estado = item.estado || "Al día";
+                      const sinBeneficio = item.tieneVacaciones === false;
+                      const saldo = sinBeneficio
+                        ? 0
+                        : (item.saldoActual ??
+                          item.saldoDisponible ??
+                          item.diasDisponibles ??
+                          0);
+                      const estado = sinBeneficio
+                        ? "Sin beneficio"
+                        : item.estado || "Al día";
 
                       return (
-                        <tr key={idItem}>
+                        <tr key={idItem} className={sinBeneficio ? "opacity-50" : ""}>
                           <td className="fw-semibold text-dark">{nombre}</td>
                           <td>
                             <span className="badge bg-light text-dark border fw-normal">
@@ -167,14 +175,16 @@ function SaldosPersonal() {
                             </span>
                           </td>
                           <td className="text-center fw-bold text-success fs-6">
-                            {saldo} días
+                            {sinBeneficio ? "—" : `${saldo} días`}
                           </td>
                           <td className="text-center">
                             <span
                               className={`badge rounded-pill px-2.5 py-1 ${
-                                estado === "Al día"
-                                  ? "bg-success-subtle text-success border border-success-subtle"
-                                  : "bg-warning-subtle text-warning border border-warning-subtle"
+                                sinBeneficio
+                                  ? "bg-secondary-subtle text-secondary border border-secondary-subtle"
+                                  : estado === "Al día"
+                                    ? "bg-success-subtle text-success border border-success-subtle"
+                                    : "bg-warning-subtle text-warning border border-warning-subtle"
                               }`}
                             >
                               {estado}
@@ -184,6 +194,7 @@ function SaldosPersonal() {
                             <button
                               type="button"
                               className="btn btn-sm btn-outline-success rounded-3 px-3"
+                              disabled={sinBeneficio}
                               onClick={() => setUsuarioAcreditar(item)}
                             >
                               <i className="bi bi-plus-circle me-1"></i>

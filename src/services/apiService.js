@@ -13,14 +13,51 @@ const getHeaders = (includeAuth = true, isMultipart = false) => {
   return headers;
 };
 
-// Interceptor centralizado para procesar respuestas y capturar errores HTTP
-//
-// isAuthRequest = true para /auth/login, /auth/cambiar-contrasena y
-// /auth/recuperar-contrasena: en esas rutas un 401 significa "credenciales
-// inválidas", NO "tu sesión expiró". Si tratamos ese 401 igual que el de
-// un endpoint protegido, se dispara window.location.href = "/login" en
-// pleno intento de login, lo que se siente como que "la página se recarga
-// sola" y nunca deja ver el mensaje de error real.
+/**
+ * CatalogosController
+ */
+export async function getCargos() {
+  const respuesta = await fetch(`${BASE_URL}/catalogos/cargos`, {
+    headers: getHeaders(true),
+  });
+  return await handleResponse(respuesta);
+}
+
+export async function getCiudades() {
+  const respuesta = await fetch(`${BASE_URL}/catalogos/ciudades`, {
+    headers: getHeaders(true),
+  });
+  return await handleResponse(respuesta);
+}
+
+export async function getBancos() {
+  const respuesta = await fetch(`${BASE_URL}/catalogos/bancos`, {
+    headers: getHeaders(true),
+  });
+  return await handleResponse(respuesta);
+}
+
+export async function getGeneros() {
+  const respuesta = await fetch(`${BASE_URL}/catalogos/generos`, {
+    headers: getHeaders(true),
+  });
+  return await handleResponse(respuesta);
+}
+
+export async function getEstadosCiviles() {
+  const respuesta = await fetch(`${BASE_URL}/catalogos/estados-civiles`, {
+    headers: getHeaders(true),
+  });
+  return await handleResponse(respuesta);
+}
+
+export async function getEtnias() {
+  const respuesta = await fetch(`${BASE_URL}/catalogos/etnias`, {
+    headers: getHeaders(true),
+  });
+  return await handleResponse(respuesta);
+}
+
 async function handleResponse(respuesta, isAuthRequest = false) {
   if (respuesta.status === 401 && !isAuthRequest) {
     localStorage.removeItem("jwt_token");
@@ -133,6 +170,26 @@ export async function getMiPerfil() {
   return await handleResponse(respuesta);
 }
 
+// Activa/desactiva el beneficio de vacaciones de un usuario y ajusta sus días asignados.
+// Solo RRHH puede llamar esto (backend valida el rol).
+export async function actualizarVacacionesUsuario(idUsuario, dto) {
+  const respuesta = await fetch(
+    `${BASE_URL}/usuarios/${idUsuario}/vacaciones`,
+    {
+      method: "PATCH",
+      headers: getHeaders(true),
+      body: JSON.stringify(dto),
+    },
+  );
+  return await handleResponse(respuesta);
+}
+export async function getAreas() {
+  const respuesta = await fetch(`${BASE_URL}/catalogos/areas`, {
+    headers: getHeaders(true),
+  });
+  return await handleResponse(respuesta);
+}
+
 /**
  * ImagenesController
  */
@@ -210,8 +267,10 @@ export async function getTodasLasVacaciones() {
   return await handleResponse(respuesta);
 }
 
-// Alias para la pantalla de SaldosPersonal
-export const getSaldosVacaciones = getTodasLasVacaciones;
+// Alias para la pantalla de SaldosPersonal.
+// OJO: usa el RESUMEN por empleado (/vacaciones/resumen), no el log de movimientos
+// (/vacaciones/todas), porque esa pantalla necesita nombre/departamento/saldo por persona.
+export const getSaldosVacaciones = getResumenVacaciones;
 
 export async function registrarDescuentoVacaciones(descuentoDto) {
   const respuesta = await fetch(`${BASE_URL}/vacaciones/descuento`, {
@@ -238,16 +297,9 @@ export async function getResumenVacaciones() {
   return await handleResponse(respuesta);
 }
 
-export async function registrarVacaciones(vacacionesDto) {
-  const respuesta = await fetch(`${BASE_URL}/vacaciones`, {
-    method: "POST",
-    headers: getHeaders(true),
-    body: JSON.stringify(vacacionesDto),
-  });
-  return await handleResponse(respuesta);
-}
-
-// Alias para la carga de días
-// Alias o función para la acreditación de días en saldos personales
+// Alias para la acreditación de días en saldos personales.
+// (Antes existían "registrarVacaciones" y "acreditarDias" apuntando a endpoints que
+// no existen en el backend /vacaciones y con nombres de campo distintos a los DTOs reales,
+// causaban 400/404. Se eliminaron: usar registrarDescuentoVacaciones y
+// registrarAjusteVacaciones directamente, que sí calzan con VacacionesController.)
 export const acreditarDiasVacaciones = registrarAjusteVacaciones;
-export const acreditarDias = registrarAjusteVacaciones;

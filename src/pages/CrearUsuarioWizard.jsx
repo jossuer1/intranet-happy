@@ -36,11 +36,25 @@ function CrearUsuarioWizard({ onCancelar, onGuardarExitoso }) {
     acumulaDecimos: 0,
     datosBancarios: [],
     titulos: [],
+    tieneVacaciones: true,
+    diasVacacionesAsignados: 15,
   });
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleToggleVacaciones = (e) => {
+    const { checked } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      tieneVacaciones: checked,
+      // Si se desactiva, no tiene sentido mostrar/enviar un valor de días
+      diasVacacionesAsignados: checked
+        ? prev.diasVacacionesAsignados || 15
+        : "",
+    }));
   };
 
   const handleImagenChange = (e) => {
@@ -166,6 +180,10 @@ function CrearUsuarioWizard({ onCancelar, onGuardarExitoso }) {
       idCargo: formData.idCargo ? Number(formData.idCargo) : null,
       numeroHijos: Number(formData.numeroHijos || 0),
       acumulaDecimos: Number(formData.acumulaDecimos || 0),
+      tieneVacaciones: formData.tieneVacaciones,
+      diasVacacionesAsignados: formData.tieneVacaciones
+        ? Number(formData.diasVacacionesAsignados || 15)
+        : null,
       datosBancarios: formData.datosBancarios.map((b) => ({
         ...b,
         idBanco: Number(b.idBanco),
@@ -224,7 +242,11 @@ function CrearUsuarioWizard({ onCancelar, onGuardarExitoso }) {
           )}
 
           {pasoActual === 2 && (
-            <Paso2Laboral formData={formData} handleChange={handleChange} />
+            <Paso2Laboral
+              formData={formData}
+              handleChange={handleChange}
+              handleToggleVacaciones={handleToggleVacaciones}
+            />
           )}
 
           {pasoActual === 3 && (

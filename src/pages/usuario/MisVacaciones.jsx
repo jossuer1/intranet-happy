@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import AppLayout from "../../components/layout/AppLayout";
 import SectionHeader from "../../components/layout/SectionHeader";
 import { getMisVacaciones } from "../../services/apiService";
+import { useAuthStore } from "../../store/useAuthStore";
 
 function TarjetaResumen({ etiqueta, valor }) {
   return (
@@ -28,6 +29,9 @@ function badgeEstado(estado) {
 }
 
 function MisVacaciones() {
+  const user = useAuthStore((state) => state.user);
+  const fetchPerfil = useAuthStore((state) => state.fetchPerfil);
+
   const [resumen, setResumen] = useState({
     diasDisponibles: 0,
     diasTomados: 0,
@@ -37,7 +41,22 @@ function MisVacaciones() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Si el perfil todavía no está en el store (ej. recarga directa en /mis-vacaciones),
+  // lo cargamos para poder validar tieneVacaciones antes de pedir el historial.
   useEffect(() => {
+    if (!user) {
+      fetchPerfil().catch(() => {});
+    }
+  }, [user, fetchPerfil]);
+
+  useEffect(() => {
+    // Si ya sabemos que el usuario no tiene el beneficio, ni siquiera
+    // consultamos el historial (evita un 400 innecesario del backend).
+    if (user && user.tieneVacaciones === false) {
+      setLoading(false);
+      return;
+    }
+
     const cargarHistorialPersonal = async () => {
       try {
         setLoading(true);
@@ -60,8 +79,11 @@ function MisVacaciones() {
       }
     };
 
-    cargarHistorialPersonal();
-  }, []);
+    // Solo pedimos el historial cuando ya sabemos (o asumimos) que tiene el beneficio.
+    if (!user || user.tieneVacaciones !== false) {
+      cargarHistorialPersonal();
+    }
+  }, [user]);
 
   const {
     diasDisponibles,
@@ -69,6 +91,28 @@ function MisVacaciones() {
     diasPendientesAprobacion,
     solicitudes,
   } = resumen;
+
+  // Guard: si el perfil ya cargó y confirma que no tiene el beneficio,
+  // mostramos un aviso en vez del panel (y no del error genérico de red).
+  if (user && user.tieneVacaciones === false) {
+    return (
+      <AppLayout>
+        <SectionHeader titulo="Mis Vacaciones" volverA="/dashboard" />
+        <div className="container my-5 flex-grow-1">
+          <div className="text-center py-5 text-muted">
+            <i className="bi bi-lock fs-1 d-block mb-3"></i>
+            <p className="mb-0 fw-semibold">
+              Aún no tienes acceso a esta opción.
+            </p>
+            <small>
+              Tu perfil no tiene habilitado el beneficio de vacaciones. Si
+              crees que esto es un error, contacta a RRHH.
+            </small>
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
 
   return (
     <AppLayout>

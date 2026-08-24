@@ -1,119 +1,144 @@
-function Paso4Bancarios({
-  formData,
-  handleChange,
-  agregarCuentaBancaria,
-  eliminarCuentaBancaria,
-  handleBancoChange,
-}) {
+import React, { useState, useEffect } from "react";
+import { getBancos } from "../../services/apiService";
+
+function Paso4Bancos({ formData, setFormData }) {
+  const [bancos, setBancos] = useState([]);
+  const [loadingBancos, setLoadingBancos] = useState(true);
+
+  useEffect(() => {
+    const cargarBancos = async () => {
+      try {
+        const dataBancos = await getBancos();
+        setBancos(dataBancos);
+      } catch (error) {
+        console.error("Error al cargar bancos:", error);
+      } finally {
+        setLoadingBancos(false);
+      }
+    };
+
+    cargarBancos();
+  }, []);
+
+  const handleBancoChange = (index, e) => {
+    const { name, value } = e.target;
+    const nuevasCuentas = [...formData.datosBancarios];
+    nuevasCuentas[index][name] = value;
+    setFormData({
+      ...formData,
+      datosBancarios: nuevasCuentas,
+    });
+  };
+
+  const agregarCuenta = () => {
+    setFormData({
+      ...formData,
+      datosBancarios: [
+        ...formData.datosBancarios,
+        { idBanco: "", tipoCuenta: "Ahorros", numeroCuenta: "" },
+      ],
+    });
+  };
+
+  const eliminarCuenta = (index) => {
+    const nuevasCuentas = formData.datosBancarios.filter((_, i) => i !== index);
+    setFormData({
+      ...formData,
+      datosBancarios: nuevasCuentas,
+    });
+  };
+
   return (
     <div>
-      <h5 className="mb-3 text-secondary">Paso 4: Datos Bancarios y Décimos</h5>
-
-      <div className="mb-4 col-md-6">
-        <label className="form-label fw-bold d-block">¿Acumula Décimos?</label>
-        <div className="form-check form-check-inline">
-          <input
-            className="form-check-input"
-            type="radio"
-            name="acumulaDecimos"
-            id="acumulaDecimosSi"
-            value="1"
-            checked={
-              formData.acumulaDecimos === "1" || formData.acumulaDecimos === 1
-            }
-            onChange={handleChange}
-          />
-          <label className="form-check-label" htmlFor="acumulaDecimosSi">
-            Sí
-          </label>
-        </div>
-        <div className="form-check form-check-inline">
-          <input
-            className="form-check-input"
-            type="radio"
-            name="acumulaDecimos"
-            id="acumulaDecimosNo"
-            value="0"
-            checked={
-              formData.acumulaDecimos === "0" || formData.acumulaDecimos === 0
-            }
-            onChange={handleChange}
-          />
-          <label className="form-check-label" htmlFor="acumulaDecimosNo">
-            No
-          </label>
-        </div>
-      </div>
-
-      <div className="d-flex justify-content-between align-items-center mb-2">
-        <h6 className="m-0 fw-bold text-dark">Cuentas Bancarias</h6>
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h5 className="text-secondary m-0">Paso 4: Información Bancaria</h5>
         <button
           type="button"
           className="btn btn-outline-primary btn-sm"
-          onClick={agregarCuentaBancaria}
+          onClick={agregarCuenta}
         >
-          + Agregar Cuenta
+          + Agregar Cuenta Bancaria
         </button>
       </div>
 
-      {formData.datosBancarios.map((item, index) => (
-        <div
-          key={index}
-          className="row g-2 align-items-center mb-2 bg-light p-2 rounded"
-        >
-          <div className="col-md-4">
-            <select
-              name="idBanco"
-              className="form-select form-select-sm"
-              value={item.idBanco}
-              onChange={(e) => handleBancoChange(index, e)}
-              required
-            >
-              <option value="">Seleccione Banco...</option>
-              <option value="1">Banco Pichincha</option>
-              <option value="2">Banco Guayaquil</option>
-              <option value="3">Banco del Pacífico</option>
-              <option value="4">Produbanco</option>
-              <option value="5">Banco Internacional</option>
-              <option value="6">Banco del Austro</option>
-              <option value="7">Cooperativa JEP</option>
-            </select>
-          </div>
-          <div className="col-md-4">
-            <input
-              type="text"
-              name="numeroCuenta"
-              className="form-control form-control-sm"
-              placeholder="Ej. 2200123456"
-              value={item.numeroCuenta}
-              onChange={(e) => handleBancoChange(index, e)}
-              required
-            />
-          </div>
-          <div className="col-md-2">
-            <select
-              name="tipoCuenta"
-              className="form-select form-select-sm"
-              value={item.tipoCuenta}
-              onChange={(e) => handleBancoChange(index, e)}
-            >
-              <option value="AHORROS">AHORROS</option>
-              <option value="CORRIENTE">CORRIENTE</option>
-            </select>
-          </div>
-          <div className="col-md-2 text-end">
-            <button
-              type="button"
-              className="btn btn-outline-danger btn-sm"
-              onClick={() => eliminarCuentaBancaria(index)}
-            >
-              Eliminar
-            </button>
-          </div>
+      {formData.datosBancarios.length === 0 ? (
+        <div className="text-center py-4 bg-light rounded-3 text-muted">
+          <p className="mb-1">No has agregado ninguna cuenta bancaria.</p>
+          <small>
+            Requerido para la acreditación de pagos de nómina o beneficios.
+          </small>
         </div>
-      ))}
+      ) : (
+        formData.datosBancarios.map((cuenta, index) => (
+          <div
+            key={index}
+            className="card border-0 bg-light p-3 mb-3 shadow-sm"
+          >
+            <div className="d-flex justify-content-between align-items-center mb-2">
+              <span className="fw-bold text-primary">
+                Cuenta Bancaria #{index + 1}
+              </span>
+              <button
+                type="button"
+                className="btn btn-outline-danger btn-sm"
+                onClick={() => eliminarCuenta(index)}
+              >
+                Eliminar
+              </button>
+            </div>
+
+            <div className="row g-3">
+              <div className="col-md-4">
+                <label className="form-label">Banco</label>
+                <select
+                  name="idBanco"
+                  className="form-select"
+                  value={cuenta.idBanco}
+                  onChange={(e) => handleBancoChange(index, e)}
+                  required
+                  disabled={loadingBancos}
+                >
+                  <option value="">Seleccione un banco...</option>
+                  {bancos.map((banco) => (
+                    <option key={banco.idBanco} value={banco.idBanco}>
+                      {banco.nombre}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="col-md-4">
+                <label className="form-label">Tipo de Cuenta</label>
+                <select
+                  name="tipoCuenta"
+                  className="form-select"
+                  value={cuenta.tipoCuenta}
+                  onChange={(e) => handleBancoChange(index, e)}
+                  required
+                >
+                  <option value="Ahorros">Ahorros</option>
+                  <option value="Corriente">Corriente</option>
+                </select>
+              </div>
+
+              <div className="col-md-4">
+                <label className="form-label">Número de Cuenta</label>
+                <input
+                  type="text"
+                  name="numeroCuenta"
+                  className="form-control"
+                  placeholder="Ej. 2200112233"
+                  value={cuenta.numeroCuenta}
+                  onChange={(e) => handleBancoChange(index, e)}
+                  required
+                />
+              </div>
+            </div>
+          </div>
+        ))
+      )}
     </div>
   );
 }
 
-export default Paso4Bancarios;
+export default Paso4Bancos;

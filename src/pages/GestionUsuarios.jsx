@@ -6,7 +6,11 @@ import EditarUsuarioCard from "../components/usuarios/EditarUsuarioCard";
 import TablaUsuarios from "../components/usuarios/TablaUsuarios";
 import AppLayout from "../components/layout/AppLayout";
 import SectionHeader from "../components/layout/SectionHeader";
-import { getUsuarios, actualizarUsuario } from "../services/apiService";
+import {
+  getUsuarios,
+  actualizarUsuario,
+  actualizarVacacionesUsuario,
+} from "../services/apiService";
 
 function GestionUsuarios() {
   const location = useLocation();
@@ -53,6 +57,15 @@ function GestionUsuarios() {
 
       // Petición al backend para persistir la actualización
       await actualizarUsuario(targetId, formData);
+
+      // El beneficio de vacaciones se guarda en su propio endpoint (PATCH
+      // /usuarios/{id}/vacaciones), separado del resto de la ficha.
+      await actualizarVacacionesUsuario(targetId, {
+        tieneVacaciones: formData.tieneVacaciones,
+        diasVacacionesAsignados: formData.tieneVacaciones
+          ? Number(formData.diasVacacionesAsignados || 15)
+          : null,
+      });
 
       // Re-obtenemos los datos para asegurar la consistencia del estado
       await cargarUsuarios();

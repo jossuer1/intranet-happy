@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import Navbar from "./Navbar";
+import { useAuthStore } from "../../store/useAuthStore";
 
-const MODULOS_EMPLEADO = [
+const MODULOS_EMPLEADO_BASE = [
   {
     key: "dashboard",
     titulo: "Inicio",
@@ -32,6 +33,15 @@ const MODULOS_EMPLEADO = [
 function AppLayout({ children, usuarioRol = "RRHH" }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const user = useAuthStore((state) => state.user);
+
+  // Si el usuario no tiene el beneficio de vacaciones habilitado, ni siquiera
+  // mostramos la opción en el menú. Por defecto (perfil aún no cargado) se
+  // asume true para no "parpadear" el ítem mientras carga.
+  const tieneVacaciones = user?.tieneVacaciones ?? true;
+  const MODULOS_EMPLEADO = MODULOS_EMPLEADO_BASE.filter(
+    (item) => item.key !== "mis-vacaciones" || tieneVacaciones,
+  );
 
   const [openGestionUsuarios, setOpenGestionUsuarios] = useState(
     location.pathname.startsWith("/gestion-usuarios"),

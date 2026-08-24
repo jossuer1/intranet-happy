@@ -54,6 +54,8 @@ function EditarUsuarioCard({ usuario, onGuardar, onCancelar }) {
     datosBancarios: [],
     titulos: [],
     estado: "Activo",
+    tieneVacaciones: true,
+    diasVacacionesAsignados: 15,
   });
 
   useEffect(() => {
@@ -85,6 +87,16 @@ function EditarUsuarioCard({ usuario, onGuardar, onCancelar }) {
         datosBancarios: usuario.datosBancarios || [],
         titulos: usuario.titulos || [],
         estado: usuario.estado || "Activo",
+        // Por defecto true si el backend aún no manda el campo (usuarios antiguos).
+        tieneVacaciones:
+          usuario.tieneVacaciones !== undefined
+            ? usuario.tieneVacaciones
+            : true,
+        diasVacacionesAsignados:
+          usuario.diasVacacionesAsignados !== undefined &&
+          usuario.diasVacacionesAsignados !== null
+            ? usuario.diasVacacionesAsignados
+            : 15,
       });
     }
   }, [usuario]);
@@ -92,6 +104,17 @@ function EditarUsuarioCard({ usuario, onGuardar, onCancelar }) {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleToggleVacaciones = (e) => {
+    const { checked } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      tieneVacaciones: checked,
+      diasVacacionesAsignados: checked
+        ? prev.diasVacacionesAsignados || 15
+        : "",
+    }));
   };
 
   const handleImagenChange = (e) => {
@@ -510,6 +533,53 @@ function EditarUsuarioCard({ usuario, onGuardar, onCancelar }) {
                 onChange={handleChange}
               />
             </div>
+
+            {/* BENEFICIO DE VACACIONES */}
+            <div className="col-12">
+              <hr className="text-muted opacity-25 my-1" />
+            </div>
+            <div className="col-md-5">
+              <label className="form-label small fw-semibold d-block">
+                ¿Tiene beneficio de vacaciones?
+              </label>
+              <div className="form-check form-switch">
+                <input
+                  className="form-check-input"
+                  type="checkbox"
+                  role="switch"
+                  id="editSwitchTieneVacaciones"
+                  checked={formData.tieneVacaciones}
+                  onChange={handleToggleVacaciones}
+                  style={{ cursor: "pointer" }}
+                />
+                <label
+                  className={`form-check-label small fw-semibold ${
+                    formData.tieneVacaciones
+                      ? "text-success"
+                      : "text-secondary"
+                  }`}
+                  htmlFor="editSwitchTieneVacaciones"
+                  style={{ cursor: "pointer" }}
+                >
+                  {formData.tieneVacaciones ? "Sí tiene" : "No tiene"}
+                </label>
+              </div>
+            </div>
+            {formData.tieneVacaciones && (
+              <div className="col-md-4">
+                <label className="form-label small fw-semibold">
+                  Días de vacaciones asignados
+                </label>
+                <input
+                  type="number"
+                  name="diasVacacionesAsignados"
+                  className="form-control"
+                  min="0"
+                  value={formData.diasVacacionesAsignados}
+                  onChange={handleChange}
+                />
+              </div>
+            )}
           </div>
 
           <hr className="my-4 text-muted opacity-25" />
