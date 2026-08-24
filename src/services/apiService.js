@@ -14,8 +14,15 @@ const getHeaders = (includeAuth = true, isMultipart = false) => {
 };
 
 // Interceptor centralizado para procesar respuestas y capturar errores HTTP
-async function handleResponse(respuesta) {
-  if (respuesta.status === 401) {
+//
+// isAuthRequest = true para /auth/login, /auth/cambiar-contrasena y
+// /auth/recuperar-contrasena: en esas rutas un 401 significa "credenciales
+// inválidas", NO "tu sesión expiró". Si tratamos ese 401 igual que el de
+// un endpoint protegido, se dispara window.location.href = "/login" en
+// pleno intento de login, lo que se siente como que "la página se recarga
+// sola" y nunca deja ver el mensaje de error real.
+async function handleResponse(respuesta, isAuthRequest = false) {
+  if (respuesta.status === 401 && !isAuthRequest) {
     localStorage.removeItem("jwt_token");
     window.location.href = "/login";
     throw new Error("Sesión expirada. Por favor, inicia sesión nuevamente.");
@@ -46,7 +53,7 @@ export async function login(cedula, password) {
     headers: getHeaders(false),
     body: JSON.stringify({ usuario: cedula, contrasena: password }),
   });
-  const data = await handleResponse(respuesta);
+  const data = await handleResponse(respuesta, true);
   if (data?.token) {
     localStorage.setItem("jwt_token", data.token);
   }
@@ -67,7 +74,7 @@ export async function cambiarContrasenaObligatoria(
     }),
   });
 
-  return await handleResponse(respuesta);
+  return await handleResponse(respuesta, true);
 }
 
 export async function solicitarRecuperacion(correo) {
@@ -76,7 +83,7 @@ export async function solicitarRecuperacion(correo) {
     headers: getHeaders(false),
     body: JSON.stringify({ correo }),
   });
-  return await handleResponse(respuesta);
+  return await handleResponse(respuesta, true);
 }
 
 /**

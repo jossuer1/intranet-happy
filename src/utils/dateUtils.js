@@ -1,4 +1,23 @@
 /**
+ * Formatea una fecha (ISO string o Date) a formato legible dd/mm/aaaa.
+ * @param {string | Date | null | undefined} fecha
+ * @returns {string | null} Fecha formateada, o null si no hay fecha o es inválida.
+ */
+export function formatearFecha(fecha) {
+  if (!fecha) return null;
+
+  const d = new Date(fecha);
+  if (isNaN(d.getTime())) return null;
+
+  return d.toLocaleDateString("es-EC", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+}
+
+/**
  * Calcula la edad exacta a partir de una fecha de nacimiento.
  * @param {string | Date} fechaNacimiento - Fecha de nacimiento (ej. "2006-05-15" o un objeto Date).
  * @returns {number} Edad en años cumplidos.

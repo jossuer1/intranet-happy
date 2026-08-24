@@ -50,4 +50,10 @@ export const useAuthStore = create((set, get) => ({
     localStorage.removeItem("jwt_token");
     set({ user: null, token: null });
   },
+
+  fetchPerfil: async () => {
+    const perfil = await getMiPerfil();
+    set({ user: perfil });
+    return perfil;
+  },
 }));

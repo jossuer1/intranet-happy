@@ -1,7 +1,11 @@
 import { useEffect, useState } from "react";
 import AppLayout from "../../components/layout/AppLayout";
 import SectionHeader from "../../components/layout/SectionHeader";
-import { calcularEdad, obtenerGeneracion } from "../../utils/dateUtils";
+import {
+  calcularEdad,
+  obtenerGeneracion,
+  formatearFecha,
+} from "../../utils/dateUtils";
 import { useAuthStore } from "../../store/useAuthStore";
 
 function Campo({ label, valor }) {
@@ -14,10 +18,8 @@ function Campo({ label, valor }) {
 }
 
 function MiPerfil() {
-  const { user, fetchPerfil } = useAuthStore((state) => ({
-    user: state.user,
-    fetchPerfil: state.fetchPerfil,
-  }));
+  const user = useAuthStore((state) => state.user);
+  const fetchPerfil = useAuthStore((state) => state.fetchPerfil);
 
   const [loading, setLoading] = useState(!user);
   const [error, setError] = useState(null);
@@ -130,7 +132,7 @@ function MiPerfil() {
                   <Campo label="Cédula" valor={user.cedula} />
                   <Campo
                     label="Fecha de nacimiento"
-                    valor={user.fechaNacimiento}
+                    valor={formatearFecha(user.fechaNacimiento)}
                   />
 
                   {/* Campos dinámicos agregados */}
@@ -156,7 +158,10 @@ function MiPerfil() {
                   <Campo label="Correo empresa" valor={user.correoEmpresa} />
                   <Campo label="Cargo" valor={user.cargo || user.nombreCargo} />
                   <Campo label="Departamento" valor={user.departamento} />
-                  <Campo label="Fecha de ingreso" valor={user.fechaIngreso} />
+                  <Campo
+                    label="Fecha de ingreso"
+                    valor={formatearFecha(user.fechaIngreso)}
+                  />
                   <Campo
                     label="Dirección de domicilio"
                     valor={user.direccion}
@@ -191,9 +196,11 @@ function MiPerfil() {
                         </thead>
                         <tbody>
                           {user.familiares.map((fam, idx) => (
-                            <tr key={fam.id || idx}>
-                              <td className="fw-medium">{fam.nombreHijo}</td>
-                              <td>{fam.fechaNacimiento}</td>
+                            <tr key={fam.idFamiliar || idx}>
+                              <td className="fw-medium">
+                                {fam.nombre} {fam.apellido || ""}
+                              </td>
+                              <td>{formatearFecha(fam.fechaNacimiento)}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -221,10 +228,10 @@ function MiPerfil() {
                         </thead>
                         <tbody>
                           {user.contactosEmergencia.map((c, idx) => (
-                            <tr key={c.id || idx}>
+                            <tr key={c.idContacto || idx}>
                               <td className="fw-medium">{c.nombre}</td>
-                              <td>{c.parentesco || c.relacion}</td>
-                              <td>{c.numeroCelular || c.telefono}</td>
+                              <td>{c.parentesco}</td>
+                              <td>{c.telefono}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -270,7 +277,7 @@ function MiPerfil() {
                       </thead>
                       <tbody>
                         {user.datosBancarios.map((b, idx) => (
-                          <tr key={b.id || idx}>
+                          <tr key={b.idDatoBancario || idx}>
                             <td className="fw-medium">
                               {b.banco || b.idBanco}
                             </td>
@@ -308,9 +315,9 @@ function MiPerfil() {
                       </thead>
                       <tbody>
                         {user.titulos.map((t, idx) => (
-                          <tr key={t.id || idx}>
-                            <td className="fw-medium">{t.titulo}</td>
-                            <td>{t.institucionEducativaSuperior || "N/A"}</td>
+                          <tr key={t.idTitulo || idx}>
+                            <td className="fw-medium">{t.nombreTitulo}</td>
+                            <td>{t.institucion || "N/A"}</td>
                           </tr>
                         ))}
                       </tbody>
