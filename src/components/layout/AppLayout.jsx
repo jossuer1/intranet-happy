@@ -30,7 +30,7 @@ const MODULOS_EMPLEADO_BASE = [
   },
 ];
 
-function AppLayout({ children, usuarioRol = "RRHH" }) {
+function AppLayout({ children, usuarioRol = null }) {
   const navigate = useNavigate();
   const location = useLocation();
   const user = useAuthStore((state) => state.user);
@@ -53,7 +53,37 @@ function AppLayout({ children, usuarioRol = "RRHH" }) {
     location.pathname.startsWith("/gestion-vacaciones"),
   );
 
-  const esAdminORRHH = usuarioRol === "RRHH" || usuarioRol === "ADMIN";
+  // Rol real del usuario logueado. `usuarioRol` (prop) permite forzarlo
+  // manualmente si algún día hace falta, pero por defecto se toma del
+  // perfil que devuelve el backend (/usuarios/mi-perfil).
+  //
+  // ⚠️ OJO: no sabemos con certeza cómo se llama el campo de rol en tu API,
+  // así que probamos varios nombres comunes. Si el menú de RRHH sigue sin
+  // aparecerle a un admin real (o le sigue apareciendo a un empleado),
+  // hay que confirmar el nombre exacto del campo y dejar solo ese.
+  const rolUsuario =
+    usuarioRol ??
+    user?.rol ??
+    user?.nombreRol ??
+    user?.role ??
+    user?.tipoUsuario ??
+    user?.perfil ??
+    null;
+
+  // Fail-closed: si todavía no sabemos el rol (perfil sin cargar, o el
+  // campo no vino en la respuesta), NO mostramos el menú de RRHH.
+  const esAdminORRHH = ["RRHH", "ADMIN"].includes(
+    String(rolUsuario || "").toUpperCase(),
+  );
+
+  if (import.meta.env.DEV && user && rolUsuario === null) {
+    console.warn(
+      "[AppLayout] El perfil del usuario no trae ningún campo de rol reconocido " +
+        "(se probó: rol, nombreRol, role, tipoUsuario, perfil). Revisa la respuesta " +
+        "de /usuarios/mi-perfil y ajusta AppLayout.jsx. Perfil recibido:",
+      user,
+    );
+  }
 
   const esGestionUsuariosActivo =
     location.pathname.startsWith("/gestion-usuarios");

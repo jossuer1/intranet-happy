@@ -22,6 +22,13 @@ export const actualizarVacaciones = (idUsuario, dto) =>
 
 export const actualizarVacacionesUsuario = actualizarVacaciones;
 
+// Sube/reemplaza la foto de perfil (multipart). Devuelve { urlImagenPerfil }.
+export const subirFotoPerfil = (idUsuario, archivo) => {
+  const formData = new FormData();
+  formData.append("foto", archivo);
+  return apiClient.post(`/usuarios/${idUsuario}/foto`, formData);
+};
+
 // Exportación por objeto
 export const usuariosService = {
   crearUsuario,
@@ -33,4 +40,5 @@ export const usuariosService = {
   actualizarUsuario,
   actualizarVacaciones,
   actualizarVacacionesUsuario,
+  subirFotoPerfil,
 };

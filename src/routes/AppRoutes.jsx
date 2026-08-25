@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 import Login from "../pages/Login";
-import RecuperarContrasena from "../pages/RecuperarContraseña";
+import RecuperarContrasena from "../pages/RecuperarContrasena";
 import Dashboard from "../pages/Dashboard";
 import GestionUsuarios from "../pages/GestionUsuarios";
 import MiPerfil from "../pages/usuario/MiPerfil";

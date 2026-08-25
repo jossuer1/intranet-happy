@@ -13,8 +13,11 @@ export const useUsuarioForm = (initialData = {}) => {
     idGenero: "",
     idEstadoCivil: "",
     idEtnia: "",
+    foto: "", // Base64 (solo para <img> de vista previa) o URL ya existente en edición
+    fotoArchivo: null, // File real que se sube a Cloudinary al guardar
 
     // Datos Laborales
+    idArea: "",
     idCargo: "",
     idCiudad: "",
     correoEmpresa: "",
@@ -43,6 +46,21 @@ export const useUsuarioForm = (initialData = {}) => {
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
+  };
+
+  // Guarda el File real (fotoArchivo, para subir a Cloudinary al guardar) y
+  // además genera un Base64 solo para la vista previa inmediata (<img src>).
+  const handleFotoChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setFormData((prev) => ({ ...prev, fotoArchivo: file }));
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setFormData((prev) => ({ ...prev, foto: reader.result }));
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleItemChange = (listName, index, fieldOrEvent, value) => {
@@ -108,6 +126,7 @@ export const useUsuarioForm = (initialData = {}) => {
     formData,
     setFormData,
     handleChange,
+    handleFotoChange,
     handleItemChange,
     handleAddItem,
     handleRemoveItem,

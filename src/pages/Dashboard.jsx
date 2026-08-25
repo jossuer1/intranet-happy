@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 import valoresImg from "../assets/images/valores_happy.png";
-import cumpleImg from "../assets/images/cumpleaños_agosto.png";
+import cumpleImg from "../assets/images/cumpleanos_agosto.png";
 import capImg from "../assets/images/capacitacion.png";
 import AppLayout from "../components/layout/AppLayout";
 import { getImagenesActivas } from "../services/imagenesService.js"; // O desde tu servicio modularizado de imágenes

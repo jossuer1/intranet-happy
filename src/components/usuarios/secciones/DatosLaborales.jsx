@@ -11,10 +11,45 @@ const DatosLaborales = ({ formData, handleChange, catalogos = {} }) => {
     });
   };
 
+  // Al cambiar el área, reseteamos el cargo seleccionado (puede que ya
+  // no pertenezca al área nueva) y filtramos el catálogo de cargos.
+  const handleAreaChange = (e) => {
+    handleChange(e);
+    handleChange({ target: { name: "idCargo", value: "" } });
+  };
+
+  // Si los cargos vienen con idArea, filtramos por el área elegida.
+  // Si no lo traen (catálogo plano), mostramos todos para no romper nada.
+  const cargosConArea = (catalogos.cargos || []).some(
+    (c) => c.idArea !== undefined && c.idArea !== null,
+  );
+  const cargosFiltrados =
+    cargosConArea && formData.idArea
+      ? (catalogos.cargos || []).filter(
+          (c) => String(c.idArea) === String(formData.idArea),
+        )
+      : catalogos.cargos || [];
+
   return (
     <div>
       <h5 className="mb-4 text-secondary">Datos Laborales</h5>
       <div className="row g-3">
+        <div className="col-md-6">
+          <label className="form-label">Área / Departamento</label>
+          <select
+            className="form-select"
+            name="idArea"
+            value={formData.idArea || ""}
+            onChange={handleAreaChange}
+          >
+            <option value="">Seleccione un área...</option>
+            {catalogos.areas?.map((a) => (
+              <option key={a.idArea || a.id} value={a.idArea || a.id}>
+                {a.nombre || a.descripcion}
+              </option>
+            ))}
+          </select>
+        </div>
         <div className="col-md-6">
           <label className="form-label">Cargo *</label>
           <select
@@ -24,8 +59,12 @@ const DatosLaborales = ({ formData, handleChange, catalogos = {} }) => {
             onChange={handleChange}
             required
           >
-            <option value="">Seleccione un cargo...</option>
-            {catalogos.cargos?.map((c) => (
+            <option value="">
+              {formData.idArea
+                ? "Seleccione un cargo..."
+                : "Seleccione un área primero..."}
+            </option>
+            {cargosFiltrados.map((c) => (
               <option key={c.idCargo || c.id} value={c.idCargo || c.id}>
                 {c.nombre || c.descripcion}
               </option>

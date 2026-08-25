@@ -1,10 +1,63 @@
 import React from "react";
 
-const DatosPersonales = ({ formData, handleChange, catalogos = {} }) => {
+const DatosPersonales = ({
+  formData,
+  handleChange,
+  handleFotoChange,
+  catalogos = {},
+}) => {
   return (
     <div>
       <h5 className="mb-4 text-secondary">Datos Personales</h5>
-      <div className="row g-3">
+      <div className="row g-4 align-items-start mb-3">
+        {/* FOTO DE PERFIL */}
+        <div className="col-12 col-md-4 col-lg-3 text-center">
+          <div className="card border-0 bg-white p-3 shadow-sm rounded-3">
+            <div className="mb-3 d-flex justify-content-center">
+              {formData.foto ? (
+                <img
+                  src={formData.foto}
+                  alt="Vista previa"
+                  className="rounded-circle object-fit-cover border border-3 border-primary shadow"
+                  style={{ width: "140px", height: "140px" }}
+                />
+              ) : (
+                <div
+                  className="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center shadow-sm"
+                  style={{ width: "140px", height: "140px", fontSize: "3.5rem" }}
+                >
+                  👤
+                </div>
+              )}
+            </div>
+
+            <label className="form-label fw-bold mb-2">Foto de Perfil</label>
+
+            <input
+              type="file"
+              id="fotoInput"
+              name="foto"
+              accept="image/*"
+              className="d-none"
+              onChange={handleFotoChange}
+            />
+            <label
+              htmlFor="fotoInput"
+              className="btn btn-outline-primary btn-sm mb-2 w-100"
+              style={{ cursor: "pointer" }}
+            >
+              {formData.foto ? "Cambiar Imagen" : "Subir Imagen"}
+            </label>
+
+            <small className="text-muted d-block" style={{ fontSize: "0.75rem" }}>
+              Formatos: JPG, PNG o WEBP.
+            </small>
+          </div>
+        </div>
+
+        {/* CAMPOS DEL FORMULARIO */}
+        <div className="col-12 col-md-8 col-lg-9">
+          <div className="row g-3">
         <div className="col-md-6">
           <label className="form-label">Nombre *</label>
           <input
@@ -135,6 +188,8 @@ const DatosPersonales = ({ formData, handleChange, catalogos = {} }) => {
             onChange={handleChange}
             placeholder="Calle Principal y Secundaria"
           />
+        </div>
+          </div>
         </div>
       </div>
     </div>
