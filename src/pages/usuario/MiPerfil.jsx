@@ -30,7 +30,6 @@ function MiPerfil() {
   } = useQuery({
     queryKey: ["perfilUsuario"],
     queryFn: async () => {
-      // Si el usuario ya está en el store, lo retorna directamente; si no, ejecuta fetchPerfil
       if (userStore) return userStore;
       return await fetchPerfil();
     },
@@ -125,7 +124,7 @@ function MiPerfil() {
                   1. Información Personal
                 </h6>
                 <div className="row">
-                  <Campo label="Nombres completos" valor={user.nombres} />
+                  <Campo label="Nombres completos" valor={(user?.nombre || '') + ' ' + (user?.apellido || '')} />
                   <Campo label="Cédula" valor={user.cedula} />
                   <Campo
                     label="Fecha de nacimiento"

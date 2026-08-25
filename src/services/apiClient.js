@@ -26,10 +26,18 @@ async function handleResponse(respuesta, isAuthRequest = false) {
   const data = isJson ? await respuesta.json() : null;
 
   if (!respuesta.ok) {
-    const errorMsg =
+    let errorMsg = null;
+    if (data?.errors && typeof data.errors === "object") {
+      errorMsg = Object.values(data.errors).flat().join(" | ");
+    }
+
+    errorMsg =
+      errorMsg ||
       data?.mensaje ||
       data?.message ||
+      data?.title ||
       `Error del servidor (${respuesta.status})`;
+
     throw new Error(errorMsg);
   }
 

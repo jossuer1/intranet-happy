@@ -35,7 +35,7 @@ function GestionNovedades() {
       setNovedades(Array.isArray(data) ? data : []);
     } catch (err) {
       setError(
-        err.message || "No se pudieron cargar los banners informativos.",
+        err.message || "No se pudieron cargar los banners informativos."
       );
     } finally {
       setLoading(false);
@@ -58,26 +58,24 @@ function GestionNovedades() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!nuevoTitulo.trim() || (!archivoImagen && !imagenPreview)) {
+    
+    if (!nuevoTitulo.trim() || !archivoImagen) {
       Swal.fire(
         "Atención",
         "Por favor completa el título y selecciona una imagen.",
-        "warning",
+        "warning"
       );
       return;
     }
 
     try {
       setPublicando(true);
+      const formData = new FormData();
+      formData.append("Titulo", nuevoTitulo);
+      formData.append("Archivo", archivoImagen); // Corregido: sin la '/' al final
+      formData.append("Orden", 0);
 
-      // Enviamos el objeto o FormData según requiera el backend
-      const payload = {
-        titulo: nuevoTitulo,
-        urlImagen: imagenPreview, // Si la API acepta URL/Base64 directamente
-        activo: true,
-      };
-
-      await agregarImagen(payload);
+      await agregarImagen(formData);
 
       Swal.fire({
         toast: true,
@@ -110,20 +108,26 @@ function GestionNovedades() {
 
     try {
       const targetId = banner.idImagen || banner.id;
-      const nuevoEstado = !banner.activo;
+      const nuevoEstado = !(banner.estado ?? banner.activo);
 
-      await actualizarImagen(targetId, {
-        ...banner,
-        activo: nuevoEstado,
-      });
+      // Mapeo alineado a ImagenActualizarDto de C#
+      const payloadActualizar = {
+        titulo: banner.titulo,
+        descripcion: banner.descripcion || "",
+        rutaImagen: banner.rutaImagen,
+        orden: banner.orden || 0,
+        estado: nuevoEstado,
+      };
+
+      await actualizarImagen(targetId, payloadActualizar);
 
       setNovedades((prev) =>
         prev.map((item) => {
           const idActual = item.idImagen || item.id;
           return idActual === targetId
-            ? { ...item, activo: nuevoEstado }
+            ? { ...item, estado: nuevoEstado, activo: nuevoEstado }
             : item;
-        }),
+        })
       );
 
       Swal.fire({
@@ -160,13 +164,13 @@ function GestionNovedades() {
         await desactivarImagen(id);
 
         setNovedades((prev) =>
-          prev.filter((item) => (item.idImagen || item.id) !== id),
+          prev.filter((item) => (item.idImagen || item.id) !== id)
         );
 
         Swal.fire(
           "Eliminado",
           "El banner ha sido removido con éxito.",
-          "success",
+          "success"
         );
       } catch (err) {
         Swal.fire({

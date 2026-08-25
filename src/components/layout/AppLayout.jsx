@@ -35,9 +35,6 @@ function AppLayout({ children, usuarioRol = null }) {
   const location = useLocation();
   const user = useAuthStore((state) => state.user);
 
-  // Si el usuario no tiene el beneficio de vacaciones habilitado, ni siquiera
-  // mostramos la opción en el menú. Por defecto (perfil aún no cargado) se
-  // asume true para no "parpadear" el ítem mientras carga.
   const tieneVacaciones = user?.tieneVacaciones ?? true;
   const MODULOS_EMPLEADO = MODULOS_EMPLEADO_BASE.filter(
     (item) => item.key !== "mis-vacaciones" || tieneVacaciones,
@@ -53,14 +50,6 @@ function AppLayout({ children, usuarioRol = null }) {
     location.pathname.startsWith("/gestion-vacaciones"),
   );
 
-  // Rol real del usuario logueado. `usuarioRol` (prop) permite forzarlo
-  // manualmente si algún día hace falta, pero por defecto se toma del
-  // perfil que devuelve el backend (/usuarios/mi-perfil).
-  //
-  // ⚠️ OJO: no sabemos con certeza cómo se llama el campo de rol en tu API,
-  // así que probamos varios nombres comunes. Si el menú de RRHH sigue sin
-  // aparecerle a un admin real (o le sigue apareciendo a un empleado),
-  // hay que confirmar el nombre exacto del campo y dejar solo ese.
   const rolUsuario =
     usuarioRol ??
     user?.rol ??
@@ -70,8 +59,6 @@ function AppLayout({ children, usuarioRol = null }) {
     user?.perfil ??
     null;
 
-  // Fail-closed: si todavía no sabemos el rol (perfil sin cargar, o el
-  // campo no vino en la respuesta), NO mostramos el menú de RRHH.
   const esAdminORRHH = ["RRHH", "ADMIN"].includes(
     String(rolUsuario || "").toUpperCase(),
   );
@@ -287,20 +274,6 @@ function AppLayout({ children, usuarioRol = null }) {
                         >
                           <i className="bi bi-card-checklist"></i>
                           <span>Gestión Vacaciones</span>
-                        </button>
-                      </li>
-                      <li className="nav-item">
-                        <button
-                          type="button"
-                          className={`nav-link w-100 text-start border-0 py-1 px-3 rounded-2 small d-flex align-items-center gap-2 ${
-                            location.pathname === "/gestion-vacaciones/saldos"
-                              ? "bg-brand text-white fw-semibold"
-                              : "text-muted bg-transparent"
-                          }`}
-                          onClick={() => navigate("/gestion-vacaciones/saldos")}
-                        >
-                          <i className="bi bi-wallet2"></i>
-                          <span>Saldos Personal</span>
                         </button>
                       </li>
                     </ul>

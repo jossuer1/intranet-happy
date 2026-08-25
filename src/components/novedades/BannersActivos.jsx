@@ -53,10 +53,10 @@ function BannersActivos({
             </thead>
             <tbody>
               {novedades.map((item) => (
-                <tr key={item.id}>
+                <tr key={item.idImagen}>
                   <td>
                     <img
-                      src={item.imagenUrl}
+                      src={item.rutaImagen}
                       alt={item.titulo}
                       style={{
                         width: "80px",
@@ -70,11 +70,13 @@ function BannersActivos({
                   <td>
                     <span className="badge bg-light text-secondary border px-2 py-1 fw-normal">
                       <i className="bi bi-calendar3 me-1"></i>
-                      {item.fecha}
+                      {item.fechaCreacion
+                        ? new Date(item.fechaCreacion).toLocaleDateString()
+                        : "-"}
                     </span>
                   </td>
                   <td>
-                    {item.activo ? (
+                    {item.estado ? (
                       <span className="badge bg-success text-white rounded-pill px-3 py-1 fw-semibold">
                         <i className="bi bi-check-circle-fill me-1"></i>
                         Activo
@@ -92,18 +94,18 @@ function BannersActivos({
                       <button
                         type="button"
                         className={`btn btn-sm px-3 py-1.5 rounded-3 shadow-sm border-0 ${
-                          item.activo
+                          item.estado
                             ? "btn-warning text-dark"
                             : "btn-success text-white"
                         }`}
-                        onClick={() => onToggleEstado(item.id)}
+                        onClick={() => onToggleEstado(item.idImagen)}
                         title={
-                          item.activo ? "Ocultar Banner" : "Mostrar Banner"
+                          item.estado ? "Ocultar Banner" : "Mostrar Banner"
                         }
                       >
                         <i
                           className={`bi ${
-                            item.activo ? "bi-eye-slash-fill" : "bi-eye-fill"
+                            item.estado ? "bi-eye-slash-fill" : "bi-eye-fill"
                           } fs-6`}
                         ></i>
                       </button>
@@ -112,7 +114,7 @@ function BannersActivos({
                       <button
                         type="button"
                         className="btn btn-sm btn-danger text-white px-3 py-1.5 rounded-3 shadow-sm border-0"
-                        onClick={() => onEliminar(item.id)}
+                        onClick={() => onEliminar(item.idImagen)}
                         title="Eliminar Banner"
                       >
                         <i className="bi bi-trash3-fill fs-6"></i>

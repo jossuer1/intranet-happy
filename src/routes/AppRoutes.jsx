@@ -8,7 +8,7 @@ import MisVacaciones from "../pages/usuario/MisVacaciones";
 import RegistroAsistencia from "../pages/usuario/RegistroAsistencia";
 import GestionNovedades from "../pages/GestionNovedades";
 import GestionVacaciones from "../pages/GestionVacaciones";
-import SaldosPersonal from "../pages/SaldosPersonales"; // Importar la nueva página
+import SaldosPersonal from "../pages/SaldosPersonales"; 
 
 function AppRoutes() {
   return (

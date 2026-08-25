@@ -33,7 +33,7 @@ function Dashboard() {
         <div className="row">
           <div className="col-12">
             <h5 className="mb-3 text-secondary fw-semibold">
-              Novedades e Intranet
+              Novedades 
             </h5>
 
             {cargando ? (

@@ -173,9 +173,9 @@ function GestionVacaciones() {
               <thead className="table-light text-uppercase fs-7 text-muted">
                 <tr>
                   <th>Colaborador</th>
-                  <th>Departamento</th>
+                  <th>Area</th>
                   <th>Fecha Ingreso</th>
-                  <th className="text-center">Días Ganados</th>
+                  <th className="text-center">Días Totales</th>
                   <th className="text-center">Días Tomados</th>
                   <th className="text-center">Saldo Disponible</th>
                   <th className="text-end">Acción</th>
