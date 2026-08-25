@@ -1,7 +1,8 @@
 import { create } from "zustand";
-import { login as apiLogin, getMiPerfil } from "../services/apiService";
+import { authService } from "../services/authService";
+import { usuariosService } from "../services/usuariosService";
 
-export const useAuthStore = create((set, get) => ({
+export const useAuthStore = create((set) => ({
   user: null,
   token: localStorage.getItem("jwt_token") || null,
   cargando: false,
@@ -9,40 +10,28 @@ export const useAuthStore = create((set, get) => ({
   login: async (cedula, contrasena) => {
     set({ cargando: true });
     try {
-      const respuesta = await apiLogin(cedula, contrasena);
+      const respuesta = await authService.login(cedula, contrasena);
 
-      // Si el backend indica cambio obligatorio
-      if (respuesta && respuesta.debeCambiarContrasena) {
+      if (respuesta?.debeCambiarContrasena) {
         set({ cargando: false });
         return { success: true, data: respuesta };
       }
 
-      // Flujo normal con token
-      if (respuesta && respuesta.token) {
+      if (respuesta?.token) {
         localStorage.setItem("jwt_token", respuesta.token);
-        set({ token: respuesta.token, cargando: false });
-
-        try {
-          const perfil = await getMiPerfil();
-          set({ user: perfil });
-        } catch {
-          // Si falla el perfil al momento, se reintenta luego
-        }
-
+        const perfil = await usuariosService.getMiPerfil();
+        set({ token: respuesta.token, user: perfil, cargando: false });
         return { success: true, data: respuesta };
       }
 
       set({ cargando: false });
       return {
         success: false,
-        mensaje: respuesta?.mensaje || "Cédula o contraseña incorrectas",
+        mensaje: respuesta?.mensaje || "Credenciales incorrectas",
       };
     } catch (error) {
       set({ cargando: false });
-      return {
-        success: false,
-        mensaje: error.message || "Error al conectar con el servidor",
-      };
+      return { success: false, mensaje: error.message };
     }
   },
 
@@ -52,8 +41,12 @@ export const useAuthStore = create((set, get) => ({
   },
 
   fetchPerfil: async () => {
-    const perfil = await getMiPerfil();
-    set({ user: perfil });
-    return perfil;
+    try {
+      const perfil = await usuariosService.getMiPerfil();
+      set({ user: perfil });
+      return perfil;
+    } catch (error) {
+      return null;
+    }
   },
 }));

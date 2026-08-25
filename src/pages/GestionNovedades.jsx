@@ -9,7 +9,7 @@ import {
   agregarImagen,
   actualizarImagen,
   desactivarImagen,
-} from "../services/apiService";
+} from "../services/imagenesService";
 
 function GestionNovedades() {
   const location = useLocation();

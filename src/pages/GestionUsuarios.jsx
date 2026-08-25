@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
-import CrearUsuarioWizard from "./CrearUsuarioWizard";
+import CrearUsuarioWizard from "../components/usuarios/CrearUsuarioWizard.jsx";
 import EditarUsuarioCard from "../components/usuarios/EditarUsuarioCard";
 import TablaUsuarios from "../components/usuarios/TablaUsuarios";
 import AppLayout from "../components/layout/AppLayout";
@@ -10,7 +10,7 @@ import {
   getUsuarios,
   actualizarUsuario,
   actualizarVacacionesUsuario,
-} from "../services/apiService";
+} from "../services/usuariosService.js";
 
 function GestionUsuarios() {
   const location = useLocation();
@@ -51,15 +51,12 @@ function GestionUsuarios() {
     setUsuarioSeleccionado(null);
   };
 
-  const guardarEdicion = async (formData) => {
+  const guardarEdicion = async (targetId, formData) => {
     try {
-      const targetId = usuarioSeleccionado.idUsuario || usuarioSeleccionado.id;
-
-      // Petición al backend para persistir la actualización
+      // 1. Petición principal con la ficha completa del usuario
       await actualizarUsuario(targetId, formData);
 
-      // El beneficio de vacaciones se guarda en su propio endpoint (PATCH
-      // /usuarios/{id}/vacaciones), separado del resto de la ficha.
+      // 2. Petición para actualizar vacaciones
       await actualizarVacacionesUsuario(targetId, {
         tieneVacaciones: formData.tieneVacaciones,
         diasVacacionesAsignados: formData.tieneVacaciones
@@ -67,9 +64,7 @@ function GestionUsuarios() {
           : null,
       });
 
-      // Re-obtenemos los datos para asegurar la consistencia del estado
       await cargarUsuarios();
-
       setUsuarioSeleccionado(null);
 
       Swal.fire({
@@ -90,7 +85,6 @@ function GestionUsuarios() {
       });
     }
   };
-
   return (
     <AppLayout>
       <SectionHeader titulo="Gestión de Usuarios" volverA="/dashboard" />
@@ -107,9 +101,9 @@ function GestionUsuarios() {
               }}
             />
           ) : usuarioSeleccionado ? (
-            /* MODO EDICIÓN */
+            /* MODO EDICIÓN - Se corrigió el nombre de la prop a 'usuarioOriginal' */
             <EditarUsuarioCard
-              usuario={usuarioSeleccionado}
+              usuarioOriginal={usuarioSeleccionado}
               onGuardar={guardarEdicion}
               onCancelar={cancelarEdicion}
             />

@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import AppLayout from "../../components/layout/AppLayout";
 import SectionHeader from "../../components/layout/SectionHeader";
-import { getMisVacaciones } from "../../services/apiService";
+import { getMisVacaciones } from "../../services/vacacionesService";
 import { useAuthStore } from "../../store/useAuthStore";
 
 function TarjetaResumen({ etiqueta, valor }) {
@@ -29,71 +29,41 @@ function badgeEstado(estado) {
 }
 
 function MisVacaciones() {
-  const user = useAuthStore((state) => state.user);
+  const userStore = useAuthStore((state) => state.user);
   const fetchPerfil = useAuthStore((state) => state.fetchPerfil);
 
-  const [resumen, setResumen] = useState({
-    diasDisponibles: 0,
-    diasTomados: 0,
-    diasPendientesAprobacion: 0,
-    solicitudes: [],
+  // 1. Query para cargar el perfil si no existe en el store
+  const { data: user, isLoading: loadingPerfil } = useQuery({
+    queryKey: ["perfilUsuario"],
+    queryFn: fetchPerfil,
+    initialData: userStore || undefined,
+    staleTime: 1000 * 60 * 5,
   });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
-  // Si el perfil todavía no está en el store (ej. recarga directa en /mis-vacaciones),
-  // lo cargamos para poder validar tieneVacaciones antes de pedir el historial.
-  useEffect(() => {
-    if (!user) {
-      fetchPerfil().catch(() => {});
-    }
-  }, [user, fetchPerfil]);
-
-  useEffect(() => {
-    // Si ya sabemos que el usuario no tiene el beneficio, ni siquiera
-    // consultamos el historial (evita un 400 innecesario del backend).
-    if (user && user.tieneVacaciones === false) {
-      setLoading(false);
-      return;
-    }
-
-    const cargarHistorialPersonal = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const data = await getMisVacaciones();
-
-        // Mapeo defensivo asegurando las propiedades del backend
-        setResumen({
-          diasDisponibles: data?.diasDisponibles ?? 0,
-          diasTomados: data?.diasTomados ?? 0,
-          diasPendientesAprobacion: data?.diasPendientesAprobacion ?? 0,
-          solicitudes: Array.isArray(data?.solicitudes) ? data.solicitudes : [],
-        });
-      } catch (err) {
-        setError(
-          err.message || "No se pudo cargar la información de tus vacaciones.",
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    // Solo pedimos el historial cuando ya sabemos (o asumimos) que tiene el beneficio.
-    if (!user || user.tieneVacaciones !== false) {
-      cargarHistorialPersonal();
-    }
-  }, [user]);
-
+  // 2. Query para obtener el historial de vacaciones.
+  // Se ejecuta SOLAMENTE si el usuario existe y tieneVacaciones no es false.
   const {
-    diasDisponibles,
-    diasTomados,
-    diasPendientesAprobacion,
-    solicitudes,
-  } = resumen;
+    data: resumen,
+    isLoading: loadingVacaciones,
+    isError,
+    error,
+  } = useQuery({
+    queryKey: ["misVacaciones"],
+    queryFn: getMisVacaciones,
+    enabled: Boolean(user && user.tieneVacaciones !== false),
+    staleTime: 1000 * 60 * 2,
+    select: (data) => ({
+      diasDisponibles: data?.diasDisponibles ?? 0,
+      diasTomados: data?.diasTomados ?? 0,
+      diasPendientesAprobacion: data?.diasPendientesAprobacion ?? 0,
+      solicitudes: Array.isArray(data?.solicitudes) ? data.solicitudes : [],
+    }),
+  });
 
-  // Guard: si el perfil ya cargó y confirma que no tiene el beneficio,
-  // mostramos un aviso en vez del panel (y no del error genérico de red).
+  const loading =
+    loadingPerfil || (loadingVacaciones && user?.tieneVacaciones !== false);
+
+  // Guard: Si no tiene el beneficio de vacaciones
   if (user && user.tieneVacaciones === false) {
     return (
       <AppLayout>
@@ -105,14 +75,21 @@ function MisVacaciones() {
               Aún no tienes acceso a esta opción.
             </p>
             <small>
-              Tu perfil no tiene habilitado el beneficio de vacaciones. Si
-              crees que esto es un error, contacta a RRHH.
+              Tu perfil no tiene habilitado el beneficio de vacaciones. Si crees
+              que esto es un error, contacta a RRHH.
             </small>
           </div>
         </div>
       </AppLayout>
     );
   }
+
+  const {
+    diasDisponibles = 0,
+    diasTomados = 0,
+    diasPendientesAprobacion = 0,
+    solicitudes = [],
+  } = resumen || {};
 
   return (
     <AppLayout>
@@ -125,9 +102,10 @@ function MisVacaciones() {
               <span className="visually-hidden">Cargando datos...</span>
             </div>
           </div>
-        ) : error ? (
+        ) : isError ? (
           <div className="alert alert-danger my-3" role="alert">
-            {error}
+            {error?.message ||
+              "No se pudo cargar la información de tus vacaciones."}
           </div>
         ) : (
           <>

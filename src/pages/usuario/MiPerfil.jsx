@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import AppLayout from "../../components/layout/AppLayout";
 import SectionHeader from "../../components/layout/SectionHeader";
 import {
@@ -18,30 +18,27 @@ function Campo({ label, valor }) {
 }
 
 function MiPerfil() {
-  const user = useAuthStore((state) => state.user);
+  const userStore = useAuthStore((state) => state.user);
   const fetchPerfil = useAuthStore((state) => state.fetchPerfil);
 
-  const [loading, setLoading] = useState(!user);
-  const [error, setError] = useState(null);
+  // TanStack Query gestiona el estado de carga, errores y caché
+  const {
+    data: user,
+    isLoading,
+    isError,
+    error,
+  } = useQuery({
+    queryKey: ["perfilUsuario"],
+    queryFn: async () => {
+      // Si el usuario ya está en el store, lo retorna directamente; si no, ejecuta fetchPerfil
+      if (userStore) return userStore;
+      return await fetchPerfil();
+    },
+    initialData: userStore || undefined,
+    staleTime: 1000 * 60 * 5, // 5 minutos de tiempo de expiración de caché
+  });
 
-  useEffect(() => {
-    const cargarDatos = async () => {
-      try {
-        setLoading(true);
-        await fetchPerfil();
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (!user) {
-      cargarDatos();
-    }
-  }, [user, fetchPerfil]);
-
-  if (loading) {
+  if (isLoading) {
     return (
       <AppLayout>
         <SectionHeader titulo="Mi Perfil" volverA="/dashboard" />
@@ -54,13 +51,13 @@ function MiPerfil() {
     );
   }
 
-  if (error || !user) {
+  if (isError || !user) {
     return (
       <AppLayout>
         <SectionHeader titulo="Mi Perfil" volverA="/dashboard" />
         <div className="container my-5">
           <div className="alert alert-danger" role="alert">
-            {error || "No se encontró la información del usuario."}
+            {error?.message || "No se encontró la información del usuario."}
           </div>
         </div>
       </AppLayout>
@@ -74,10 +71,10 @@ function MiPerfil() {
     .join("")
     .toUpperCase();
 
-  // Cálculo de edad y generación basado en fechaNacimiento
   const edadCalculada = user.fechaNacimiento
     ? `${calcularEdad(user.fechaNacimiento)} años`
     : null;
+
   const generacionCalculada = user.fechaNacimiento
     ? obtenerGeneracion(user.fechaNacimiento)
     : null;
@@ -134,11 +131,8 @@ function MiPerfil() {
                     label="Fecha de nacimiento"
                     valor={formatearFecha(user.fechaNacimiento)}
                   />
-
-                  {/* Campos dinámicos agregados */}
                   <Campo label="Edad" valor={edadCalculada} />
                   <Campo label="Generación" valor={generacionCalculada} />
-
                   <Campo label="Correo personal" valor={user.correoPersonal} />
                   <Campo label="Género" valor={user.genero || user.idGenero} />
                   <Campo

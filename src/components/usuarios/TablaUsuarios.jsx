@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState, useMemo, memo } from "react";
 import DataTable from "react-data-table-component";
 
 const customStyles = {
@@ -19,138 +19,155 @@ const customStyles = {
   },
 };
 
-function IconEditar() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor">
-      <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325" />
-    </svg>
-  );
-}
+const paginationComponentOptions = {
+  rowsPerPageText: "Filas por página:",
+  rangeSeparatorText: "de",
+  selectAllRowsItem: true,
+  selectAllRowsItemText: "Todos",
+};
 
 function TablaUsuarios({ usuarios = [], onEditar }) {
   const [filterText, setFilterText] = useState("");
 
-  const filteredItems = usuarios.filter((item) => {
-    const search = filterText.toLowerCase();
-    const nombre = (item.nombres || item.nombre || "").toLowerCase();
-    const correo = (item.correoEmpresa || item.correo || "").toLowerCase();
-    const cedula = (item.cedula || "").toLowerCase();
+  // Filtrado memoizado para evitar recalcular en cada re-render del padre
+  const filteredItems = useMemo(() => {
+    const search = filterText.toLowerCase().trim();
+    if (!search) return usuarios;
 
-    return (
-      nombre.includes(search) ||
-      correo.includes(search) ||
-      cedula.includes(search)
-    );
-  });
+    return usuarios.filter((item) => {
+      const nombre = (item.nombres || item.nombre || "").toLowerCase();
+      const correo = (item.correoEmpresa || item.correo || "").toLowerCase();
+      const cedula = (item.cedula || "").toLowerCase();
 
-  const columns = [
-    {
-      name: "#",
-      selector: (row, index) => index + 1,
-      width: "60px",
-    },
-    {
-      name: "Usuario",
-      selector: (row) => row.nombres || row.nombre || "Sin nombre",
-      sortable: true,
-      cell: (row) => (
-        <div className="py-1">
-          <span className="fw-semibold d-block">
-            {row.nombres || row.nombre || "N/A"}
-          </span>
-          {row.cedula && (
-            <small className="text-muted d-block">C.I: {row.cedula}</small>
-          )}
-        </div>
-      ),
-    },
-    {
-      name: "Correo",
-      selector: (row) => row.correoEmpresa || row.correo || "N/A",
-      sortable: true,
-    },
-    {
-      name: "Cargo",
-      selector: (row) => row.cargo || row.nombreCargo || "N/A",
-      sortable: true,
-    },
-    {
-      name: "Vacaciones",
-      selector: (row) => (row.tieneVacaciones === false ? "No" : "Sí"),
-      sortable: true,
-      width: "130px",
-      cell: (row) => {
-        const tiene = row.tieneVacaciones !== false;
-        return (
-          <span
-            className={`badge ${tiene ? "bg-info-subtle text-info-emphasis border border-info-subtle" : "bg-light text-muted border"}`}
+      return (
+        nombre.includes(search) ||
+        correo.includes(search) ||
+        cedula.includes(search)
+      );
+    });
+  }, [usuarios, filterText]);
+
+  // Definición memoizada de columnas
+  const columns = useMemo(
+    () => [
+      {
+        name: "#",
+        selector: (row, index) => index + 1,
+        width: "60px",
+      },
+      {
+        name: "Usuario",
+        selector: (row) => row.nombres || row.nombre || "Sin nombre",
+        sortable: true,
+        cell: (row) => (
+          <div className="py-1">
+            <span className="fw-semibold d-block">
+              {row.nombres || row.nombre || "N/A"}
+            </span>
+            {row.cedula && (
+              <small className="text-muted d-block">C.I: {row.cedula}</small>
+            )}
+          </div>
+        ),
+      },
+      {
+        name: "Correo",
+        selector: (row) => row.correoEmpresa || row.correo || "N/A",
+        sortable: true,
+      },
+      {
+        name: "Cargo",
+        selector: (row) => row.cargo || row.nombreCargo || "N/A",
+        sortable: true,
+      },
+      {
+        name: "Vacaciones",
+        selector: (row) => (row.tieneVacaciones === false ? "No" : "Sí"),
+        sortable: true,
+        width: "130px",
+        cell: (row) => {
+          const tiene = row.tieneVacaciones !== false;
+          return (
+            <span
+              className={`badge ${
+                tiene
+                  ? "bg-info-subtle text-info-emphasis border border-info-subtle"
+                  : "bg-light text-muted border"
+              }`}
+            >
+              {tiene ? "Habilitadas" : "No aplica"}
+            </span>
+          );
+        },
+      },
+      {
+        name: "Estado",
+        selector: (row) => row.estado,
+        sortable: true,
+        width: "120px",
+        cell: (row) => {
+          const esActivo =
+            row.estado === "Activo" ||
+            row.estado === 1 ||
+            row.estado === true ||
+            row.idEstado === 1;
+
+          return (
+            <span
+              className={`badge ${esActivo ? "bg-success" : "bg-secondary"}`}
+            >
+              {esActivo ? "Activo" : "Inactivo"}
+            </span>
+          );
+        },
+      },
+      {
+        name: "Acciones",
+        width: "110px",
+        cell: (row) => (
+          <button
+            type="button"
+            className="btn btn-outline-secondary btn-sm d-inline-flex align-items-center gap-1"
+            onClick={(e) => {
+              e.stopPropagation();
+              onEditar?.(row);
+            }}
           >
-            {tiene ? "Habilitadas" : "No aplica"}
-          </span>
-        );
+            <i className="bi bi-pencil-square"></i>
+            <span>Editar</span>
+          </button>
+        ),
+        ignoreRowClick: true,
+        allowOverflow: true,
+        button: true,
       },
-    },
-    {
-      name: "Estado",
-      selector: (row) => row.estado,
-      sortable: true,
-      width: "120px",
-      cell: (row) => {
-        const esActivo =
-          row.estado === "Activo" ||
-          row.estado === 1 ||
-          row.estado === true ||
-          row.idEstado === 1;
-
-        return (
-          <span className={`badge ${esActivo ? "bg-success" : "bg-secondary"}`}>
-            {esActivo ? "Activo" : "Inactivo"}
-          </span>
-        );
-      },
-    },
-    {
-      name: "",
-      width: "100px",
-      cell: (row) => (
-        <button
-          type="button"
-          className="btn btn-outline-secondary btn-sm d-inline-flex align-items-center gap-1"
-          onClick={(e) => {
-            e.stopPropagation();
-            onEditar && onEditar(row);
-          }}
-        >
-          <IconEditar /> Editar
-        </button>
-      ),
-      ignoreRowClick: true,
-      allowOverflow: true,
-      button: true,
-    },
-  ];
-
-  const paginationComponentOptions = {
-    rowsPerPageText: "Filas por página:",
-    rangeSeparatorText: "de",
-    selectAllRowsItem: true,
-    selectAllRowsItemText: "Todos",
-  };
+    ],
+    [onEditar],
+  );
 
   return (
     <div className="card shadow-sm border-0">
       <div className="card-body p-3">
+        {/* BUSCADOR CON ICONO DE BOOTSTRAP */}
         <div className="d-flex justify-content-end mb-3">
-          <input
-            type="text"
-            className="form-control form-control-sm"
-            style={{ maxWidth: "280px" }}
-            placeholder="Buscar por nombre, correo o cédula..."
-            value={filterText}
-            onChange={(e) => setFilterText(e.target.value)}
-          />
+          <div
+            className="input-group input-group-sm"
+            style={{ maxWidth: "300px" }}
+          >
+            <span className="input-group-text bg-light border-end-0">
+              <i className="bi bi-search text-muted"></i>
+            </span>
+            <input
+              type="text"
+              className="form-control border-start-0 ps-0"
+              placeholder="Buscar por nombre, correo o cédula..."
+              value={filterText}
+              onChange={(e) => setFilterText(e.target.value)}
+            />
+          </div>
         </div>
 
+        {/* TABLA DE DATOS */}
         <DataTable
           columns={columns}
           data={filteredItems}
@@ -160,7 +177,7 @@ function TablaUsuarios({ usuarios = [], onEditar }) {
           highlightOnHover
           pointerOnHover
           responsive
-          onRowClicked={(row) => onEditar && onEditar(row)}
+          onRowClicked={(row) => onEditar?.(row)}
           noDataComponent={
             <div className="p-4 text-muted">No hay usuarios para mostrar</div>
           }
@@ -170,4 +187,4 @@ function TablaUsuarios({ usuarios = [], onEditar }) {
   );
 }
 
-export default TablaUsuarios;
+export default memo(TablaUsuarios);

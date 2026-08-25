@@ -1,15 +1,16 @@
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
-
+import { useAuthStore } from "../../store/useAuthStore";
 import logoHappyPay from "../../assets/images/logo_happy.jpg";
 
 /**
- * Navbar principal de la intranet.
+ * Navbar principal de la intranet[cite: 14].
  * Se monta una sola vez dentro de AppLayout: ninguna página individual
- * debería volver a dibujar su propio navbar.
+ * debería volver a dibujar su propio navbar[cite: 14].
  */
 function Navbar() {
   const navigate = useNavigate();
+  const logout = useAuthStore((state) => state.logout); // Invocamos el método de cierre del store
 
   const cerrarSesion = () => {
     Swal.fire({
@@ -23,15 +24,14 @@ function Navbar() {
       cancelButtonText: "Cancelar",
     }).then((result) => {
       if (result.isConfirmed) {
+        logout(); // Limpia los tokens y el estado del usuario
         navigate("/login");
       }
     });
   };
 
   return (
-    <nav
-      className="navbar navbar-expand shadow-sm px-4 py-2 sticky-top bg-brand"
-    >
+    <nav className="navbar navbar-expand shadow-sm px-4 py-2 sticky-top bg-brand">
       <div className="container-fluid d-flex justify-content-between align-items-center">
         {/* Logo Empresa */}
         <div

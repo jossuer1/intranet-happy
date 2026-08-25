@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import { useAuthStore } from "../store/useAuthStore";
-import { cambiarContrasenaObligatoria } from "../services/apiService";
+import { authService } from "../services/authService"; // Importamos desde la capa modular
 
 function Login() {
   const [cedula, setCedula] = useState("");
@@ -37,7 +37,7 @@ function Login() {
     if (resultado.success) {
       if (resultado.data?.debeCambiarContrasena) {
         setRequiereCambioPassword(true);
-        setIdUsuarioTemp(resultado.data.idUsuario); // Guardamos el ID que manda el backend
+        setIdUsuarioTemp(resultado.data.idUsuario);
         Toast.fire({
           icon: "info",
           title: "Primer ingreso: Cambia tu contraseña",
@@ -58,7 +58,7 @@ function Login() {
     }
   };
 
-  // 2. Manejador del Cambio Obligatorio (Se ejecuta una sola vez)
+  // 2. Manejador del Cambio Obligatorio
   const manejarCambioObligatorio = async (e) => {
     e.preventDefault();
 
@@ -72,10 +72,10 @@ function Login() {
 
     setProcesandoCambio(true);
     try {
-      // Llamada única a tu apiService
-      await cambiarContrasenaObligatoria(
+      // Uso de authService modularizado
+      await authService.cambiarContrasena(
         idUsuarioTemp,
-        contrasena, // La contraseña temporal con la que ingresó
+        contrasena, // Contraseña temporal con la que intentó ingresar
         nuevaContrasena,
       );
 
@@ -84,7 +84,7 @@ function Login() {
         title: "¡Contraseña actualizada! Inicia sesión con tu nueva clave.",
       });
 
-      // Limpiamos y regresamos al login normal
+      // Limpiamos formularios y devolvemos al estado inicial
       setRequiereCambioPassword(false);
       setContrasena("");
       setNuevaContrasena("");
@@ -102,7 +102,7 @@ function Login() {
   return (
     <div className="login-page">
       <div className="card login-card shadow position-relative">
-        {/* TARJETA SUPERPUESTA (ENCIMA DEL LOGIN) SI REQUIERE CAMBIO */}
+        {/* TARJETA SUPERPUESTA SI REQUIERE CAMBIO */}
         {requiereCambioPassword && (
           <div
             className="position-absolute top-0 start-0 w-100 h-100 bg-white p-4 p-md-5 d-flex flex-column justify-content-center rounded"
@@ -169,7 +169,7 @@ function Login() {
           </div>
         )}
 
-        {/* VISTA NORMAL DEL LOGIN DE FONDO */}
+        {/* FORMULARIO DE LOGIN PRINCIPAL */}
         <div className="card-body p-4 p-md-5">
           <div className="text-center mb-4">
             <div className="logo-placeholder">LOGO</div>
@@ -185,7 +185,7 @@ function Login() {
               <input
                 type="text"
                 id="cedula"
-                className="_form-control form-control"
+                className="form-control"
                 placeholder="Ingresa tu cédula"
                 value={cedula}
                 onChange={(e) => setCedula(e.target.value)}

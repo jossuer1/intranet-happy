@@ -4,7 +4,7 @@ import AppLayout from "../components/layout/AppLayout";
 import {
   getSaldosVacaciones,
   acreditarDiasVacaciones,
-} from "../services/apiService";
+} from "../services/vacacionesService";
 
 function SaldosPersonal() {
   const [personal, setPersonal] = useState([]);
@@ -50,8 +50,7 @@ function SaldosPersonal() {
         idUsuario: Number(targetId),
         dias: Number(diasAcreditar),
         // El DTO real del backend (VacacionAjusteCrearDto) espera "motivo", no "observacion".
-        motivo:
-          observacion || "Acreditación de días por antigüedad/ajuste",
+        motivo: observacion || "Acreditación de días por antigüedad/ajuste",
       };
 
       await acreditarDiasVacaciones(payload);
@@ -167,7 +166,10 @@ function SaldosPersonal() {
                         : item.estado || "Al día";
 
                       return (
-                        <tr key={idItem} className={sinBeneficio ? "opacity-50" : ""}>
+                        <tr
+                          key={idItem}
+                          className={sinBeneficio ? "opacity-50" : ""}
+                        >
                           <td className="fw-semibold text-dark">{nombre}</td>
                           <td>
                             <span className="badge bg-light text-dark border fw-normal">

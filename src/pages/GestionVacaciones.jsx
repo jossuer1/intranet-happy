@@ -5,7 +5,7 @@ import {
   getResumenVacaciones,
   registrarDescuentoVacaciones,
   registrarAjusteVacaciones,
-} from "../services/apiService";
+} from "../services/vacacionesService";
 
 function GestionVacaciones() {
   const [personal, setPersonal] = useState([]);

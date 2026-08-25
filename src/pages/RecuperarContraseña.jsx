@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
-import { solicitarRecuperacion } from "../services/apiService";
+import { authService } from "../services/authService";
 
 function RecuperarContrasena() {
   const [correo, setCorreo] = useState("");
@@ -25,21 +25,20 @@ function RecuperarContrasena() {
     setCargando(true);
 
     try {
-      // Llamada a la API (si existe el endpoint)
-      const respuesta = await solicitarRecuperacion(correo);
+      // Llamada al método modularizado en authService
+      await authService.solicitarRecuperacion(correo);
 
-      // Simulación exitosa por el momento
       Toast.fire({
         icon: "success",
         title: "Instrucciones enviadas al correo registrado",
       });
 
-      // Redirigir al login después de un momento
+      // Redirigir al login
       setTimeout(() => navigate("/login"), 2000);
     } catch (error) {
       Toast.fire({
         icon: "error",
-        title: "No se pudo procesar la solicitud",
+        title: error.message || "No se pudo procesar la solicitud",
       });
     } finally {
       setCargando(false);

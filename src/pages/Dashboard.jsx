@@ -1,11 +1,10 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 
 import valoresImg from "../assets/images/valores_happy.png";
 import cumpleImg from "../assets/images/cumpleaños_agosto.png";
 import capImg from "../assets/images/capacitacion.png";
 import AppLayout from "../components/layout/AppLayout";
-import { getImagenesActivas } from "../services/apiService"; // Ajusta la ruta a tu apiService.js
+import { getImagenesActivas } from "../services/imagenesService.js"; // O desde tu servicio modularizado de imágenes
 
 const IMAGENES_POR_DEFECTO = [
   { id: 1, url: valoresImg, titulo: "Valores de Happy Pay" },
@@ -14,30 +13,19 @@ const IMAGENES_POR_DEFECTO = [
 ];
 
 function Dashboard() {
-  const navigate = useNavigate();
-  const [imagenes, setImagenes] = useState([]);
-  const [cargando, setCargando] = useState(true);
-
-  useEffect(() => {
-    const cargarImagenes = async () => {
-      try {
+  // Manejo de petición y caché con TanStack Query
+  const { data: imagenes = IMAGENES_POR_DEFECTO, isLoading: cargando } =
+    useQuery({
+      queryKey: ["imagenesActivas"],
+      queryFn: async () => {
         const respuesta = await getImagenesActivas();
-        // Si el backend responde con una lista de imágenes válidas la usamos, de lo contrario usamos las locales
-        if (Array.isArray(respuesta) && respuesta.length > 0) {
-          setImagenes(respuesta);
-        } else {
-          setImagenes(IMAGENES_POR_DEFECTO);
-        }
-      } catch (error) {
-        console.error("Error al obtener imágenes del carrusel:", error);
-        setImagenes(IMAGENES_POR_DEFECTO);
-      } finally {
-        setCargando(false);
-      }
-    };
-
-    cargarImagenes();
-  }, []);
+        return Array.isArray(respuesta) && respuesta.length > 0
+          ? respuesta
+          : IMAGENES_POR_DEFECTO;
+      },
+      // Fallback directo en caso de error HTTP o de red
+      initialData: IMAGENES_POR_DEFECTO,
+    });
 
   return (
     <AppLayout>
