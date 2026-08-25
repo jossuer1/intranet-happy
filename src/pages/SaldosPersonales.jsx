@@ -55,19 +55,10 @@ function SaldosPersonal() {
 
       await acreditarDiasVacaciones(payload);
 
-      // Actualizamos el estado local de forma reactiva
-      setPersonal((prev) =>
-        prev.map((u) => {
-          const idActual = u.idUsuario || u.id;
-          if (idActual === targetId) {
-            return {
-              ...u,
-              saldoActual: (Number(u.saldoActual) || 0) + payload.dias,
-            };
-          }
-          return u;
-        }),
-      );
+      // Recargamos desde el backend en vez de "adivinar" el nuevo saldo en el cliente:
+      // el campo real que devuelve /vacaciones/resumen es "saldoDisponible", no "saldoActual",
+      // y el cálculo (asignados - descuentos + ajustes) lo hace el backend.
+      await cargarSaldos();
 
       setUsuarioAcreditar(null);
       setDiasAcreditar("");

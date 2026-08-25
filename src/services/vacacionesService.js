@@ -3,11 +3,13 @@ import { apiClient } from "./apiClient";
 export const getSaldo = (idUsuario) =>
   apiClient.get(`/vacaciones/saldo/${idUsuario}`);
 
-// Alias para compatibilidad con SaldosPersonales.jsx
+// Alias para compatibilidad con SaldosPersonales.jsx.
+// Sin idUsuario -> lista de TODO el personal con su saldo (backend: GET /vacaciones/resumen).
+// El backend no tiene un endpoint "/vacaciones/saldos"; el que trae el listado completo es "/resumen".
 export const getSaldosVacaciones = (idUsuario) =>
   idUsuario
     ? apiClient.get(`/vacaciones/saldo/${idUsuario}`)
-    : apiClient.get("/vacaciones/saldos");
+    : apiClient.get("/vacaciones/resumen");
 
 export const getHistorial = (idUsuario) =>
   apiClient.get(`/vacaciones/historial/${idUsuario}`);
@@ -31,8 +33,9 @@ export const registrarAjuste = (ajusteDto) =>
 
 export const registrarAjusteVacaciones = registrarAjuste;
 
+// El backend no tiene "/vacaciones/acreditar"; acreditar días es un Ajuste normal (POST /vacaciones/ajuste)
 export const acreditarDiasVacaciones = (ajusteDto) =>
-  apiClient.post("/vacaciones/acreditar", ajusteDto);
+  apiClient.post("/vacaciones/ajuste", ajusteDto);
 
 export const vacacionesService = {
   getSaldo,

@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import AppLayout from "../../components/layout/AppLayout";
 import SectionHeader from "../../components/layout/SectionHeader";
-import { getMisVacaciones } from "../../services/vacacionesService";
+import { getSaldo, getMisVacaciones } from "../../services/vacacionesService";
 import { useAuthStore } from "../../store/useAuthStore";
 
 function TarjetaResumen({ etiqueta, valor }) {
@@ -19,13 +19,10 @@ function TarjetaResumen({ etiqueta, valor }) {
   );
 }
 
-function badgeEstado(estado) {
-  const clases = {
-    Aprobado: "bg-success",
-    Pendiente: "bg-warning text-dark",
-    Rechazado: "bg-danger",
-  };
-  return clases[estado] || "bg-secondary";
+// El backend registra movimientos de tipo "Descuento" (vacación tomada) o "Ajuste"
+// (corrección manual). No existe un flujo de aprobación con estados Pendiente/Aprobado.
+function badgeTipoMovimiento(tipo) {
+  return tipo === "Descuento" ? "bg-danger" : "bg-success";
 }
 
 function MisVacaciones() {
@@ -40,28 +37,41 @@ function MisVacaciones() {
     staleTime: 1000 * 60 * 5,
   });
 
-  // 2. Query para obtener el historial de vacaciones.
-  // Se ejecuta SOLAMENTE si el usuario existe y tieneVacaciones no es false.
+  const idUsuario = user?.idUsuario;
+  const habilitado = Boolean(
+    user && user.tieneVacaciones !== false && idUsuario,
+  );
+
+  // 2. Saldo actual (GET /vacaciones/saldo/{idUsuario}) -> SaldoVacacionesDto
   const {
-    data: resumen,
-    isLoading: loadingVacaciones,
-    isError,
-    error,
+    data: saldo,
+    isLoading: loadingSaldo,
+    isError: errorSaldo,
+    error: errSaldo,
   } = useQuery({
-    queryKey: ["misVacaciones"],
-    queryFn: getMisVacaciones,
-    enabled: Boolean(user && user.tieneVacaciones !== false),
+    queryKey: ["vacaciones", "saldo", idUsuario],
+    queryFn: () => getSaldo(idUsuario),
+    enabled: habilitado,
     staleTime: 1000 * 60 * 2,
-    select: (data) => ({
-      diasDisponibles: data?.diasDisponibles ?? 0,
-      diasTomados: data?.diasTomados ?? 0,
-      diasPendientesAprobacion: data?.diasPendientesAprobacion ?? 0,
-      solicitudes: Array.isArray(data?.solicitudes) ? data.solicitudes : [],
-    }),
   });
 
-  const loading =
-    loadingPerfil || (loadingVacaciones && user?.tieneVacaciones !== false);
+  // 3. Historial de movimientos propios (GET /vacaciones/mis-vacaciones) -> VacacionDto[]
+  const {
+    data: historial,
+    isLoading: loadingHistorial,
+    isError: errorHistorial,
+    error: errHistorial,
+  } = useQuery({
+    queryKey: ["vacaciones", "mis-vacaciones"],
+    queryFn: getMisVacaciones,
+    enabled: habilitado,
+    staleTime: 1000 * 60 * 2,
+    select: (data) => (Array.isArray(data) ? data : []),
+  });
+
+  const loading = loadingPerfil || (habilitado && (loadingSaldo || loadingHistorial));
+  const isError = errorSaldo || errorHistorial;
+  const error = errSaldo || errHistorial;
 
   // Guard: Si no tiene el beneficio de vacaciones
   if (user && user.tieneVacaciones === false) {
@@ -84,12 +94,7 @@ function MisVacaciones() {
     );
   }
 
-  const {
-    diasDisponibles = 0,
-    diasTomados = 0,
-    diasPendientesAprobacion = 0,
-    solicitudes = [],
-  } = resumen || {};
+  const movimientos = historial || [];
 
   return (
     <AppLayout>
@@ -111,53 +116,72 @@ function MisVacaciones() {
           <>
             <div className="row g-3 mb-4">
               <TarjetaResumen
-                etiqueta="Días disponibles"
-                valor={diasDisponibles}
+                etiqueta="Días asignados"
+                valor={saldo?.diasAsignados ?? 0}
               />
-              <TarjetaResumen etiqueta="Días tomados" valor={diasTomados} />
               <TarjetaResumen
-                etiqueta="Pendientes de aprobación"
-                valor={diasPendientesAprobacion}
+                etiqueta="Días tomados"
+                valor={saldo?.diasDescontados ?? 0}
+              />
+              <TarjetaResumen
+                etiqueta="Días disponibles"
+                valor={saldo?.diasDisponibles ?? 0}
               />
             </div>
 
             <div className="card shadow-sm border-0">
               <div className="card-body p-4">
                 <h5 className="card-title fw-bold mb-4">
-                  Historial de solicitudes
+                  Historial de movimientos
                 </h5>
                 <div className="table-responsive">
                   <table className="table table-hover align-middle">
                     <thead className="table-light">
                       <tr>
+                        <th>Tipo</th>
                         <th>Desde</th>
                         <th>Hasta</th>
                         <th>Días</th>
-                        <th>Estado</th>
+                        <th>Observación</th>
+                        <th>Registrado por</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {solicitudes.length === 0 ? (
+                      {movimientos.length === 0 ? (
                         <tr>
                           <td
-                            colSpan="4"
+                            colSpan="6"
                             className="text-center text-muted py-4"
                           >
-                            No tienes solicitudes registradas.
+                            No tienes movimientos de vacaciones registrados.
                           </td>
                         </tr>
                       ) : (
-                        solicitudes.map((s, index) => (
-                          <tr key={s.id || index}>
-                            <td>{s.fechaInicio}</td>
-                            <td>{s.fechaFin}</td>
-                            <td>{s.dias}</td>
+                        movimientos.map((m) => (
+                          <tr key={m.idVacacion}>
                             <td>
                               <span
-                                className={`badge ${badgeEstado(s.estado)}`}
+                                className={`badge ${badgeTipoMovimiento(m.tipoMovimiento)}`}
                               >
-                                {s.estado}
+                                {m.tipoMovimiento}
                               </span>
+                            </td>
+                            <td>
+                              {m.fechaInicio
+                                ? new Date(m.fechaInicio).toLocaleDateString()
+                                : "—"}
+                            </td>
+                            <td>
+                              {m.fechaFin
+                                ? new Date(m.fechaFin).toLocaleDateString()
+                                : "—"}
+                            </td>
+                            <td>{m.diasTomados}</td>
+                            <td className="text-muted small">
+                              {m.observacion || "—"}
+                            </td>
+                            <td className="text-muted small">
+                              {m.registradoPorNombre}
                             </td>
                           </tr>
                         ))
