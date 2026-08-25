@@ -1,7 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
-import Login from "../pages/Login";
-import RecuperarContrasena from "../pages/RecuperarContrasena";
+import AuthContainer from "../pages/AuthContainer";
 import Dashboard from "../pages/Dashboard";
 import GestionUsuarios from "../pages/GestionUsuarios";
 import MiPerfil from "../pages/usuario/MiPerfil";
@@ -15,8 +14,9 @@ function AppRoutes() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/recuperar-contrasena" element={<RecuperarContrasena />} />
+        <Route path="/login" element={<AuthContainer />} />
+        {/* Compatibilidad con enlaces antiguos: ahora la recuperación vive dentro de /login */}
+        <Route path="/recuperar-contrasena" element={<Navigate to="/login" replace />} />
         <Route path="/dashboard" element={<Dashboard />} />
 
         {/* RRHH - Gestión de Usuarios */}
