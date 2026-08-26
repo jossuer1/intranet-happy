@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import Navbar from "./Navbar";
 import { useAuthStore } from "../../store/useAuthStore";
@@ -24,7 +24,7 @@ const MODULOS_EMPLEADO_BASE = [
   },
   {
     key: "registro-asistencia",
-    titulo: "Marcación / Asistencia", // Reemplaza a Mis Permisos
+    titulo: "Marcación / Asistencia",
     ruta: "/registro-asistencia",
     icono: "bi-clock-history",
   },
@@ -50,20 +50,29 @@ function AppLayout({ children, usuarioRol = null }) {
     location.pathname.startsWith("/gestion-vacaciones"),
   );
 
-  const rolUsuario =
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [location.pathname]);
+
+  // Captura y normaliza el rol en mayúsculas sin espacios
+  const rolUsuario = String(
     usuarioRol ??
-    user?.rol ??
-    user?.nombreRol ??
-    user?.role ??
-    user?.tipoUsuario ??
-    user?.perfil ??
-    null;
+      user?.rol ??
+      user?.nombreRol ??
+      user?.role ??
+      user?.tipoUsuario ??
+      user?.perfil ??
+      "",
+  )
+    .trim()
+    .toUpperCase();
 
-  const esAdminORRHH = ["RRHH", "ADMIN"].includes(
-    String(rolUsuario || "").toUpperCase(),
-  );
+  // Es verdaderamente RRHH si el rol coincide de manera exacta
+  const esRRHH = rolUsuario === "RRHH";
 
-  if (import.meta.env.DEV && user && rolUsuario === null) {
+  if (import.meta.env.DEV && user && !rolUsuario) {
     console.warn(
       "[AppLayout] El perfil del usuario no trae ningún campo de rol reconocido " +
         "(se probó: rol, nombreRol, role, tipoUsuario, perfil). Revisa la respuesta " +
@@ -82,13 +91,68 @@ function AppLayout({ children, usuarioRol = null }) {
 
   return (
     <div className="bg-light min-vh-100 d-flex flex-column">
+      <style>{`
+        .app-sidebar {
+          width: 250px;
+        }
+        @media (max-width: 767.98px) {
+          .app-sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            z-index: 1050;
+            transform: translateX(-100%);
+            transition: transform 0.25s ease-in-out;
+            overflow-y: auto;
+            box-shadow: 2px 0 16px rgba(0, 0, 0, 0.2);
+          }
+          .app-sidebar.open {
+            transform: translateX(0);
+          }
+        }
+      `}</style>
+
       <Navbar />
+
+      <button
+        type="button"
+        className="btn btn-outline-secondary d-md-none position-fixed rounded-3 shadow-sm"
+        style={{ top: "70px", left: "12px", zIndex: 1060 }}
+        onClick={() => setSidebarOpen(true)}
+        aria-label="Abrir menú"
+      >
+        <i className="bi bi-list fs-5"></i>
+      </button>
+
+      {sidebarOpen && (
+        <div
+          className="d-md-none"
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.4)",
+            zIndex: 1049,
+          }}
+          onClick={() => setSidebarOpen(false)}
+        ></div>
+      )}
 
       <div className="d-flex flex-grow-1">
         <aside
-          className="bg-white border-end p-3 d-none d-md-block flex-shrink-0"
-          style={{ width: "250px" }}
+          className={`app-sidebar bg-white border-end p-3 flex-shrink-0 d-md-block ${
+            sidebarOpen ? "open" : ""
+          }`}
         >
+          <div className="d-flex justify-content-end d-md-none mb-2">
+            <button
+              type="button"
+              className="btn-close"
+              onClick={() => setSidebarOpen(false)}
+              aria-label="Cerrar menú"
+            ></button>
+          </div>
+
           {/* Autogestión Empleado */}
           <div className="mb-4">
             <small className="text-uppercase text-muted fw-bold extra-small d-block mb-2">
@@ -117,8 +181,8 @@ function AppLayout({ children, usuarioRol = null }) {
             </ul>
           </div>
 
-          {/* Administración RRHH */}
-          {esAdminORRHH && (
+          {/* Administración RRHH - Solo visible si esRRHH es true */}
+          {esRRHH && (
             <div>
               <hr className="text-muted opacity-25 my-3" />
               <small className="text-uppercase text-muted fw-bold extra-small d-block mb-2">

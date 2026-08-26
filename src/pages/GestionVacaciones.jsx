@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
+import DataTable from "react-data-table-component";
 import Swal from "sweetalert2";
 import AppLayout from "../components/layout/AppLayout";
+import HistorialVacacionesPanel from "../components/vacaciones/HistorialVacacionesPanel";
 import {
   getResumenVacaciones,
   registrarDescuentoVacaciones,
@@ -13,14 +15,17 @@ function GestionVacaciones() {
   const [error, setError] = useState(null);
 
   const [usuarioSeleccionado, setUsuarioSeleccionado] = useState(null);
-  const [tipoOperacion, setTipoOperacion] = useState("DESCUENTO"); // "DESCUENTO" o "ACREDITACION"
+  const [usuarioHistorial, setUsuarioHistorial] = useState(null);
+  const [tipoOperacion, setTipoOperacion] = useState("DESCUENTO");
   const [fechaInicio, setFechaInicio] = useState("");
   const [fechaFin, setFechaFin] = useState("");
   const [diasAcreditar, setDiasAcreditar] = useState("");
   const [motivo, setMotivo] = useState("");
   const [procesando, setProcesando] = useState(false);
 
-  // Carga de saldos de vacaciones desde el backend
+  // Estado para la búsqueda global
+  const [filterText, setFilterText] = useState("");
+
   const cargarDatos = async () => {
     try {
       setLoading(true);
@@ -38,7 +43,6 @@ function GestionVacaciones() {
     cargarDatos();
   }, []);
 
-  // Calcular la diferencia de días entre fechas de inicio y fin
   const calcularDiasRango = () => {
     if (!fechaInicio || !fechaFin) return 0;
     const inicio = new Date(fechaInicio);
@@ -53,7 +57,7 @@ function GestionVacaciones() {
       Swal.fire(
         "Sin beneficio de vacaciones",
         "Este colaborador no tiene habilitado el beneficio de vacaciones. Actívalo primero desde Gestión de Usuarios.",
-        "info",
+        "info"
       );
       return;
     }
@@ -79,7 +83,7 @@ function GestionVacaciones() {
       Swal.fire(
         "Atención",
         "Por favor ingresa un rango o número de días válido.",
-        "warning",
+        "warning"
       );
       return;
     }
@@ -88,7 +92,7 @@ function GestionVacaciones() {
       Swal.fire(
         "Atención",
         "El motivo / observación es obligatorio.",
-        "warning",
+        "warning"
       );
       return;
     }
@@ -97,7 +101,6 @@ function GestionVacaciones() {
       setProcesando(true);
 
       if (tipoOperacion === "DESCUENTO") {
-        // Debe calzar con VacacionDescuentoCrearDto del backend.
         await registrarDescuentoVacaciones({
           idUsuario: Number(idUsuario),
           fechaInicio,
@@ -105,7 +108,6 @@ function GestionVacaciones() {
           motivo,
         });
       } else {
-        // Debe calzar con VacacionAjusteCrearDto del backend.
         await registrarAjusteVacaciones({
           idUsuario: Number(idUsuario),
           dias: diasAfectados,
@@ -126,7 +128,7 @@ function GestionVacaciones() {
       });
 
       setUsuarioSeleccionado(null);
-      cargarDatos(); // Recargar datos de la BD para refrescar saldos
+      cargarDatos();
     } catch (err) {
       Swal.fire({
         icon: "error",
@@ -139,10 +141,124 @@ function GestionVacaciones() {
     }
   };
 
+  // Filtrado global sobre nombre y departamento
+  const filteredItems = personal.filter((item) => {
+    const busqueda = filterText.toLowerCase();
+    const nombre = item.nombre ? item.nombre.toLowerCase() : "";
+    const depto = item.departamento ? item.departamento.toLowerCase() : "";
+    return nombre.includes(busqueda) || depto.includes(busqueda);
+  });
+
+  // Configuración de columnas para React Data Table Component
+  const columns = [
+    {
+      name: "Colaborador",
+      selector: (row) => row.nombre,
+      sortable: true,
+      cell: (row) => (
+        <span className="fw-semibold text-dark">{row.nombre}</span>
+      ),
+    },
+    {
+      name: "Área",
+      selector: (row) => row.departamento || "",
+      sortable: true,
+      cell: (row) => (
+        <span className="badge bg-light text-dark border fw-normal">
+          {row.departamento || "—"}
+        </span>
+      ),
+    },
+    {
+      name: "Fecha Ingreso",
+      selector: (row) => row.fechaIngreso || "",
+      sortable: true,
+      cell: (row) => (
+        <small className="text-muted">
+          {row.fechaIngreso ? String(row.fechaIngreso).split("T")[0] : "—"}
+        </small>
+      ),
+    },
+    {
+      name: "Días Totales",
+      selector: (row) => row.diasGanados,
+      sortable: true,
+      center: true,
+      cell: (row) =>
+        row.tieneVacaciones === false ? null : (
+          <span className="text-success fw-semibold">
+            +{row.diasGanados} días
+          </span>
+        ),
+    },
+    {
+      name: "Días Tomados",
+      selector: (row) => row.diasTomados,
+      sortable: true,
+      center: true,
+      cell: (row) =>
+        row.tieneVacaciones === false ? null : (
+          <span className="text-danger fw-semibold">
+            -{row.diasTomados} días
+          </span>
+        ),
+    },
+    {
+      name: "Saldo Disponible",
+      selector: (row) => row.saldoDisponible,
+      sortable: true,
+      center: true,
+      cell: (row) =>
+        row.tieneVacaciones === false ? (
+          <span className="badge bg-secondary-subtle text-secondary border">
+            Sin beneficio de vacaciones
+          </span>
+        ) : (
+          <span className="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-1 fw-bold">
+            {row.saldoDisponible} días libres
+          </span>
+        ),
+    },
+    {
+      name: "Acción",
+      right: true,
+      cell: (row) => {
+        const sinBeneficio = row.tieneVacaciones === false;
+        return (
+          <div className="d-flex justify-content-end gap-2">
+            <button
+              type="button"
+              className="btn btn-sm btn-outline-info rounded-3 px-3"
+              onClick={() => setUsuarioHistorial(row)}
+            >
+              <i className="bi bi-clock-history me-1"></i>
+            </button>
+            <button
+              type="button"
+              className="btn btn-sm btn-outline-primary rounded-3 px-3"
+              disabled={sinBeneficio}
+              onClick={() => abrirModal(row)}
+            >
+              <i className="bi bi-pencil-square me-1"></i>
+            </button>
+          </div>
+        );
+      },
+    },
+  ];
+
+  // Opciones de localización en español para la tabla
+  const paginationComponentOptions = {
+    rowsPerPageText: "Filas por página:",
+    rangeSeparatorText: "de",
+    selectAllRowsItem: true,
+    selectAllRowsItemText: "Todos",
+  };
+
   return (
     <AppLayout usuarioRol="RRHH">
       <div className="card border-0 shadow-sm rounded-4 p-4">
-        <div className="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div className="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom flex-wrap gap-2">
           <div>
             <h6 className="fw-bold text-dark m-0 d-flex align-items-center gap-2">
               <i className="bi bi-calendar2-range text-primary"></i>
@@ -153,9 +269,18 @@ function GestionVacaciones() {
               antigüedad
             </small>
           </div>
+          {!loading && !error && (
+            <input
+              type="search"
+              className="form-control form-control-sm rounded-3"
+              style={{ maxWidth: "260px" }}
+              placeholder="Buscar colaborador..."
+              value={filterText}
+              onChange={(e) => setFilterText(e.target.value)}
+            />
+          )}
         </div>
 
-        {/* Carga y Errores */}
         {loading ? (
           <div className="text-center my-5 py-4">
             <div className="spinner-border text-primary" role="status">
@@ -167,82 +292,37 @@ function GestionVacaciones() {
             {error}
           </div>
         ) : (
-          /* Tabla de Saldos y Colaboradores */
-          <div className="table-responsive">
-            <table className="table table-hover align-middle border-top">
-              <thead className="table-light text-uppercase fs-7 text-muted">
-                <tr>
-                  <th>Colaborador</th>
-                  <th>Area</th>
-                  <th>Fecha Ingreso</th>
-                  <th className="text-center">Días Totales</th>
-                  <th className="text-center">Días Tomados</th>
-                  <th className="text-center">Saldo Disponible</th>
-                  <th className="text-end">Acción</th>
-                </tr>
-              </thead>
-              <tbody>
-                {personal.map((item) => {
-                  const sinBeneficio = item.tieneVacaciones === false;
-                  return (
-                    <tr
-                      key={item.idUsuario || item.idEmpleado || item.id}
-                      className={sinBeneficio ? "opacity-50" : ""}
-                    >
-                      <td className="fw-semibold text-dark">{item.nombre}</td>
-                      <td>
-                        <span className="badge bg-light text-dark border fw-normal">
-                          {item.departamento || "—"}
-                        </span>
-                      </td>
-                      <td>
-                        <small className="text-muted">
-                          {item.fechaIngreso
-                            ? String(item.fechaIngreso).split("T")[0]
-                            : "—"}
-                        </small>
-                      </td>
-                      {sinBeneficio ? (
-                        <td colSpan={3} className="text-center">
-                          <span className="badge bg-secondary-subtle text-secondary border">
-                            Sin beneficio de vacaciones
-                          </span>
-                        </td>
-                      ) : (
-                        <>
-                          <td className="text-center text-success fw-semibold">
-                            +{item.diasGanados} días
-                          </td>
-                          <td className="text-center text-danger fw-semibold">
-                            -{item.diasTomados} días
-                          </td>
-                          <td className="text-center">
-                            <span className="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-1 fw-bold">
-                              {item.saldoDisponible} días libres
-                            </span>
-                          </td>
-                        </>
-                      )}
-                      <td className="text-end">
-                        <button
-                          type="button"
-                          className="btn btn-sm btn-outline-primary rounded-3 px-3"
-                          disabled={sinBeneficio}
-                          onClick={() => abrirModal(item)}
-                        >
-                          <i className="bi bi-pencil-square me-1"></i>
-                          Gestionar
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          <DataTable
+            columns={columns}
+            data={filteredItems}
+            pagination
+            paginationPerPage={10}
+            paginationComponentOptions={paginationComponentOptions}
+            noDataComponent={
+              <div className="text-center text-muted py-4">
+                No se encontraron colaboradores.
+              </div>
+            }
+            conditionalRowStyles={[
+              {
+                when: (row) => row.tieneVacaciones === false,
+                style: {
+                  opacity: 0.5,
+                },
+              },
+            ]}
+            highlightOnHover
+            responsive
+          />
         )}
 
-        {/* Modal de Registro por Fechas o Acreditación */}
+        {usuarioHistorial && (
+          <HistorialVacacionesPanel
+            usuario={usuarioHistorial}
+            onClose={() => setUsuarioHistorial(null)}
+          />
+        )}
+
         {usuarioSeleccionado && (
           <div
             className="modal fade show d-block"
@@ -372,8 +452,8 @@ function GestionVacaciones() {
                     {procesando
                       ? "Guardando..."
                       : tipoOperacion === "DESCUENTO"
-                        ? "Registrar Período Vacacional"
-                        : "Acreditar Días"}
+                      ? "Registrar Período Vacacional"
+                      : "Acreditar Días"}
                   </button>
                 </div>
               </div>

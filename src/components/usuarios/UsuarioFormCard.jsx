@@ -16,17 +16,6 @@ import {
   getGeneros,
 } from "../../services/catalogosService.js";
 
-/**
- * Formulario único para crear y editar usuarios.
- *
- * - Si se recibe `usuarioOriginal` -> modo EDICIÓN (precarga datos, envía ids
- *   de las sublistas y las listas "AEliminar").
- * - Si no se recibe `usuarioOriginal` -> modo CREACIÓN (formulario vacío,
- *   payload sin ids ni listas de eliminación).
- *
- * En ambos casos se delega el guardado al padre a través de `onGuardar`,
- * que recibe `(idUsuario, payload)`. En creación `idUsuario` es `null`.
- */
 const UsuarioFormCard = ({ usuarioOriginal = null, onGuardar, onCancelar }) => {
   const esEdicion = Boolean(usuarioOriginal?.idUsuario);
 

@@ -1,5 +1,6 @@
 import React, { useState, useMemo, memo } from "react";
 import DataTable from "react-data-table-component";
+import UsuarioInfoModal from "./UsuarioInfoModal";
 
 const customStyles = {
   headCells: {
@@ -28,6 +29,9 @@ const paginationComponentOptions = {
 
 function TablaUsuarios({ usuarios = [], onEditar }) {
   const [filterText, setFilterText] = useState("");
+  // Usuario cuya información general se muestra en la tarjeta flotante.
+  // null = tarjeta cerrada.
+  const [usuarioEnVista, setUsuarioEnVista] = useState(null);
 
   // Filtrado memoizado para evitar recalcular en cada re-render del padre
   const filteredItems = useMemo(() => {
@@ -123,19 +127,32 @@ function TablaUsuarios({ usuarios = [], onEditar }) {
       },
       {
         name: "Acciones",
-        width: "110px",
+        width: "160px",
         cell: (row) => (
-          <button
-            type="button"
-            className="btn btn-outline-secondary btn-sm d-inline-flex align-items-center gap-1"
-            onClick={(e) => {
-              e.stopPropagation();
-              onEditar?.(row);
-            }}
-          >
-            <i className="bi bi-pencil-square"></i>
-            <span>Editar</span>
-          </button>
+          <div className="d-flex align-items-center gap-2">
+            <button
+              type="button"
+              className="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center"
+              title="Ver información"
+              onClick={(e) => {
+                e.stopPropagation();
+                setUsuarioEnVista(row);
+              }}
+            >
+              <i className="bi bi-eye"></i>
+            </button>
+            <button
+              type="button"
+              className="btn btn-outline-secondary btn-sm d-inline-flex align-items-center gap-1"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEditar?.(row);
+              }}
+            >
+              <i className="bi bi-pencil-square"></i>
+              <span>Editar</span>
+            </button>
+          </div>
         ),
         ignoreRowClick: true,
         allowOverflow: true,
@@ -183,6 +200,13 @@ function TablaUsuarios({ usuarios = [], onEditar }) {
           }
         />
       </div>
+
+      {usuarioEnVista && (
+        <UsuarioInfoModal
+          usuario={usuarioEnVista}
+          onClose={() => setUsuarioEnVista(null)}
+        />
+      )}
     </div>
   );
 }

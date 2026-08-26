@@ -63,7 +63,7 @@ function MiPerfil() {
     );
   }
 
-  const iniciales = (user.nombres || "??")
+  const iniciales = (user.nombre || "??")
     .split(" ")
     .slice(0, 2)
     .map((p) => p[0])
@@ -89,9 +89,11 @@ function MiPerfil() {
               <div className="card-body p-4">
                 {/* ENCABEZADO DE PERFIL */}
                 <div className="d-flex align-items-center gap-3 mb-4">
-                  {user.fotoPreview || user.fotoUrl ? (
+                  {user.urlImagenPerfil || user.fotoPreview || user.fotoUrl ? (
                     <img
-                      src={user.fotoPreview || user.fotoUrl}
+                      src={
+                        user.urlImagenPerfil || user.fotoPreview || user.fotoUrl
+                      }
                       alt="Foto de perfil"
                       className="rounded-circle object-fit-cover border border-2 border-primary shadow-sm"
                       style={{ width: "64px", height: "64px" }}
@@ -109,7 +111,9 @@ function MiPerfil() {
                     </div>
                   )}
                   <div>
-                    <h5 className="fw-bold mb-0">{user.nombres}</h5>
+                    <h5 className="fw-bold mb-0">
+                      {(user?.nombre || "") + " " + (user?.apellido || "")}
+                    </h5>
                     <p className="text-muted mb-0 small">
                       {user.cargo || user.nombreCargo}{" "}
                       {user.departamento ? `· ${user.departamento}` : ""}
@@ -124,7 +128,10 @@ function MiPerfil() {
                   1. Información Personal
                 </h6>
                 <div className="row">
-                  <Campo label="Nombres completos" valor={(user?.nombre || '') + ' ' + (user?.apellido || '')} />
+                  <Campo
+                    label="Nombres completos"
+                    valor={(user?.nombre || "") + " " + (user?.apellido || "")}
+                  />
                   <Campo label="Cédula" valor={user.cedula} />
                   <Campo
                     label="Fecha de nacimiento"
@@ -156,6 +163,18 @@ function MiPerfil() {
                     valor={formatearFecha(user.fechaIngreso)}
                   />
                   <Campo
+                    label="Tiene derecho a vacaciones"
+                    valor={user.tieneVacaciones ? "Sí" : "No"}
+                  />
+                  <Campo
+                    label="Días de vacaciones asignados"
+                    valor={
+                      user.diasVacacionesAsignados
+                        ? `${user.diasVacacionesAsignados} días`
+                        : "0 días"
+                    }
+                  />
+                  <Campo
                     label="Dirección de domicilio"
                     valor={user.direccion}
                   />
@@ -174,16 +193,17 @@ function MiPerfil() {
                   3. Información Familiar y Contactos
                 </h6>
 
-                <div className="mb-3">
+                <div className="mb-4">
                   <p className="text-uppercase text-muted fw-bold small mb-2">
-                    Hijos Registrados
+                    Familiares Registrados
                   </p>
                   {user.familiares && user.familiares.length > 0 ? (
                     <div className="table-responsive">
                       <table className="table table-sm table-borderless bg-light rounded align-middle">
                         <thead>
                           <tr className="text-muted small border-bottom">
-                            <th>Nombre del hijo/a</th>
+                            <th>Nombre Completo</th>
+                            <th>Parentesco</th>
                             <th>Fecha de nacimiento</th>
                           </tr>
                         </thead>
@@ -191,16 +211,25 @@ function MiPerfil() {
                           {user.familiares.map((fam, idx) => (
                             <tr key={fam.idFamiliar || idx}>
                               <td className="fw-medium">
-                                {fam.nombre} {fam.apellido || ""}
+                                {(fam.nombre || "") +
+                                  " " +
+                                  (fam.apellido || "")}
                               </td>
-                              <td>{formatearFecha(fam.fechaNacimiento)}</td>
+                              <td>{fam.parentesco || "N/A"}</td>
+                              <td>
+                                {fam.fechaNacimiento
+                                  ? formatearFecha(fam.fechaNacimiento)
+                                  : "N/A"}
+                              </td>
                             </tr>
                           ))}
                         </tbody>
                       </table>
                     </div>
                   ) : (
-                    <p className="small text-muted mb-0">No registra hijos.</p>
+                    <p className="small text-muted mb-0">
+                      No registra familiares.
+                    </p>
                   )}
                 </div>
 
@@ -214,17 +243,21 @@ function MiPerfil() {
                       <table className="table table-sm table-borderless bg-light rounded align-middle">
                         <thead>
                           <tr className="text-muted small border-bottom">
-                            <th>Nombre</th>
+                            <th>Nombre Completo</th>
                             <th>Parentesco / Relación</th>
                             <th>Teléfono</th>
+                            <th>Dirección</th>
                           </tr>
                         </thead>
                         <tbody>
                           {user.contactosEmergencia.map((c, idx) => (
                             <tr key={c.idContacto || idx}>
-                              <td className="fw-medium">{c.nombre}</td>
-                              <td>{c.parentesco}</td>
-                              <td>{c.telefono}</td>
+                              <td className="fw-medium">
+                                {(c.nombre || "") + " " + (c.apellido || "")}
+                              </td>
+                              <td>{c.parentesco || "N/A"}</td>
+                              <td>{c.telefono || "N/A"}</td>
+                              <td>{c.direccion || "N/A"}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -243,18 +276,6 @@ function MiPerfil() {
                 <h6 className="fw-bold text-primary mb-3">
                   4. Datos Bancarios y Décimos
                 </h6>
-                <div className="row mb-3">
-                  <Campo
-                    label="¿Acumula décimos?"
-                    valor={
-                      String(user.acumulaDecimos) === "1" ||
-                      user.acumulaDecimos === 1
-                        ? "Sí"
-                        : "No"
-                    }
-                  />
-                </div>
-
                 <p className="text-uppercase text-muted fw-bold small mb-2">
                   Cuentas Bancarias
                 </p>
