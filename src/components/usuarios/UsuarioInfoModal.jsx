@@ -225,6 +225,7 @@ function UsuarioInfoModal({ usuario, onClose }) {
               <hr className="my-3 text-muted opacity-25" />
 
               {/* 2. DATOS LABORALES Y UBICACIÓN */}
+
               <SeccionTitulo>Datos Laborales y Ubicación</SeccionTitulo>
               <div className="row">
                 <InfoItem
@@ -232,6 +233,20 @@ function UsuarioInfoModal({ usuario, onClose }) {
                   valor={info.correoEmpresa || info.correo}
                 />
                 <InfoItem label="Celular empresa" valor={info.celularEmpresa} />
+
+                <InfoItem
+                  label="Tiene Derecho a Vacaciones"
+                  valor={info.tieneVacaciones ? "Sí" : "No"}
+                />
+
+                <InfoItem
+                  label="Días de vacaciones asignados"
+                  valor={
+                    info.diasVacacionesAsignados
+                      ? `${info.diasVacacionesAsignados} días`
+                      : "0 días"
+                  }
+                />
                 <InfoItem
                   label="Cargo"
                   valor={info.cargo || info.nombreCargo}
@@ -255,23 +270,34 @@ function UsuarioInfoModal({ usuario, onClose }) {
 
               <div className="mb-3">
                 <p className="text-uppercase text-muted fw-bold small mb-2">
-                  Hijos registrados
+                  Familiares e Hijos registrados
                 </p>
                 {info.familiares && info.familiares.length > 0 ? (
                   <TablaMini
-                    headers={["Nombre del hijo/a", "Fecha de nacimiento"]}
+                    headers={[
+                      "Nombre Completo",
+                      "Parentesco",
+                      "Fecha de nacimiento",
+                    ]}
                   >
                     {info.familiares.map((fam, idx) => (
                       <tr key={fam.idFamiliar || idx}>
                         <td className="fw-medium">
                           {fam.nombre} {fam.apellido || ""}
                         </td>
-                        <td>{formatearFecha(fam.fechaNacimiento)}</td>
+                        <td>{fam.parentesco || "N/A"}</td>
+                        <td>
+                          {fam.fechaNacimiento
+                            ? formatearFecha(fam.fechaNacimiento)
+                            : "N/A"}
+                        </td>
                       </tr>
                     ))}
                   </TablaMini>
                 ) : (
-                  <p className="small text-muted mb-0">No registra hijos.</p>
+                  <p className="small text-muted mb-0">
+                    No registra familiares ni hijos.
+                  </p>
                 )}
               </div>
 

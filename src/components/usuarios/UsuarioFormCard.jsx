@@ -178,8 +178,6 @@ const UsuarioFormCard = ({ usuarioOriginal = null, onGuardar, onCancelar }) => {
         idArea: formData.idArea ? Number(formData.idArea) : null,
         idCargo: formData.idCargo ? Number(formData.idCargo) : null,
         idCiudad: formData.idCiudad ? Number(formData.idCiudad) : null,
-        // La foto NO va en este payload JSON: se sube aparte (multipart) a
-        // POST /usuarios/{id}/foto una vez que el usuario existe/fue guardado.
         tieneVacaciones: formData.tieneVacaciones,
         diasVacacionesAsignados: formData.tieneVacaciones
           ? Number(formData.diasVacacionesAsignados || 15)
@@ -189,6 +187,15 @@ const UsuarioFormCard = ({ usuarioOriginal = null, onGuardar, onCancelar }) => {
       const payload = esEdicion
         ? {
             ...payloadBase,
+            familiares: formData.familiares.map((f) => ({
+              idFamiliar: f.idFamiliar || null,
+              nombre: f.nombre,
+              apellido: f.apellido || null,
+              parentesco: f.parentesco || null,
+              fechaNacimiento: f.fechaNacimiento
+                ? new Date(f.fechaNacimiento).toISOString()
+                : null,
+            })),
             titulos: formData.titulos.map((t) => ({
               idTitulo: t.idTitulo || null,
               nombreTitulo: t.nombreTitulo,
@@ -218,6 +225,14 @@ const UsuarioFormCard = ({ usuarioOriginal = null, onGuardar, onCancelar }) => {
           }
         : {
             ...payloadBase,
+            familiares: formData.familiares.map((f) => ({
+              nombre: f.nombre,
+              apellido: f.apellido || null,
+              parentesco: f.parentesco || null,
+              fechaNacimiento: f.fechaNacimiento
+                ? new Date(f.fechaNacimiento).toISOString()
+                : null,
+            })),
             titulos: formData.titulos.map((t) => ({
               nombreTitulo: t.nombreTitulo,
               institucion: t.institucion || null,
