@@ -1,40 +1,42 @@
 import { useQuery } from "@tanstack/react-query";
-
-import valoresImg from "../assets/images/valores_happy.png";
-import cumpleImg from "../assets/images/cumpleanos_agosto.png";
-import capImg from "../assets/images/capacitacion.png";
+import { useEffect, useRef } from "react";
 import AppLayout from "../components/layout/AppLayout";
-import { getImagenesActivas } from "../services/imagenesService.js"; // O desde tu servicio modularizado de imágenes
-
-const IMAGENES_POR_DEFECTO = [
-  { id: 1, url: valoresImg, titulo: "Valores de Happy Pay" },
-  { id: 2, url: cumpleImg, titulo: "Cumpleaños del Mes" },
-  { id: 3, url: capImg, titulo: "Capacitaciones del Mes" },
-];
+import { getImagenesActivas } from "../services/imagenesService.js";
 
 function Dashboard() {
-  // Manejo de petición y caché con TanStack Query
-  const { data: imagenes = IMAGENES_POR_DEFECTO, isLoading: cargando } =
-    useQuery({
-      queryKey: ["imagenesActivas"],
-      queryFn: async () => {
-        const respuesta = await getImagenesActivas();
-        return Array.isArray(respuesta) && respuesta.length > 0
-          ? respuesta
-          : IMAGENES_POR_DEFECTO;
+  const carouselRef = useRef(null);
+  const carouselInstanceRef = useRef(null);
+
+  const { data: imagenes = [], isLoading: cargando } = useQuery({
+    queryKey: ["imagenesActivas"],
+    queryFn: async () => {
+      const respuesta = await getImagenesActivas();
+      return Array.isArray(respuesta) ? respuesta : [];
+    },
+  });
+
+  useEffect(() => {
+    if (!carouselRef.current || imagenes.length === 0) return;
+    if (!window.bootstrap?.Carousel) return;
+
+    carouselInstanceRef.current?.dispose();
+    carouselInstanceRef.current = new window.bootstrap.Carousel(
+      carouselRef.current,
+      {
+        interval: 5000,
+        ride: "carousel",
       },
-      // Fallback directo en caso de error HTTP o de red
-      initialData: IMAGENES_POR_DEFECTO,
-    });
+    );
+
+    return () => carouselInstanceRef.current?.dispose();
+  }, [imagenes]);
 
   return (
     <AppLayout>
       <div className="container-fluid px-4 my-4 flex-grow-1">
         <div className="row">
           <div className="col-12">
-            <h5 className="mb-3 text-secondary fw-semibold">
-              Novedades 
-            </h5>
+            <h5 className="mb-3 text-secondary fw-semibold">Novedades</h5>
 
             {cargando ? (
               <div className="text-center py-5">
@@ -42,11 +44,18 @@ function Dashboard() {
                   <span className="visually-hidden">Cargando carrusel...</span>
                 </div>
               </div>
+            ) : imagenes.length === 0 ? (
+              <div className="text-center py-5 text-muted bg-light rounded-4 border">
+                <i className="bi bi-image-alt fs-1 d-block mb-2 text-secondary opacity-50"></i>
+                <p className="fw-medium mb-0">
+                  No hay novedades publicadas por el momento.
+                </p>
+              </div>
             ) : (
               <div
                 id="dashboardCarousel"
+                ref={carouselRef}
                 className="carousel slide shadow-sm rounded-3 overflow-hidden w-100"
-                data-bs-ride="carousel"
               >
                 {/* Indicadores */}
                 <div className="carousel-indicators">
@@ -67,11 +76,11 @@ function Dashboard() {
                 <div className="carousel-inner">
                   {imagenes.map((img, index) => (
                     <div
-                      key={img.id || index}
+                      key={img.idImagen || img.id || index}
                       className={`carousel-item ${index === 0 ? "active" : ""}`}
                     >
                       <img
-                        src={img.url || img.rutaImagen}
+                        src={img.rutaImagen}
                         className="d-block w-100"
                         alt={img.titulo || img.descripcion || "Imagen carrusel"}
                         style={{

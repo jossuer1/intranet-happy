@@ -2,10 +2,10 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   getMisVacaciones,
-  getSaldoVacaciones,
-  getHistorialVacaciones,
+  getSaldo,
+  getHistorial,
   registrarDescuentoVacaciones,
-} from "../services/apiService";
+} from "../services/vacacionesService";
 
 // Hook para consultar mis vacaciones (Mantiene caché sin pedir al backend en cada render)
 export const useMisVacaciones = () => {
@@ -16,15 +16,11 @@ export const useMisVacaciones = () => {
   });
 };
 
-// Hook para consultar historial por usuario
+// Hook para consultar saldo + historial por usuario (pensado para el historial flotante)
 export const useHistorialUsuario = (idUsuario) => {
   return useQuery({
     queryKey: ["vacaciones", "historial", idUsuario],
-    queryFn: () =>
-      Promise.all([
-        getSaldoVacaciones(idUsuario),
-        getHistorialVacaciones(idUsuario),
-      ]),
+    queryFn: () => Promise.all([getSaldo(idUsuario), getHistorial(idUsuario)]),
     enabled: !!idUsuario, // Solo ejecuta si el ID existe
   });
 };
@@ -36,7 +32,6 @@ export const useAplicarDescuento = () => {
   return useMutation({
     mutationFn: registrarDescuentoVacaciones,
     onSuccess: () => {
-      // Invalida la caché e invalida los datos viejos automáticamente
       queryClient.invalidateQueries({ queryKey: ["vacaciones"] });
     },
   });

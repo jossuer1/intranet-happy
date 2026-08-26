@@ -1,5 +1,3 @@
-import React from "react";
-
 function BannersActivos({
   novedades,
   onNuevoBannerClick,
@@ -115,7 +113,7 @@ function BannersActivos({
                         type="button"
                         className="btn btn-sm btn-danger text-white px-3 py-1.5 rounded-3 shadow-sm border-0"
                         onClick={() => onEliminar(item.idImagen)}
-                        title="Eliminar Banner"
+                        title="Eliminar Permanentemente"
                       >
                         <i className="bi bi-trash3-fill fs-6"></i>
                       </button>

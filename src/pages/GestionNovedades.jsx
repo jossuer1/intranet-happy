@@ -9,6 +9,7 @@ import {
   agregarImagen,
   actualizarImagen,
   desactivarImagen,
+  eliminarImagenDefinitivo,
 } from "../services/imagenesService";
 
 function GestionNovedades() {
@@ -35,7 +36,7 @@ function GestionNovedades() {
       setNovedades(Array.isArray(data) ? data : []);
     } catch (err) {
       setError(
-        err.message || "No se pudieron cargar los banners informativos."
+        err.message || "No se pudieron cargar los banners informativos.",
       );
     } finally {
       setLoading(false);
@@ -58,12 +59,12 @@ function GestionNovedades() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!nuevoTitulo.trim() || !archivoImagen) {
       Swal.fire(
         "Atención",
         "Por favor completa el título y selecciona una imagen.",
-        "warning"
+        "warning",
       );
       return;
     }
@@ -127,7 +128,7 @@ function GestionNovedades() {
           return idActual === targetId
             ? { ...item, estado: nuevoEstado, activo: nuevoEstado }
             : item;
-        })
+        }),
       );
 
       Swal.fire({
@@ -147,30 +148,30 @@ function GestionNovedades() {
     }
   };
 
-  const handleEliminar = async (id) => {
+  const handleEliminarDefinitivo = async (id) => {
     const result = await Swal.fire({
-      title: "¿Eliminar o desactivar banner?",
-      text: "El banner dejará de mostrarse en la sección de novedades.",
+      title: "¿Eliminar banner permanentemente?",
+      text: "Esta acción borra el registro de la base de datos y no se puede deshacer. Si solo quieres ocultarlo del carrusel, usa el botón de desactivar (ícono de ojo).",
       icon: "warning",
       showCancelButton: true,
       confirmButtonColor: "#d33",
       cancelButtonColor: "#6c757d",
-      confirmButtonText: "Sí, eliminar",
+      confirmButtonText: "Sí, eliminar definitivamente",
       cancelButtonText: "Cancelar",
     });
 
     if (result.isConfirmed) {
       try {
-        await desactivarImagen(id);
+        await eliminarImagenDefinitivo(id);
 
         setNovedades((prev) =>
-          prev.filter((item) => (item.idImagen || item.id) !== id)
+          prev.filter((item) => (item.idImagen || item.id) !== id),
         );
 
         Swal.fire(
           "Eliminado",
-          "El banner ha sido removido con éxito.",
-          "success"
+          "El banner fue eliminado permanentemente.",
+          "success",
         );
       } catch (err) {
         Swal.fire({
@@ -218,7 +219,7 @@ function GestionNovedades() {
               novedades={novedades}
               onNuevoBannerClick={() => navigate("/gestion-novedades/publicar")}
               onToggleEstado={handleToggleEstado}
-              onEliminar={handleEliminar}
+              onEliminar={handleEliminarDefinitivo}
             />
           )}
         </div>
