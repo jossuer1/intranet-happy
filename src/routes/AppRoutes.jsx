@@ -5,10 +5,11 @@ import Dashboard from "../pages/Dashboard";
 import GestionUsuarios from "../pages/GestionUsuarios";
 import MiPerfil from "../pages/usuario/MiPerfil";
 import MisVacaciones from "../pages/usuario/MisVacaciones";
-import RegistroAsistencia from "../pages/usuario/RegistroAsistencia";
+import AprobarVacaciones from "../pages/usuario/AprobarVacaciones";
 import GestionNovedades from "../pages/GestionNovedades";
 import GestionVacaciones from "../pages/GestionVacaciones";
-import SaldosPersonal from "../pages/SaldosPersonales"; 
+import SaldosPersonal from "../pages/SaldosPersonales";
+import GestionCatalogos from "../pages/GestionCatalogos";
 
 function AppRoutes() {
   return (
@@ -16,7 +17,10 @@ function AppRoutes() {
       <Routes>
         <Route path="/login" element={<AuthContainer />} />
         {/* Compatibilidad con enlaces antiguos: ahora la recuperación vive dentro de /login */}
-        <Route path="/recuperar-contrasena" element={<Navigate to="/login" replace />} />
+        <Route
+          path="/recuperar-contrasena"
+          element={<Navigate to="/login" replace />}
+        />
         <Route path="/dashboard" element={<Dashboard />} />
 
         {/* RRHH - Gestión de Usuarios */}
@@ -39,10 +43,13 @@ function AppRoutes() {
         {/* AHORA APUNTA A LA NUEVA VISTA DE SALDOS */}
         <Route path="/gestion-vacaciones/saldos" element={<SaldosPersonal />} />
 
+        {/* ADMIN - Gestión de Catálogos */}
+        <Route path="/gestion-catalogos" element={<GestionCatalogos />} />
+
         {/* Autogestión Empleado */}
         <Route path="/mi-perfil" element={<MiPerfil />} />
         <Route path="/mis-vacaciones" element={<MisVacaciones />} />
-        <Route path="/registro-asistencia" element={<RegistroAsistencia />} />
+        <Route path="/aprobar-vacaciones" element={<AprobarVacaciones />} />
 
         {/* Redirección por defecto */}
         <Route path="*" element={<Navigate to="/login" replace />} />

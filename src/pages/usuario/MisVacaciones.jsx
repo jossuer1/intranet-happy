@@ -1,8 +1,29 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import Swal from "sweetalert2";
 import AppLayout from "../../components/layout/AppLayout";
 import SectionHeader from "../../components/layout/SectionHeader";
-import { getSaldo, getMisVacaciones } from "../../services/vacacionesService";
+import {
+  getSaldo,
+  getMisVacaciones,
+  crearSolicitudVacacion,
+  getMisSolicitudesVacacion,
+  descargarConstanciaSolicitud,
+} from "../../services/vacacionesService";
 import { useAuthStore } from "../../store/useAuthStore";
+
+const ESTADOS_SOLICITUD = {
+  PENDIENTE_JEFE: { texto: "Pendiente jefe directo", clase: "bg-warning text-dark" },
+  PENDIENTE_RRHH: { texto: "Pendiente RRHH", clase: "bg-info text-dark" },
+  APROBADA: { texto: "Aprobada", clase: "bg-success" },
+  RECHAZADA_JEFE: { texto: "Rechazada por el jefe", clase: "bg-danger" },
+  RECHAZADA_RRHH: { texto: "Rechazada por RRHH", clase: "bg-danger" },
+};
+
+function BadgeEstadoSolicitud({ estado }) {
+  const info = ESTADOS_SOLICITUD[estado] || { texto: estado, clase: "bg-secondary" };
+  return <span className={`badge ${info.clase}`}>{info.texto}</span>;
+}
 
 function TarjetaResumen({ etiqueta, valor }) {
   return (
@@ -69,6 +90,85 @@ function MisVacaciones() {
     select: (data) => (Array.isArray(data) ? data : []),
   });
 
+  // 4. Mis solicitudes de vacaciones (flujo Jefe -> RRHH)
+  const {
+    data: solicitudes,
+    isLoading: loadingSolicitudes,
+    refetch: refetchSolicitudes,
+  } = useQuery({
+    queryKey: ["vacaciones", "mis-solicitudes"],
+    queryFn: getMisSolicitudesVacacion,
+    enabled: habilitado,
+    staleTime: 1000 * 30,
+    select: (data) => (Array.isArray(data) ? data : []),
+  });
+
+  const [mostrarForm, setMostrarForm] = useState(false);
+  const [fechaInicioSolicitud, setFechaInicioSolicitud] = useState("");
+  const [fechaFinSolicitud, setFechaFinSolicitud] = useState("");
+  const [motivoSolicitud, setMotivoSolicitud] = useState("");
+  const [enviandoSolicitud, setEnviandoSolicitud] = useState(false);
+  const [descargandoId, setDescargandoId] = useState(null);
+
+  const enviarSolicitud = async (e) => {
+    e.preventDefault();
+    if (!fechaInicioSolicitud || !fechaFinSolicitud || !motivoSolicitud.trim()) {
+      return;
+    }
+    try {
+      setEnviandoSolicitud(true);
+      await crearSolicitudVacacion({
+        fechaInicio: fechaInicioSolicitud,
+        fechaFin: fechaFinSolicitud,
+        motivo: motivoSolicitud.trim(),
+      });
+      setMostrarForm(false);
+      setFechaInicioSolicitud("");
+      setFechaFinSolicitud("");
+      setMotivoSolicitud("");
+      await refetchSolicitudes();
+      Swal.fire({
+        toast: true,
+        position: "top-end",
+        icon: "success",
+        title: "Solicitud enviada. Ahora la revisará tu jefe directo.",
+        showConfirmButton: false,
+        timer: 2200,
+      });
+    } catch (err) {
+      Swal.fire({
+        icon: "error",
+        title: "No se pudo enviar la solicitud",
+        text: err.message || "Inténtalo de nuevo en unos segundos.",
+      });
+    } finally {
+      setEnviandoSolicitud(false);
+    }
+  };
+
+  const descargarConstancia = async (idSolicitud) => {
+    try {
+      setDescargandoId(idSolicitud);
+      const blob = await descargarConstanciaSolicitud(idSolicitud);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `constancia-vacaciones-${idSolicitud}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      Swal.fire({
+        icon: "error",
+        title: "No se pudo descargar la constancia",
+        text: err.message || "Inténtalo de nuevo en unos segundos.",
+      });
+    } finally {
+      setDescargandoId(null);
+    }
+  };
+
   const loading = loadingPerfil || (habilitado && (loadingSaldo || loadingHistorial));
   const isError = errorSaldo || errorHistorial;
   const error = errSaldo || errHistorial;
@@ -127,6 +227,142 @@ function MisVacaciones() {
                 etiqueta="Días disponibles"
                 valor={saldo?.diasDisponibles ?? 0}
               />
+            </div>
+
+            <div className="card shadow-sm border-0 mb-4">
+              <div className="card-body p-4">
+                <div className="d-flex justify-content-between align-items-center mb-3">
+                  <h5 className="card-title fw-bold mb-0">
+                    Solicitar Vacaciones
+                  </h5>
+                  {!mostrarForm && (
+                    <button
+                      type="button"
+                      className="btn btn-brand btn-sm"
+                      onClick={() => setMostrarForm(true)}
+                    >
+                      <i className="bi bi-calendar-plus me-1"></i>
+                      Nueva solicitud
+                    </button>
+                  )}
+                </div>
+
+                {mostrarForm && (
+                  <form onSubmit={enviarSolicitud} className="row g-3 mb-2">
+                    <div className="col-md-4">
+                      <label className="form-label">Desde</label>
+                      <input
+                        type="date"
+                        className="form-control"
+                        value={fechaInicioSolicitud}
+                        onChange={(e) => setFechaInicioSolicitud(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div className="col-md-4">
+                      <label className="form-label">Hasta</label>
+                      <input
+                        type="date"
+                        className="form-control"
+                        value={fechaFinSolicitud}
+                        onChange={(e) => setFechaFinSolicitud(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div className="col-md-4">
+                      <label className="form-label">Motivo</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        placeholder="Ej. Viaje familiar"
+                        value={motivoSolicitud}
+                        onChange={(e) => setMotivoSolicitud(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div className="col-12 d-flex gap-2">
+                      <button
+                        type="submit"
+                        className="btn btn-brand"
+                        disabled={enviandoSolicitud}
+                      >
+                        {enviandoSolicitud ? "Enviando..." : "Enviar solicitud"}
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-outline-secondary"
+                        onClick={() => setMostrarForm(false)}
+                        disabled={enviandoSolicitud}
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  </form>
+                )}
+
+                <div className="table-responsive mt-3">
+                  <table className="table table-hover align-middle mb-0">
+                    <thead className="table-light">
+                      <tr>
+                        <th>Desde</th>
+                        <th>Hasta</th>
+                        <th>Días</th>
+                        <th>Motivo</th>
+                        <th>Estado</th>
+                        <th>Jefe</th>
+                        <th>RRHH</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {loadingSolicitudes ? (
+                        <tr>
+                          <td colSpan={8} className="text-center text-muted py-3">
+                            Cargando solicitudes...
+                          </td>
+                        </tr>
+                      ) : !solicitudes || solicitudes.length === 0 ? (
+                        <tr>
+                          <td colSpan={8} className="text-center text-muted py-3">
+                            No has enviado solicitudes de vacaciones todavía.
+                          </td>
+                        </tr>
+                      ) : (
+                        solicitudes.map((s) => (
+                          <tr key={s.idSolicitud}>
+                            <td>{new Date(s.fechaInicio).toLocaleDateString()}</td>
+                            <td>{new Date(s.fechaFin).toLocaleDateString()}</td>
+                            <td>{s.diasSolicitados}</td>
+                            <td className="small text-muted">{s.motivo}</td>
+                            <td>
+                              <BadgeEstadoSolicitud estado={s.estado} />
+                            </td>
+                            <td className="small text-muted">
+                              {s.jefeAprobadorNombre || "—"}
+                            </td>
+                            <td className="small text-muted">
+                              {s.rrhhAprobadorNombre || "—"}
+                            </td>
+                            <td>
+                              {s.estado === "APROBADA" && (
+                                <button
+                                  type="button"
+                                  className="btn btn-sm btn-outline-primary"
+                                  disabled={descargandoId === s.idSolicitud}
+                                  onClick={() => descargarConstancia(s.idSolicitud)}
+                                  title="Descargar constancia"
+                                >
+                                  <i className="bi bi-file-earmark-pdf"></i>
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
 
             <div className="card shadow-sm border-0">

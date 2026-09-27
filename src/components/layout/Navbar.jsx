@@ -1,16 +1,10 @@
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import { useAuthStore } from "../../store/useAuthStore";
-import logoHappyPay from "../../assets/images/logo_happy.jpg";
 
-/**
- * Navbar principal de la intranet[cite: 14].
- * Se monta una sola vez dentro de AppLayout: ninguna página individual
- * debería volver a dibujar su propio navbar[cite: 14].
- */
 function Navbar() {
   const navigate = useNavigate();
-  const logout = useAuthStore((state) => state.logout); // Invocamos el método de cierre del store
+  const logout = useAuthStore((state) => state.logout);
 
   const cerrarSesion = () => {
     Swal.fire({
@@ -24,52 +18,31 @@ function Navbar() {
       cancelButtonText: "Cancelar",
     }).then((result) => {
       if (result.isConfirmed) {
-        logout(); // Limpia los tokens y el estado del usuario
+        logout();
         navigate("/login");
       }
     });
   };
 
   return (
-    <nav className="navbar navbar-expand shadow-sm px-4 py-2 sticky-top bg-brand">
-      <div className="container-fluid d-flex justify-content-between align-items-center">
-        {/* Logo Empresa */}
-        <div
-          className="navbar-brand d-flex align-items-center mb-0"
-          style={{ cursor: "pointer" }}
-          onClick={() => navigate("/dashboard")}
-        >
-          <img
-            src={logoHappyPay}
-            alt="Happy Pay Logo"
-            style={{ height: "42px", objectFit: "contain" }}
-          />
-        </div>
-
-        {/* Perfil de Usuario Dropdown */}
+    /* Cambiamos 'bg-white border-bottom' por 'bg-brand' para darle el color verde */
+    <nav
+      className="navbar navbar-expand bg-brand px-4 py-2 sticky-top shadow-sm"
+      style={{ zIndex: 1040, height: "64px" }}
+    >
+      <div className="container-fluid d-flex justify-content-end align-items-center">
+        {/* Dropdown Perfil de Usuario */}
         <div className="dropdown">
           <button
-            className="btn btn-outline-light rounded-circle d-flex align-items-center justify-content-center p-0"
+            /* Botón transparente/blanco para contrastar con el fondo verde */
+            className="btn btn-outline-light rounded-circle d-flex align-items-center justify-content-center p-0 border-0"
             type="button"
             id="dropdownMenuUser"
             data-bs-toggle="dropdown"
             aria-expanded="false"
-            style={{ width: "42px", height: "42px" }}
+            style={{ width: "40px", height: "40px" }}
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="22"
-              height="22"
-              fill="currentColor"
-              className="bi bi-person-circle"
-              viewBox="0 0 16 16"
-            >
-              <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0z" />
-              <path
-                fillRule="evenodd"
-                d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1z"
-              />
-            </svg>
+            <i className="bi bi-person-circle fs-4 text-white"></i>
           </button>
           <ul
             className="dropdown-menu dropdown-menu-end shadow border-0 mt-2"
@@ -77,10 +50,11 @@ function Navbar() {
           >
             <li>
               <button
-                className="dropdown-item"
+                className="dropdown-item d-flex align-items-center gap-2"
                 onClick={() => navigate("/mi-perfil")}
               >
-                Ver perfil
+                <i className="bi bi-person"></i>
+                <span>Ver perfil</span>
               </button>
             </li>
             <li>
@@ -88,10 +62,11 @@ function Navbar() {
             </li>
             <li>
               <button
-                className="dropdown-item text-danger"
+                className="dropdown-item text-danger d-flex align-items-center gap-2"
                 onClick={cerrarSesion}
               >
-                Cerrar sesión
+                <i className="bi bi-box-arrow-right"></i>
+                <span>Cerrar sesión</span>
               </button>
             </li>
           </ul>

@@ -18,11 +18,96 @@
   min-height: 480px;
 }
 
+.password-wrapper {
+  position: relative;
+  width: 100%;
+  margin: 8px 0;
+}
+
+.password-wrapper input {
+  width: 100%;
+  padding-right: 40px;
+  margin: 0;
+}
+
+.password-toggle-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  color: #6c757d;
+}
+
 .form-container {
   position: absolute;
   top: 0;
   height: 100%;
   transition: all 0.6s ease-in-out;
+}
+
+/* Contenedor relativo para la contraseña */
+.password-input-wrapper {
+  position: relative;
+  width: 100%;
+  margin: 8px 0;
+}
+
+/* El input de contraseña con espacio a la derecha para que el texto no tape el ícono */
+.password-input-wrapper input {
+  width: 100%;
+  padding-right: 45px;
+  margin: 0 !important;
+}
+
+/* El botón del ojito posicionado de forma absoluta y perfectamente centrado */
+.password-toggle-btn {
+  position: absolute;
+  right: 0;
+  top: 0;
+  height: 100%;
+  background: transparent;
+  border: none;
+  padding: 0 15px;
+  cursor: pointer;
+  color: #6c757d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0 !important;
+  border-radius: 0 5px 5px 0;
+}
+/* Modifica o añade esto en tu AuthContainer.css */
+.auth-container {
+  background-color: #fff;
+  border-radius: 10px;
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.25), 
+              0 10px 10px rgba(0, 0, 0, 0.22);
+  position: relative;
+  overflow: hidden;
+  
+  /* CAMBIO: Usamos un tamaño base más generoso que escala bien */
+  width: 900px;
+  max-width: 90vw;
+  min-height: 560px;
+}
+
+/* Opcional: Para pantallas muy grandes (como tu monitor de 20"+), podemos forzar un poquito más de escala general */
+@media (min-width: 1600px) {
+  .auth-container {
+    width: 1020px;
+    min-height: 620px;
+  }
+  
+  /* Hacemos que los textos y títulos respiren un poco mejor en pantallas grandes */
+  .form-container h1 {
+    font-size: 2.2rem;
+  }
+}
+
+.password-toggle-btn:hover {
+  color: #333;
+  background: rgba(0, 0, 0, 0.03);
 }
 
 .login-container {

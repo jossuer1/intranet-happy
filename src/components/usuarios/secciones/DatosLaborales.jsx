@@ -1,6 +1,12 @@
 import React from "react";
 
-const DatosLaborales = ({ formData, handleChange, catalogos = {} }) => {
+const DatosLaborales = ({
+  formData,
+  handleChange,
+  catalogos = {},
+  usuariosDisponibles = [],
+  idUsuarioActual = null,
+}) => {
   const handleSwitchChange = (e) => {
     const { name, checked } = e.target;
     handleChange({
@@ -29,6 +35,11 @@ const DatosLaborales = ({ formData, handleChange, catalogos = {} }) => {
           (c) => String(c.idArea) === String(formData.idArea),
         )
       : catalogos.cargos || [];
+
+  // Un usuario no puede ser su propio jefe directo
+  const posiblesJefes = usuariosDisponibles.filter(
+    (u) => !idUsuarioActual || u.idUsuario !== idUsuarioActual,
+  );
 
   return (
     <div>
@@ -89,6 +100,26 @@ const DatosLaborales = ({ formData, handleChange, catalogos = {} }) => {
               </option>
             ))}
           </select>
+        </div>
+        <div className="col-md-6">
+          <label className="form-label">Jefe Directo</label>
+          <select
+            className="form-select"
+            name="idJefeDirecto"
+            value={formData.idJefeDirecto || ""}
+            onChange={handleChange}
+          >
+            <option value="">Sin jefe directo asignado</option>
+            {posiblesJefes.map((u) => (
+              <option key={u.idUsuario} value={u.idUsuario}>
+                {u.nombre} {u.apellido}
+                {u.cargo ? ` — ${u.cargo}` : ""}
+              </option>
+            ))}
+          </select>
+          <small className="text-muted">
+            Se usa para el flujo de aprobación de vacaciones (jefe → RRHH).
+          </small>
         </div>
         <div className="col-md-6">
           <label className="form-label">Correo Empresarial</label>

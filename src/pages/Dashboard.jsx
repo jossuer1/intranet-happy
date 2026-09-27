@@ -33,95 +33,95 @@ function Dashboard() {
 
   return (
     <AppLayout>
-      <div className="container-fluid px-4 my-4 flex-grow-1">
-        <div className="row">
-          <div className="col-12">
-            <h5 className="mb-3 text-secondary fw-semibold">Novedades</h5>
+      <div className="container-fluid px-3 px-md-4 py-3 flex-grow-1 d-flex flex-column">
+        <h5 className="mb-3 text-secondary fw-semibold">Novedades</h5>
 
-            {cargando ? (
-              <div className="text-center py-5">
-                <div className="spinner-border text-primary" role="status">
-                  <span className="visually-hidden">Cargando carrusel...</span>
-                </div>
+        {cargando ? (
+          <div className="text-center py-5 my-auto">
+            <div className="spinner-border text-brand" role="status">
+              <span className="visually-hidden">Cargando carrusel...</span>
+            </div>
+          </div>
+        ) : imagenes.length === 0 ? (
+          <div className="text-center py-5 text-muted bg-white rounded-4 border shadow-sm my-auto">
+            <i className="bi bi-image-alt fs-1 d-block mb-2 text-secondary opacity-50"></i>
+            <p className="fw-medium mb-0">
+              No hay novedades publicadas por el momento.
+            </p>
+          </div>
+        ) : (
+          <div className="card shadow-sm border-0 rounded-4 overflow-hidden bg-white flex-grow-1 d-flex flex-column">
+            <div
+              id="dashboardCarousel"
+              ref={carouselRef}
+              className="carousel slide h-100 d-flex flex-column justify-content-center"
+            >
+              {/* Indicadores */}
+              <div className="carousel-indicators mb-2">
+                {imagenes.map((_, index) => (
+                  <button
+                    key={index}
+                    type="button"
+                    data-bs-target="#dashboardCarousel"
+                    data-bs-slide-to={index}
+                    className={index === 0 ? "active" : ""}
+                    aria-current={index === 0 ? "true" : "false"}
+                    aria-label={`Slide ${index + 1}`}
+                  ></button>
+                ))}
               </div>
-            ) : imagenes.length === 0 ? (
-              <div className="text-center py-5 text-muted bg-light rounded-4 border">
-                <i className="bi bi-image-alt fs-1 d-block mb-2 text-secondary opacity-50"></i>
-                <p className="fw-medium mb-0">
-                  No hay novedades publicadas por el momento.
-                </p>
-              </div>
-            ) : (
-              <div
-                id="dashboardCarousel"
-                ref={carouselRef}
-                className="carousel slide shadow-sm rounded-3 overflow-hidden w-100"
-              >
-                {/* Indicadores */}
-                <div className="carousel-indicators">
-                  {imagenes.map((_, index) => (
-                    <button
-                      key={index}
-                      type="button"
-                      data-bs-target="#dashboardCarousel"
-                      data-bs-slide-to={index}
-                      className={index === 0 ? "active" : ""}
-                      aria-current={index === 0 ? "true" : "false"}
-                      aria-label={`Slide ${index + 1}`}
-                    ></button>
-                  ))}
-                </div>
 
-                {/* Diapositivas */}
-                <div className="carousel-inner">
-                  {imagenes.map((img, index) => (
-                    <div
-                      key={img.idImagen || img.id || index}
-                      className={`carousel-item ${index === 0 ? "active" : ""}`}
-                    >
+              {/* Diapositivas */}
+              <div className="carousel-inner h-100">
+                {imagenes.map((img, index) => (
+                  <div
+                    key={img.idImagen || img.id || index}
+                    className={`carousel-item h-100 ${index === 0 ? "active" : ""}`}
+                  >
+                    <div className="d-flex justify-content-center align-items-center h-100 bg-dark rounded-3 overflow-hidden">
                       <img
                         src={img.rutaImagen}
-                        className="d-block w-100"
+                        className="img-fluid w-100 h-auto"
                         alt={img.titulo || img.descripcion || "Imagen carrusel"}
                         style={{
-                          maxHeight: "500px",
-                          objectFit: "cover",
-                          objectPosition: "center",
+                          maxHeight: "75vh", // Permite mayor altura en pantallas grandes
+                          objectFit: "contain", // Cambiado a 'contain' para que NUNCA se corte la imagen
+                          width: "100%",
                         }}
                       />
                     </div>
-                  ))}
-                </div>
-
-                {/* Controles de Navegación */}
-                <button
-                  className="carousel-control-prev"
-                  type="button"
-                  data-bs-target="#dashboardCarousel"
-                  data-bs-slide="prev"
-                >
-                  <span
-                    className="carousel-control-prev-icon"
-                    aria-hidden="true"
-                  ></span>
-                  <span className="visually-hidden">Anterior</span>
-                </button>
-                <button
-                  className="carousel-control-next"
-                  type="button"
-                  data-bs-target="#dashboardCarousel"
-                  data-bs-slide="next"
-                >
-                  <span
-                    className="carousel-control-next-icon"
-                    aria-hidden="true"
-                  ></span>
-                  <span className="visually-hidden">Siguiente</span>
-                </button>
+                  </div>
+                ))}
               </div>
-            )}
+
+              {/* Controles de Navegación */}
+              <button
+                className="carousel-control-prev"
+                type="button"
+                data-bs-target="#dashboardCarousel"
+                data-bs-slide="prev"
+              >
+                <span
+                  className="carousel-control-prev-icon bg-dark rounded-circle p-3 shadow"
+                  aria-hidden="true"
+                ></span>
+                <span className="visually-hidden">Anterior</span>
+              </button>
+              <button
+                className="carousel-control-next"
+                type="button"
+                data-bs-target="#dashboardCarousel"
+                data-bs-slide="next"
+              >
+                <span
+                  className="carousel-control-next-icon bg-dark rounded-circle p-3 shadow"
+                  aria-hidden="true"
+                ></span>
+                <span className="visually-hidden">Siguiente</span>
+              </button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </AppLayout>
   );

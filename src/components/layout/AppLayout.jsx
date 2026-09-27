@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import Navbar from "./Navbar";
 import { useAuthStore } from "../../store/useAuthStore";
+import logoHappyPay from "../../assets/images/logo_happy.jpg";
 
 const MODULOS_EMPLEADO_BASE = [
   {
@@ -23,10 +24,10 @@ const MODULOS_EMPLEADO_BASE = [
     icono: "bi-calendar-check",
   },
   {
-    key: "registro-asistencia",
-    titulo: "Marcación / Asistencia", // Reemplaza a Mis Permisos
-    ruta: "/registro-asistencia",
-    icono: "bi-clock-history",
+    key: "aprobar-vacaciones",
+    titulo: "Aprobar Vacaciones",
+    ruta: "/aprobar-vacaciones",
+    icono: "bi-clipboard-check",
   },
 ];
 
@@ -50,27 +51,32 @@ function AppLayout({ children, usuarioRol = null }) {
     location.pathname.startsWith("/gestion-vacaciones"),
   );
 
-  const rolUsuario =
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [location.pathname]);
+
+  const rolUsuario = String(
     usuarioRol ??
-    user?.rol ??
-    user?.nombreRol ??
-    user?.role ??
-    user?.tipoUsuario ??
-    user?.perfil ??
-    null;
+      user?.rol ??
+      user?.nombreRol ??
+      user?.role ??
+      user?.tipoUsuario ??
+      user?.perfil ??
+      "",
+  )
+    .trim()
+    .toUpperCase();
 
-  const esAdminORRHH = ["RRHH", "ADMIN"].includes(
-    String(rolUsuario || "").toUpperCase(),
-  );
+  const esRRHH = rolUsuario === "RRHH";
+  const esADMIN = rolUsuario === "ADMIN" || rolUsuario === "ADMINISTRADOR";
 
-  if (import.meta.env.DEV && user && rolUsuario === null) {
-    console.warn(
-      "[AppLayout] El perfil del usuario no trae ningún campo de rol reconocido " +
-        "(se probó: rol, nombreRol, role, tipoUsuario, perfil). Revisa la respuesta " +
-        "de /usuarios/mi-perfil y ajusta AppLayout.jsx. Perfil recibido:",
-      user,
-    );
-  }
+  useEffect(() => {
+    if (esADMIN && location.pathname !== "/gestion-catalogos") {
+      navigate("/gestion-catalogos", { replace: true });
+    }
+  }, [esADMIN, location.pathname, navigate]);
 
   const esGestionUsuariosActivo =
     location.pathname.startsWith("/gestion-usuarios");
@@ -81,17 +87,84 @@ function AppLayout({ children, usuarioRol = null }) {
   );
 
   return (
-    <div className="bg-light min-vh-100 d-flex flex-column">
-      <Navbar />
+    <div className="bg-light min-vh-100 d-flex">
+      <style>{`
+        .app-sidebar {
+          width: 270px;
+          height: 100vh;
+          position: sticky;
+          top: 0;
+          overflow-y: auto;
+          z-index: 1045;
+        }
 
-      <div className="d-flex flex-grow-1">
-        <aside
-          className="bg-white border-end p-3 d-none d-md-block flex-shrink-0"
-          style={{ width: "250px" }}
+        .sidebar-section-title {
+          font-size: 0.72rem;
+          letter-spacing: 0.08em;
+          color: #8c98a4;
+        }
+
+        .sidebar-item-btn {
+          transition: all 0.15s ease-in-out;
+          font-size: 0.92rem;
+        }
+
+        .sidebar-item-btn:hover {
+          background-color: rgba(30, 90, 99, 0.06) !important;
+        }
+
+        @media (max-width: 767.98px) {
+          .app-sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            z-index: 1050;
+            transform: translateX(-100%);
+            transition: transform 0.25s ease-in-out;
+            box-shadow: 2px 0 16px rgba(0, 0, 0, 0.2);
+          }
+          .app-sidebar.open {
+            transform: translateX(0);
+          }
+        }
+      `}</style>
+
+      {/* Sidebar completo de arriba a abajo */}
+      <aside
+        className={`app-sidebar bg-white border-end px-3 py-3 flex-shrink-0 d-md-block ${
+          sidebarOpen ? "open" : ""
+        }`}
+      >
+        {/* Cabecera del Sidebar con Logo + HappyPay */}
+        <div
+          className="d-flex align-items-center gap-2 pb-3 mb-3 border-bottom px-2 cursor-pointer"
+          style={{ cursor: "pointer", height: "48px" }}
+          onClick={() => navigate("/dashboard")}
         >
-          {/* Autogestión Empleado */}
+          <img
+            src={logoHappyPay}
+            alt="HappyPay Logo"
+            style={{ height: "36px", objectFit: "contain" }}
+          />
+          <span className="fw-bold fs-5 text-dark tracking-tight">
+            HappyPay
+          </span>
+        </div>
+
+        <div className="d-flex justify-content-end d-md-none mb-2">
+          <button
+            type="button"
+            className="btn-close"
+            onClick={() => setSidebarOpen(false)}
+            aria-label="Cerrar menú"
+          ></button>
+        </div>
+
+        {/* Autogestión Empleado */}
+        {!esADMIN && (
           <div className="mb-4">
-            <small className="text-uppercase text-muted fw-bold extra-small d-block mb-2">
+            <small className="text-uppercase fw-bold sidebar-section-title d-block mb-2 px-2">
               Autogestión
             </small>
             <ul className="nav nav-pills flex-column gap-1">
@@ -101,9 +174,9 @@ function AppLayout({ children, usuarioRol = null }) {
                   <li key={item.key} className="nav-item">
                     <button
                       type="button"
-                      className={`nav-link w-100 text-start border-0 d-flex align-items-center gap-2 py-2 px-3 rounded-2 ${
+                      className={`nav-link w-100 text-start border-0 d-flex align-items-center gap-3 py-2.5 px-3 rounded-2 sidebar-item-btn ${
                         activo
-                          ? "bg-brand text-white fw-semibold"
+                          ? "bg-brand text-white fw-semibold shadow-sm"
                           : "text-dark bg-transparent"
                       }`}
                       onClick={() => navigate(item.ruta)}
@@ -116,177 +189,214 @@ function AppLayout({ children, usuarioRol = null }) {
               })}
             </ul>
           </div>
+        )}
 
-          {/* Administración RRHH */}
-          {esAdminORRHH && (
-            <div>
-              <hr className="text-muted opacity-25 my-3" />
-              <small className="text-uppercase text-muted fw-bold extra-small d-block mb-2">
-                Administración RRHH
-              </small>
-              <ul className="nav nav-pills flex-column gap-1">
-                {/* GESTIÓN DE USUARIOS */}
-                <li className="nav-item">
-                  <button
-                    type="button"
-                    className={`nav-link w-100 text-start border-0 d-flex align-items-center justify-content-between py-2 px-3 rounded-2 ${
-                      esGestionUsuariosActivo
-                        ? "text-brand fw-semibold bg-brand-soft"
-                        : "text-dark bg-transparent"
-                    }`}
-                    onClick={() => setOpenGestionUsuarios(!openGestionUsuarios)}
-                  >
-                    <div className="d-flex align-items-center gap-2">
-                      <i className="bi bi-people fs-5"></i>
-                      <span>Gestión de Usuarios</span>
-                    </div>
-                    <i
-                      className={`bi bi-chevron-${openGestionUsuarios ? "down" : "right"} small`}
-                    ></i>
-                  </button>
+        {/* Administración RRHH */}
+        {esRRHH && (
+          <div>
+            <hr className="text-muted opacity-25 my-3" />
+            <small className="text-uppercase fw-bold sidebar-section-title d-block mb-2 px-2">
+              Administración RRHH
+            </small>
+            <ul className="nav nav-pills flex-column gap-1">
+              {/* GESTIÓN DE USUARIOS */}
+              <li className="nav-item">
+                <button
+                  type="button"
+                  className={`nav-link w-100 text-start border-0 d-flex align-items-center justify-content-between py-2.5 px-3 rounded-2 sidebar-item-btn ${
+                    esGestionUsuariosActivo
+                      ? "text-brand fw-semibold bg-brand-soft"
+                      : "text-dark bg-transparent"
+                  }`}
+                  onClick={() => setOpenGestionUsuarios(!openGestionUsuarios)}
+                >
+                  <div className="d-flex align-items-center gap-3">
+                    <i className="bi bi-people fs-5"></i>
+                    <span>Gestión de Usuarios</span>
+                  </div>
+                  <i
+                    className={`bi bi-chevron-${openGestionUsuarios ? "down" : "right"} small opacity-75`}
+                  ></i>
+                </button>
 
-                  {openGestionUsuarios && (
-                    <ul className="nav nav-pills flex-column ms-3 mt-1 ps-2 border-start gap-1">
-                      <li className="nav-item">
-                        <button
-                          type="button"
-                          className={`nav-link w-100 text-start border-0 py-1 px-3 rounded-2 small d-flex align-items-center gap-2 ${
-                            location.pathname === "/gestion-usuarios"
-                              ? "bg-brand text-white fw-semibold"
-                              : "text-muted bg-transparent"
-                          }`}
-                          onClick={() => navigate("/gestion-usuarios")}
-                        >
-                          <i className="bi bi-list-ul"></i>
-                          <span>Ver Usuarios</span>
-                        </button>
-                      </li>
-                      <li className="nav-item">
-                        <button
-                          type="button"
-                          className={`nav-link w-100 text-start border-0 py-1 px-3 rounded-2 small d-flex align-items-center gap-2 ${
-                            location.pathname === "/gestion-usuarios/crear"
-                              ? "bg-brand text-white fw-semibold"
-                              : "text-muted bg-transparent"
-                          }`}
-                          onClick={() => navigate("/gestion-usuarios/crear")}
-                        >
-                          <i className="bi bi-person-plus"></i>
-                          <span>Crear Usuario</span>
-                        </button>
-                      </li>
-                    </ul>
-                  )}
-                </li>
+                {openGestionUsuarios && (
+                  <ul className="nav nav-pills flex-column ms-3 mt-1 ps-2 border-start gap-1">
+                    <li className="nav-item">
+                      <button
+                        type="button"
+                        className={`nav-link w-100 text-start border-0 py-2 px-3 rounded-2 small d-flex align-items-center gap-2 sidebar-item-btn ${
+                          location.pathname === "/gestion-usuarios"
+                            ? "bg-brand text-white fw-semibold shadow-sm"
+                            : "text-secondary bg-transparent"
+                        }`}
+                        onClick={() => navigate("/gestion-usuarios")}
+                      >
+                        <i className="bi bi-list-ul"></i>
+                        <span>Ver Usuarios</span>
+                      </button>
+                    </li>
+                    <li className="nav-item">
+                      <button
+                        type="button"
+                        className={`nav-link w-100 text-start border-0 py-2 px-3 rounded-2 small d-flex align-items-center gap-2 sidebar-item-btn ${
+                          location.pathname === "/gestion-usuarios/crear"
+                            ? "bg-brand text-white fw-semibold shadow-sm"
+                            : "text-secondary bg-transparent"
+                        }`}
+                        onClick={() => navigate("/gestion-usuarios/crear")}
+                      >
+                        <i className="bi bi-person-plus"></i>
+                        <span>Crear Usuario</span>
+                      </button>
+                    </li>
+                  </ul>
+                )}
+              </li>
 
-                {/* GESTIÓN DE NOVEDADES */}
-                <li className="nav-item">
-                  <button
-                    type="button"
-                    className={`nav-link w-100 text-start border-0 d-flex align-items-center justify-content-between py-2 px-3 rounded-2 ${
-                      esGestionNovedadesActivo
-                        ? "text-brand fw-semibold bg-brand-soft"
-                        : "text-dark bg-transparent"
-                    }`}
-                    onClick={() =>
-                      setOpenGestionNovedades(!openGestionNovedades)
-                    }
-                  >
-                    <div className="d-flex align-items-center gap-2">
-                      <i className="bi bi-megaphone fs-5"></i>
-                      <span>Gestión Novedades</span>
-                    </div>
-                    <i
-                      className={`bi bi-chevron-${openGestionNovedades ? "down" : "right"} small`}
-                    ></i>
-                  </button>
+              {/* GESTIÓN DE NOVEDADES */}
+              <li className="nav-item">
+                <button
+                  type="button"
+                  className={`nav-link w-100 text-start border-0 d-flex align-items-center justify-content-between py-2.5 px-3 rounded-2 sidebar-item-btn ${
+                    esGestionNovedadesActivo
+                      ? "text-brand fw-semibold bg-brand-soft"
+                      : "text-dark bg-transparent"
+                  }`}
+                  onClick={() => setOpenGestionNovedades(!openGestionNovedades)}
+                >
+                  <div className="d-flex align-items-center gap-3">
+                    <i className="bi bi-megaphone fs-5"></i>
+                    <span>Gestión Novedades</span>
+                  </div>
+                  <i
+                    className={`bi bi-chevron-${openGestionNovedades ? "down" : "right"} small opacity-75`}
+                  ></i>
+                </button>
 
-                  {openGestionNovedades && (
-                    <ul className="nav nav-pills flex-column ms-3 mt-1 ps-2 border-start gap-1">
-                      <li className="nav-item">
-                        <button
-                          type="button"
-                          className={`nav-link w-100 text-start border-0 py-1 px-3 rounded-2 small d-flex align-items-center gap-2 ${
-                            location.pathname === "/gestion-novedades" ||
-                            location.pathname === "/gestion-novedades/activos"
-                              ? "bg-brand text-white fw-semibold"
-                              : "text-muted bg-transparent"
-                          }`}
-                          onClick={() => navigate("/gestion-novedades/activos")}
-                        >
-                          <i className="bi bi-images"></i>
-                          <span>Banners Activos</span>
-                        </button>
-                      </li>
-                      <li className="nav-item">
-                        <button
-                          type="button"
-                          className={`nav-link w-100 text-start border-0 py-1 px-3 rounded-2 small d-flex align-items-center gap-2 ${
-                            location.pathname === "/gestion-novedades/publicar"
-                              ? "bg-brand text-white fw-semibold"
-                              : "text-muted bg-transparent"
-                          }`}
-                          onClick={() =>
-                            navigate("/gestion-novedades/publicar")
-                          }
-                        >
-                          <i className="bi bi-cloud-arrow-up"></i>
-                          <span>Publicar Banner</span>
-                        </button>
-                      </li>
-                    </ul>
-                  )}
-                </li>
+                {openGestionNovedades && (
+                  <ul className="nav nav-pills flex-column ms-3 mt-1 ps-2 border-start gap-1">
+                    <li className="nav-item">
+                      <button
+                        type="button"
+                        className={`nav-link w-100 text-start border-0 py-2 px-3 rounded-2 small d-flex align-items-center gap-2 sidebar-item-btn ${
+                          location.pathname === "/gestion-novedades" ||
+                          location.pathname === "/gestion-novedades/activos"
+                            ? "bg-brand text-white fw-semibold shadow-sm"
+                            : "text-secondary bg-transparent"
+                        }`}
+                        onClick={() => navigate("/gestion-novedades/activos")}
+                      >
+                        <i className="bi bi-images"></i>
+                        <span>Banners Activos</span>
+                      </button>
+                    </li>
+                    <li className="nav-item">
+                      <button
+                        type="button"
+                        className={`nav-link w-100 text-start border-0 py-2 px-3 rounded-2 small d-flex align-items-center gap-2 sidebar-item-btn ${
+                          location.pathname === "/gestion-novedades/publicar"
+                            ? "bg-brand text-white fw-semibold shadow-sm"
+                            : "text-secondary bg-transparent"
+                        }`}
+                        onClick={() => navigate("/gestion-novedades/publicar")}
+                      >
+                        <i className="bi bi-cloud-arrow-up"></i>
+                        <span>Publicar Banner</span>
+                      </button>
+                    </li>
+                  </ul>
+                )}
+              </li>
 
-                {/* GESTIÓN DE VACACIONES */}
-                <li className="nav-item">
-                  <button
-                    type="button"
-                    className={`nav-link w-100 text-start border-0 d-flex align-items-center justify-content-between py-2 px-3 rounded-2 ${
-                      esGestionVacacionesActivo
-                        ? "text-brand fw-semibold bg-brand-soft"
-                        : "text-dark bg-transparent"
-                    }`}
-                    onClick={() =>
-                      setOpenGestionVacaciones(!openGestionVacaciones)
-                    }
-                  >
-                    <div className="d-flex align-items-center gap-2">
-                      <i className="bi bi-calendar2-range fs-5"></i>
-                      <span>Gestión Vacaciones</span>
-                    </div>
-                    <i
-                      className={`bi bi-chevron-${openGestionVacaciones ? "down" : "right"} small`}
-                    ></i>
-                  </button>
+              {/* GESTIÓN DE VACACIONES */}
+              <li className="nav-item">
+                <button
+                  type="button"
+                  className={`nav-link w-100 text-start border-0 d-flex align-items-center justify-content-between py-2.5 px-3 rounded-2 sidebar-item-btn ${
+                    esGestionVacacionesActivo
+                      ? "text-brand fw-semibold bg-brand-soft"
+                      : "text-dark bg-transparent"
+                  }`}
+                  onClick={() =>
+                    setOpenGestionVacaciones(!openGestionVacaciones)
+                  }
+                >
+                  <div className="d-flex align-items-center gap-3">
+                    <i className="bi bi-calendar2-range fs-5"></i>
+                    <span>Gestión Vacaciones</span>
+                  </div>
+                  <i
+                    className={`bi bi-chevron-${openGestionVacaciones ? "down" : "right"} small opacity-75`}
+                  ></i>
+                </button>
 
-                  {openGestionVacaciones && (
-                    <ul className="nav nav-pills flex-column ms-3 mt-1 ps-2 border-start gap-1">
-                      <li className="nav-item">
-                        <button
-                          type="button"
-                          className={`nav-link w-100 text-start border-0 py-1 px-3 rounded-2 small d-flex align-items-center gap-2 ${
-                            location.pathname === "/gestion-vacaciones"
-                              ? "bg-brand text-white fw-semibold"
-                              : "text-muted bg-transparent"
-                          }`}
-                          onClick={() => navigate("/gestion-vacaciones")}
-                        >
-                          <i className="bi bi-card-checklist"></i>
-                          <span>Gestión Vacaciones</span>
-                        </button>
-                      </li>
-                    </ul>
-                  )}
-                </li>
-              </ul>
-            </div>
-          )}
-        </aside>
+                {openGestionVacaciones && (
+                  <ul className="nav nav-pills flex-column ms-3 mt-1 ps-2 border-start gap-1">
+                    <li className="nav-item">
+                      <button
+                        type="button"
+                        className={`nav-link w-100 text-start border-0 py-2 px-3 rounded-2 small d-flex align-items-center gap-2 sidebar-item-btn ${
+                          location.pathname === "/gestion-vacaciones"
+                            ? "bg-brand text-white fw-semibold shadow-sm"
+                            : "text-secondary bg-transparent"
+                        }`}
+                        onClick={() => navigate("/gestion-vacaciones")}
+                      >
+                        <i className="bi bi-card-checklist"></i>
+                        <span>Gestión Vacaciones</span>
+                      </button>
+                    </li>
+                  </ul>
+                )}
+              </li>
+            </ul>
+          </div>
+        )}
 
-        <main className="flex-grow-1 p-3 p-md-4 overflow-auto d-flex flex-column">
-          {children}
-        </main>
+        {/* Administración (ADMIN) */}
+        {esADMIN && (
+          <div>
+            <small className="text-uppercase fw-bold sidebar-section-title d-block mb-2 px-2">
+              Administración
+            </small>
+            <ul className="nav nav-pills flex-column gap-1">
+              <li className="nav-item">
+                <button
+                  type="button"
+                  className={`nav-link w-100 text-start border-0 d-flex align-items-center gap-3 py-2.5 px-3 rounded-2 sidebar-item-btn ${
+                    location.pathname === "/gestion-catalogos"
+                      ? "bg-brand text-white fw-semibold shadow-sm"
+                      : "text-dark bg-transparent"
+                  }`}
+                  onClick={() => navigate("/gestion-catalogos")}
+                >
+                  <i className="bi bi-collection fs-5"></i>
+                  <span>Catálogos</span>
+                </button>
+              </li>
+            </ul>
+          </div>
+        )}
+      </aside>
+
+      {sidebarOpen && (
+        <div
+          className="d-md-none"
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.4)",
+            zIndex: 1049,
+          }}
+          onClick={() => setSidebarOpen(false)}
+        ></div>
+      )}
+
+      {/* Contenedor Principal (Navbar Blanco Delgado + Área de Contenido) */}
+      <div className="flex-grow-1 d-flex flex-column min-vh-100 overflow-hidden">
+        <Navbar />
+
+        <main className="flex-grow-1 p-3 p-md-4 overflow-auto">{children}</main>
       </div>
     </div>
   );

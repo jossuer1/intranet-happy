@@ -14,20 +14,15 @@ import {
   getEtnias,
   getEstadosCiviles,
   getGeneros,
+  getTiposSangre,
 } from "../../services/catalogosService.js";
 
-/**
- * Formulario único para crear y editar usuarios.
- *
- * - Si se recibe `usuarioOriginal` -> modo EDICIÓN (precarga datos, envía ids
- *   de las sublistas y las listas "AEliminar").
- * - Si no se recibe `usuarioOriginal` -> modo CREACIÓN (formulario vacío,
- *   payload sin ids ni listas de eliminación).
- *
- * En ambos casos se delega el guardado al padre a través de `onGuardar`,
- * que recibe `(idUsuario, payload)`. En creación `idUsuario` es `null`.
- */
-const UsuarioFormCard = ({ usuarioOriginal = null, onGuardar, onCancelar }) => {
+const UsuarioFormCard = ({
+  usuarioOriginal = null,
+  usuariosDisponibles = [],
+  onGuardar,
+  onCancelar,
+}) => {
   const esEdicion = Boolean(usuarioOriginal?.idUsuario);
 
   // Wizard paso a paso: solo aplica en modo creación.
@@ -68,6 +63,7 @@ const UsuarioFormCard = ({ usuarioOriginal = null, onGuardar, onCancelar }) => {
     etnias: [],
     estadosCiviles: [],
     generos: [],
+    tiposSangre: [],
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -93,6 +89,7 @@ const UsuarioFormCard = ({ usuarioOriginal = null, onGuardar, onCancelar }) => {
         resEtnias,
         resEstadosCiviles,
         resGeneros,
+        resTiposSangre,
       ] = await Promise.all([
         fetchSeguro(getAreas),
         fetchSeguro(getCargos),
@@ -101,6 +98,7 @@ const UsuarioFormCard = ({ usuarioOriginal = null, onGuardar, onCancelar }) => {
         fetchSeguro(getEtnias),
         fetchSeguro(getEstadosCiviles),
         fetchSeguro(getGeneros),
+        fetchSeguro(getTiposSangre),
       ]);
 
       setCatalogos({
@@ -111,6 +109,7 @@ const UsuarioFormCard = ({ usuarioOriginal = null, onGuardar, onCancelar }) => {
         etnias: resEtnias,
         estadosCiviles: resEstadosCiviles,
         generos: resGeneros,
+        tiposSangre: resTiposSangre,
       });
     };
 
@@ -139,9 +138,11 @@ const UsuarioFormCard = ({ usuarioOriginal = null, onGuardar, onCancelar }) => {
         idGenero: usuarioOriginal.idGenero || "",
         idEstadoCivil: usuarioOriginal.idEstadoCivil || "",
         idEtnia: usuarioOriginal.idEtnia || "",
+        idTipoSangre: usuarioOriginal.idTipoSangre || "",
         idArea: usuarioOriginal.idArea || "",
         idCargo: usuarioOriginal.idCargo || "",
         idCiudad: usuarioOriginal.idCiudad || "",
+        idJefeDirecto: usuarioOriginal.idJefeDirecto || "",
         // El backend expone la foto guardada como urlImagenPerfil (PerfilDto)
         foto: usuarioOriginal.urlImagenPerfil || "",
         tieneVacaciones: usuarioOriginal.tieneVacaciones ?? true,
@@ -186,11 +187,15 @@ const UsuarioFormCard = ({ usuarioOriginal = null, onGuardar, onCancelar }) => {
           ? Number(formData.idEstadoCivil)
           : null,
         idEtnia: formData.idEtnia ? Number(formData.idEtnia) : null,
+        idTipoSangre: formData.idTipoSangre
+          ? Number(formData.idTipoSangre)
+          : null,
         idArea: formData.idArea ? Number(formData.idArea) : null,
         idCargo: formData.idCargo ? Number(formData.idCargo) : null,
         idCiudad: formData.idCiudad ? Number(formData.idCiudad) : null,
-        // La foto NO va en este payload JSON: se sube aparte (multipart) a
-        // POST /usuarios/{id}/foto una vez que el usuario existe/fue guardado.
+        idJefeDirecto: formData.idJefeDirecto
+          ? Number(formData.idJefeDirecto)
+          : null,
         tieneVacaciones: formData.tieneVacaciones,
         diasVacacionesAsignados: formData.tieneVacaciones
           ? Number(formData.diasVacacionesAsignados || 15)
@@ -200,6 +205,15 @@ const UsuarioFormCard = ({ usuarioOriginal = null, onGuardar, onCancelar }) => {
       const payload = esEdicion
         ? {
             ...payloadBase,
+            familiares: formData.familiares.map((f) => ({
+              idFamiliar: f.idFamiliar || null,
+              nombre: f.nombre,
+              apellido: f.apellido || null,
+              parentesco: f.parentesco || null,
+              fechaNacimiento: f.fechaNacimiento
+                ? new Date(f.fechaNacimiento).toISOString()
+                : null,
+            })),
             titulos: formData.titulos.map((t) => ({
               idTitulo: t.idTitulo || null,
               nombreTitulo: t.nombreTitulo,
@@ -229,6 +243,14 @@ const UsuarioFormCard = ({ usuarioOriginal = null, onGuardar, onCancelar }) => {
           }
         : {
             ...payloadBase,
+            familiares: formData.familiares.map((f) => ({
+              nombre: f.nombre,
+              apellido: f.apellido || null,
+              parentesco: f.parentesco || null,
+              fechaNacimiento: f.fechaNacimiento
+                ? new Date(f.fechaNacimiento).toISOString()
+                : null,
+            })),
             titulos: formData.titulos.map((t) => ({
               nombreTitulo: t.nombreTitulo,
               institucion: t.institucion || null,
@@ -355,6 +377,8 @@ const UsuarioFormCard = ({ usuarioOriginal = null, onGuardar, onCancelar }) => {
                 formData={formData}
                 handleChange={handleChange}
                 catalogos={catalogos}
+                usuariosDisponibles={usuariosDisponibles}
+                idUsuarioActual={usuarioOriginal?.idUsuario}
               />
               <Familiares
                 familiares={formData.familiares}
@@ -400,6 +424,8 @@ const UsuarioFormCard = ({ usuarioOriginal = null, onGuardar, onCancelar }) => {
                   formData={formData}
                   handleChange={handleChange}
                   catalogos={catalogos}
+                  usuariosDisponibles={usuariosDisponibles}
+                  idUsuarioActual={usuarioOriginal?.idUsuario}
                 />
               )}
               {step === 3 && (

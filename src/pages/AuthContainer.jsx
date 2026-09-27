@@ -5,13 +5,10 @@ import { useAuthStore } from "../store/useAuthStore";
 import { authService } from "../services/authService";
 import "./AuthContainer.css";
 
-
-const IMAGEN_OVERLAY =
-  "";
+const IMAGEN_OVERLAY = "";
 
 function AuthContainer() {
- 
-  const [panelActivo, setPanelActivo] = useState(false); 
+  const [panelActivo, setPanelActivo] = useState(false);
 
   const [cedula, setCedula] = useState("");
   const [contrasena, setContrasena] = useState("");
@@ -20,6 +17,12 @@ function AuthContainer() {
   const [nuevaContrasena, setNuevaContrasena] = useState("");
   const [confirmarContrasena, setConfirmarContrasena] = useState("");
   const [procesandoCambio, setProcesandoCambio] = useState(false);
+
+  // ---------- Estados para ver/ocultar contraseñas (el ojito) ----------
+  const [mostrarPasswordLogin, setMostrarPasswordLogin] = useState(false);
+  const [mostrarNuevaPassword, setMostrarNuevaPassword] = useState(false);
+  const [mostrarConfirmarPassword, setMostrarConfirmarPassword] =
+    useState(false);
 
   // ---------- Estados de Recuperar Contraseña ----------
   const [correo, setCorreo] = useState("");
@@ -76,6 +79,17 @@ function AuthContainer() {
   const manejarCambioObligatorio = async (e) => {
     e.preventDefault();
 
+    const regexPassword =
+      /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,}$/;
+
+    if (!regexPassword.test(nuevaContrasena)) {
+      Toast.fire({
+        icon: "error",
+        title: "La contraseña no cumple con los requisitos de seguridad",
+      });
+      return;
+    }
+
     if (nuevaContrasena !== confirmarContrasena) {
       Toast.fire({
         icon: "error",
@@ -125,7 +139,6 @@ function AuthContainer() {
       });
 
       setCorreo("");
-      // Regresa automáticamente al panel de login luego de enviar
       setTimeout(() => setPanelActivo(false), 1800);
     } catch (error) {
       Toast.fire({
@@ -139,9 +152,7 @@ function AuthContainer() {
 
   return (
     <div className="auth-page">
-      <div
-        className={`auth-container ${panelActivo ? "panel-active" : ""}`}
-      >
+      <div className={`auth-container ${panelActivo ? "panel-active" : ""}`}>
         {/* OVERLAY DE CAMBIO OBLIGATORIO (primer ingreso) */}
         {requiereCambioPassword && (
           <div className="change-password-overlay">
@@ -153,33 +164,85 @@ function AuthContainer() {
               <p className="text-muted small">
                 Establece una nueva contraseña para continuar.
               </p>
+              <div
+                className="text-start alert alert-light border p-2 mt-2"
+                style={{ fontSize: "0.8rem" }}
+              >
+                <p className="mb-1 fw-bold text-dark">
+                  La contraseña debe contener:
+                </p>
+                <ul className="mb-0 ps-3 text-muted">
+                  <li>Mínimo de 8 caracteres</li>
+                  <li>Al menos una letra mayúscula</li>
+                  <li>Al menos un número</li>
+                  <li>Al menos un carácter especial (ej. @$!%*?&)</li>
+                </ul>
+              </div>
             </div>
 
             <form onSubmit={manejarCambioObligatorio}>
-              <input
-                type="password"
-                placeholder="Nueva contraseña"
-                value={nuevaContrasena}
-                onChange={(e) => setNuevaContrasena(e.target.value)}
-                required
-                disabled={procesandoCambio}
-              />
-              <input
-                type="password"
-                placeholder="Confirmar contraseña"
-                value={confirmarContrasena}
-                onChange={(e) => setConfirmarContrasena(e.target.value)}
-                required
-                disabled={procesandoCambio}
-              />
+              {/* Nueva Contraseña */}
+              <div className="password-input-wrapper">
+                <input
+                  type={mostrarNuevaPassword ? "text" : "password"}
+                  placeholder="Nueva contraseña"
+                  value={nuevaContrasena}
+                  onChange={(e) => setNuevaContrasena(e.target.value)}
+                  required
+                  disabled={procesandoCambio}
+                />
+                <button
+                  type="button"
+                  className="password-toggle-btn"
+                  onClick={() => setMostrarNuevaPassword(!mostrarNuevaPassword)}
+                  disabled={procesandoCambio}
+                >
+                  <i
+                    className={`bi ${mostrarNuevaPassword ? "bi-eye-slash" : "bi-eye"}`}
+                  ></i>
+                </button>
+              </div>
 
-              <button type="submit" disabled={procesandoCambio}>
-                {procesandoCambio ? "Guardando..." : "Guardar contraseña"}
+              {/* Confirmar Contraseña */}
+              <div className="password-input-wrapper">
+                <input
+                  type={mostrarConfirmarPassword ? "text" : "password"}
+                  placeholder="Confirmar contraseña"
+                  value={confirmarContrasena}
+                  onChange={(e) => setConfirmarContrasena(e.target.value)}
+                  required
+                  disabled={procesandoCambio}
+                />
+                <button
+                  type="button"
+                  className="password-toggle-btn"
+                  onClick={() =>
+                    setMostrarConfirmarPassword(!mostrarConfirmarPassword)
+                  }
+                  disabled={procesandoCambio}
+                >
+                  <i
+                    className={`bi ${mostrarConfirmarPassword ? "bi-eye-slash" : "bi-eye"}`}
+                  ></i>
+                </button>
+              </div>
+
+              <button
+                type="submit"
+                disabled={procesandoCambio}
+                style={{ marginTop: "15px" }}
+              >
+                {procesandoCambio ? "Guardando..." : "GUARDAR CONTRASEÑA"}
               </button>
 
               <a
                 href="#"
                 className="switch-link"
+                style={{
+                  display: "block",
+                  textAlign: "center",
+                  marginTop: "15px",
+                }}
                 onClick={(e) => {
                   e.preventDefault();
                   setRequiereCambioPassword(false);
@@ -206,14 +269,28 @@ function AuthContainer() {
               required
               disabled={cargando}
             />
-            <input
-              type="password"
-              placeholder="Contraseña"
-              value={contrasena}
-              onChange={(e) => setContrasena(e.target.value)}
-              required
-              disabled={cargando}
-            />
+
+            {/* Input Contraseña Login */}
+            <div className="password-input-wrapper">
+              <input
+                type={mostrarPasswordLogin ? "text" : "password"}
+                placeholder="Contraseña"
+                value={contrasena}
+                onChange={(e) => setContrasena(e.target.value)}
+                required
+                disabled={cargando}
+              />
+              <button
+                type="button"
+                className="password-toggle-btn"
+                onClick={() => setMostrarPasswordLogin(!mostrarPasswordLogin)}
+                disabled={cargando}
+              >
+                <i
+                  className={`bi ${mostrarPasswordLogin ? "bi-eye-slash" : "bi-eye"}`}
+                ></i>
+              </button>
+            </div>
 
             <a
               href="#"

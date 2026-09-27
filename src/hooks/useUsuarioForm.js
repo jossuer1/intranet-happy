@@ -13,6 +13,7 @@ export const useUsuarioForm = (initialData = {}) => {
     idGenero: "",
     idEstadoCivil: "",
     idEtnia: "",
+    idTipoSangre: "",
     foto: "", // Base64 (solo para <img> de vista previa) o URL ya existente en edición
     fotoArchivo: null, // File real que se sube a Cloudinary al guardar
 
@@ -25,6 +26,7 @@ export const useUsuarioForm = (initialData = {}) => {
     fechaIngreso: "",
     tieneVacaciones: true,
     diasVacacionesAsignados: 15,
+    idJefeDirecto: "",
 
     // Sublistas
     titulos: [],

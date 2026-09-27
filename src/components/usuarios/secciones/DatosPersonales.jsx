@@ -157,6 +157,22 @@ const DatosPersonales = ({
           </select>
         </div>
         <div className="col-md-4">
+          <label className="form-label">Tipo de Sangre</label>
+          <select
+            className="form-select"
+            name="idTipoSangre"
+            value={formData.idTipoSangre || ""}
+            onChange={handleChange}
+          >
+            <option value="">Seleccione...</option>
+            {catalogos.tiposSangre?.map((t) => (
+              <option key={t.idTipoSangre || t.id} value={t.idTipoSangre || t.id}>
+                {t.nombre}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="col-md-4">
           <label className="form-label">Celular Personal</label>
           <input
             type="text"

@@ -22,6 +22,11 @@ export const actualizarVacaciones = (idUsuario, dto) =>
 
 export const actualizarVacacionesUsuario = actualizarVacaciones;
 
+// Activa (true) o desactiva (false) la cuenta de un usuario. Un usuario
+// desactivado no puede iniciar sesión ni cambiar su contraseña.
+export const actualizarEstadoUsuario = (idUsuario, activar) =>
+  apiClient.patch(`/usuarios/${idUsuario}/estado`, { activar });
+
 // Sube/reemplaza la foto de perfil (multipart). Devuelve { urlImagenPerfil }.
 export const subirFotoPerfil = (idUsuario, archivo) => {
   const formData = new FormData();
@@ -40,5 +45,6 @@ export const usuariosService = {
   actualizarUsuario,
   actualizarVacaciones,
   actualizarVacacionesUsuario,
+  actualizarEstadoUsuario,
   subirFotoPerfil,
 };

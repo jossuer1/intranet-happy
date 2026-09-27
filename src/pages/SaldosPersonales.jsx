@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import Swal from "sweetalert2";
 import AppLayout from "../components/layout/AppLayout";
+import HistorialVacacionesPanel from "../components/vacaciones/HistorialVacacionesPanel";
 import {
   getSaldosVacaciones,
   acreditarDiasVacaciones,
@@ -12,6 +13,7 @@ function SaldosPersonal() {
   const [error, setError] = useState(null);
 
   const [usuarioAcreditar, setUsuarioAcreditar] = useState(null);
+  const [usuarioHistorial, setUsuarioHistorial] = useState(null);
   const [diasAcreditar, setDiasAcreditar] = useState("");
   const [observacion, setObservacion] = useState("");
   const [procesando, setProcesando] = useState(false);
@@ -186,6 +188,14 @@ function SaldosPersonal() {
                           <td className="text-end">
                             <button
                               type="button"
+                              className="btn btn-sm btn-outline-info rounded-3 px-3 me-2"
+                              onClick={() => setUsuarioHistorial(item)}
+                            >
+                              <i className="bi bi-clock-history me-1"></i>
+                              Historial
+                            </button>
+                            <button
+                              type="button"
                               className="btn btn-sm btn-outline-success rounded-3 px-3"
                               disabled={sinBeneficio}
                               onClick={() => setUsuarioAcreditar(item)}
@@ -201,6 +211,14 @@ function SaldosPersonal() {
                 </tbody>
               </table>
             </div>
+          )}
+
+          {/* Panel flotante de historial (no navega, se monta encima de la tabla) */}
+          {usuarioHistorial && (
+            <HistorialVacacionesPanel
+              usuario={usuarioHistorial}
+              onClose={() => setUsuarioHistorial(null)}
+            />
           )}
 
           {/* Modal para Sumar/Acreditar Días */}

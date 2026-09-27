@@ -11,12 +11,15 @@ import {
   crearUsuario,
   actualizarUsuario,
   actualizarVacacionesUsuario,
+  actualizarEstadoUsuario,
   subirFotoPerfil,
 } from "../services/usuariosService.js";
+import { useAuthStore } from "../store/useAuthStore";
 
 function GestionUsuarios() {
   const location = useLocation();
   const navigate = useNavigate();
+  const usuarioLogueado = useAuthStore((state) => state.user);
 
   const esCrear = location.pathname === "/gestion-usuarios/crear";
 
@@ -41,9 +44,7 @@ function GestionUsuarios() {
   };
 
   useEffect(() => {
-    if (!esCrear) {
-      cargarUsuarios();
-    }
+    cargarUsuarios();
   }, [location.pathname]);
 
   // La fila de la tabla (usuario) solo trae los campos resumidos de
@@ -69,6 +70,59 @@ function GestionUsuarios() {
 
   const cancelarEdicion = () => {
     setUsuarioSeleccionado(null);
+  };
+
+  // Activa o desactiva la cuenta de un usuario. No se permite que RRHH se
+  // desactive a sí mismo desde esta pantalla (evita quedarse sin acceso).
+  const cambiarEstadoUsuario = async (usuario) => {
+    if (!usuario?.idUsuario) return;
+
+    if (usuario.idUsuario === usuarioLogueado?.idUsuario) {
+      Swal.fire({
+        icon: "warning",
+        title: "No puedes cambiar tu propio estado",
+        text: "Pide a otro usuario de RRHH que lo haga por ti.",
+      });
+      return;
+    }
+
+    const activar = !(
+      usuario.estado === true ||
+      usuario.estado === "Activo" ||
+      usuario.estado === 1
+    );
+
+    const confirmacion = await Swal.fire({
+      icon: "warning",
+      title: activar ? "¿Activar esta cuenta?" : "¿Desactivar esta cuenta?",
+      text: activar
+        ? "El usuario podrá volver a iniciar sesión."
+        : "El usuario no podrá iniciar sesión ni cambiar su contraseña.",
+      showCancelButton: true,
+      confirmButtonText: "Sí, continuar",
+      cancelButtonText: "Cancelar",
+    });
+    if (!confirmacion.isConfirmed) return;
+
+    try {
+      await actualizarEstadoUsuario(usuario.idUsuario, activar);
+      await cargarUsuarios();
+      Swal.fire({
+        toast: true,
+        position: "top-end",
+        icon: "success",
+        title: activar ? "Cuenta activada" : "Cuenta desactivada",
+        showConfirmButton: false,
+        timer: 1800,
+        timerProgressBar: true,
+      });
+    } catch (err) {
+      Swal.fire({
+        icon: "error",
+        title: "No se pudo cambiar el estado",
+        text: err.message || "Inténtalo de nuevo en unos segundos.",
+      });
+    }
   };
 
   // Guarda tanto la creación como la edición de un usuario.
@@ -153,12 +207,14 @@ function GestionUsuarios() {
           {/* MODO CREACIÓN Y EDICIÓN: mismo formulario, mismo flujo de guardado */}
           {esCrear ? (
             <UsuarioFormCard
+              usuariosDisponibles={usuarios}
               onGuardar={guardarUsuario}
               onCancelar={() => navigate("/gestion-usuarios")}
             />
           ) : usuarioSeleccionado ? (
             <UsuarioFormCard
               usuarioOriginal={usuarioSeleccionado}
+              usuariosDisponibles={usuarios}
               onGuardar={guardarUsuario}
               onCancelar={cancelarEdicion}
             />
@@ -195,7 +251,11 @@ function GestionUsuarios() {
                     {error}
                   </div>
                 ) : (
-                  <TablaUsuarios usuarios={usuarios} onEditar={abrirEdicion} />
+                  <TablaUsuarios
+                    usuarios={usuarios}
+                    onEditar={abrirEdicion}
+                    onCambiarEstado={cambiarEstadoUsuario}
+                  />
                 )}
               </div>
             </div>
