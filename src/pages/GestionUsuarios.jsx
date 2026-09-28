@@ -12,6 +12,7 @@ import {
   actualizarUsuario,
   actualizarVacacionesUsuario,
   actualizarEstadoUsuario,
+  actualizarPermisoPerfil,
   subirFotoPerfil,
 } from "../services/usuariosService.js";
 import { useAuthStore } from "../store/useAuthStore";
@@ -120,6 +121,46 @@ function GestionUsuarios() {
       Swal.fire({
         icon: "error",
         title: "No se pudo cambiar el estado",
+        text: err.message || "Inténtalo de nuevo en unos segundos.",
+      });
+    }
+  };
+
+  const cambiarPermisoPerfilUsuario = async (usuario) => {
+    if (!usuario?.idUsuario) return;
+
+    const habilitar = !usuario.puedeActualizarPerfil;
+
+    const confirmacion = await Swal.fire({
+      icon: "question",
+      title: habilitar
+        ? "¿Habilitar edición de perfil?"
+        : "¿Revocar edición de perfil?",
+      text: habilitar
+        ? "El usuario podrá editar su información de contacto una sola vez, desde su próximo ingreso."
+        : "El usuario ya no podrá editar su perfil hasta que se lo vuelvas a habilitar.",
+      showCancelButton: true,
+      confirmButtonText: "Sí, continuar",
+      cancelButtonText: "Cancelar",
+    });
+    if (!confirmacion.isConfirmed) return;
+
+    try {
+      await actualizarPermisoPerfil(usuario.idUsuario, habilitar);
+      await cargarUsuarios();
+      Swal.fire({
+        toast: true,
+        position: "top-end",
+        icon: "success",
+        title: habilitar ? "Edición habilitada" : "Edición revocada",
+        showConfirmButton: false,
+        timer: 1800,
+        timerProgressBar: true,
+      });
+    } catch (err) {
+      Swal.fire({
+        icon: "error",
+        title: "No se pudo cambiar el permiso",
         text: err.message || "Inténtalo de nuevo en unos segundos.",
       });
     }
@@ -255,6 +296,7 @@ function GestionUsuarios() {
                     usuarios={usuarios}
                     onEditar={abrirEdicion}
                     onCambiarEstado={cambiarEstadoUsuario}
+                    onCambiarPermisoPerfil={cambiarPermisoPerfilUsuario}
                   />
                 )}
               </div>

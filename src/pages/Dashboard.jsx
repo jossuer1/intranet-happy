@@ -2,8 +2,12 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import AppLayout from "../components/layout/AppLayout";
 import { getImagenesActivas } from "../services/imagenesService.js";
+import { useNavigate } from "react-router-dom";
+import { useAuthStore } from "../store/useAuthStore";
 
 function Dashboard() {
+  const navigate = useNavigate();
+  const user = useAuthStore((state) => state.user);
   const carouselRef = useRef(null);
   const carouselInstanceRef = useRef(null);
 
@@ -35,6 +39,23 @@ function Dashboard() {
     <AppLayout>
       <div className="container-fluid px-3 px-md-4 py-3 flex-grow-1 d-flex flex-column">
         <h5 className="mb-3 text-secondary fw-semibold">Novedades</h5>
+
+        {user?.puedeActualizarPerfil && (
+          <div className="alert alert-warning d-flex justify-content-between align-items-center shadow-sm mb-3">
+            <div>
+              <i className="bi bi-person-vcard me-2"></i>
+              RRHH habilitó la edición de tu perfil. Puedes actualizar tus datos
+              ahora.
+            </div>
+            <button
+              type="button"
+              className="btn btn-sm btn-warning"
+              onClick={() => navigate("/mi-perfil")}
+            >
+              Actualizar mi perfil
+            </button>
+          </div>
+        )}
 
         {cargando ? (
           <div className="text-center py-5 my-auto">

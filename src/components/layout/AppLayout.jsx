@@ -72,11 +72,34 @@ function AppLayout({ children, usuarioRol = null }) {
   const esRRHH = rolUsuario === "RRHH";
   const esADMIN = rolUsuario === "ADMIN" || rolUsuario === "ADMINISTRADOR";
 
+  // Bloqueo real: mientras RRHH mantenga este flag en true, el empleado no
+  // puede navegar a ningún otro módulo. Se apaga solo cuando el backend
+  // recibe el guardado de la actualización (ver fetchPerfil tras guardar en
+  // la página de "Mi Perfil").
+  const debeActualizarPerfil = Boolean(user?.puedeActualizarPerfil);
+
+  // Usar esto en vez de navigate(ruta) para cualquier click del sidebar:
+  // si el empleado todavía debe actualizar su perfil, cualquier intento de
+  // ir a otro módulo lo regresa a /mi-perfil en lugar de dejarlo salir.
+  const irA = (ruta) => {
+    if (debeActualizarPerfil) {
+      navigate("/mi-perfil", { replace: true });
+      return;
+    }
+    navigate(ruta);
+  };
+
   useEffect(() => {
     if (esADMIN && location.pathname !== "/gestion-catalogos") {
       navigate("/gestion-catalogos", { replace: true });
     }
   }, [esADMIN, location.pathname, navigate]);
+
+  useEffect(() => {
+    if (debeActualizarPerfil && location.pathname !== "/mi-perfil") {
+      navigate("/mi-perfil", { replace: true });
+    }
+  }, [debeActualizarPerfil, location.pathname, navigate]);
 
   const esGestionUsuariosActivo =
     location.pathname.startsWith("/gestion-usuarios");
@@ -140,7 +163,7 @@ function AppLayout({ children, usuarioRol = null }) {
         <div
           className="d-flex align-items-center gap-2 pb-3 mb-3 border-bottom px-2 cursor-pointer"
           style={{ cursor: "pointer", height: "48px" }}
-          onClick={() => navigate("/dashboard")}
+          onClick={() => irA("/dashboard")}
         >
           <img
             src={logoHappyPay}
@@ -179,7 +202,7 @@ function AppLayout({ children, usuarioRol = null }) {
                           ? "bg-brand text-white fw-semibold shadow-sm"
                           : "text-dark bg-transparent"
                       }`}
-                      onClick={() => navigate(item.ruta)}
+                      onClick={() => irA(item.ruta)}
                     >
                       <i className={`bi ${item.icono} fs-5`}></i>
                       <span>{item.titulo}</span>
@@ -229,7 +252,7 @@ function AppLayout({ children, usuarioRol = null }) {
                             ? "bg-brand text-white fw-semibold shadow-sm"
                             : "text-secondary bg-transparent"
                         }`}
-                        onClick={() => navigate("/gestion-usuarios")}
+                        onClick={() => irA("/gestion-usuarios")}
                       >
                         <i className="bi bi-list-ul"></i>
                         <span>Ver Usuarios</span>
@@ -243,7 +266,7 @@ function AppLayout({ children, usuarioRol = null }) {
                             ? "bg-brand text-white fw-semibold shadow-sm"
                             : "text-secondary bg-transparent"
                         }`}
-                        onClick={() => navigate("/gestion-usuarios/crear")}
+                        onClick={() => irA("/gestion-usuarios/crear")}
                       >
                         <i className="bi bi-person-plus"></i>
                         <span>Crear Usuario</span>
@@ -284,7 +307,7 @@ function AppLayout({ children, usuarioRol = null }) {
                             ? "bg-brand text-white fw-semibold shadow-sm"
                             : "text-secondary bg-transparent"
                         }`}
-                        onClick={() => navigate("/gestion-novedades/activos")}
+                        onClick={() => irA("/gestion-novedades/activos")}
                       >
                         <i className="bi bi-images"></i>
                         <span>Banners Activos</span>
@@ -298,7 +321,7 @@ function AppLayout({ children, usuarioRol = null }) {
                             ? "bg-brand text-white fw-semibold shadow-sm"
                             : "text-secondary bg-transparent"
                         }`}
-                        onClick={() => navigate("/gestion-novedades/publicar")}
+                        onClick={() => irA("/gestion-novedades/publicar")}
                       >
                         <i className="bi bi-cloud-arrow-up"></i>
                         <span>Publicar Banner</span>
@@ -340,7 +363,7 @@ function AppLayout({ children, usuarioRol = null }) {
                             ? "bg-brand text-white fw-semibold shadow-sm"
                             : "text-secondary bg-transparent"
                         }`}
-                        onClick={() => navigate("/gestion-vacaciones")}
+                        onClick={() => irA("/gestion-vacaciones")}
                       >
                         <i className="bi bi-card-checklist"></i>
                         <span>Gestión Vacaciones</span>
@@ -368,7 +391,7 @@ function AppLayout({ children, usuarioRol = null }) {
                       ? "bg-brand text-white fw-semibold shadow-sm"
                       : "text-dark bg-transparent"
                   }`}
-                  onClick={() => navigate("/gestion-catalogos")}
+                  onClick={() => irA("/gestion-catalogos")}
                 >
                   <i className="bi bi-collection fs-5"></i>
                   <span>Catálogos</span>
@@ -398,6 +421,47 @@ function AppLayout({ children, usuarioRol = null }) {
 
         <main className="flex-grow-1 p-3 p-md-4 overflow-auto">{children}</main>
       </div>
+      {/*
+        Este overlay solo se ve en el instante antes de que el useEffect de
+        arriba complete el redirect a /mi-perfil (o si por algún motivo la
+        navegación no ocurre). Una vez en /mi-perfil, debeActualizarPerfil
+        sigue siendo true, pero ahí NO debe taparse el formulario: en la
+        página de "Mi Perfil" hay que mostrar en su lugar un aviso fijo (no
+        descartable) usando este mismo `user.puedeActualizarPerfil`, y dejar
+        que el formulario se use. El bloqueo real de "no puede salir" lo da
+        irA() + el useEffect de redirect, no este modal.
+      */}
+      {debeActualizarPerfil && location.pathname !== "/mi-perfil" && (
+        <div
+          className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center p-3"
+          style={{ backgroundColor: "rgba(0,0,0,0.6)", zIndex: 2000 }}
+        >
+          <div
+            className="card shadow-lg border-0"
+            style={{ width: "min(420px, 100%)" }}
+          >
+            <div className="card-body p-4 text-center">
+              <i
+                className="bi bi-person-vcard text-brand"
+                style={{ fontSize: "2.5rem" }}
+              ></i>
+              <h5 className="fw-bold mt-3">Actualiza tu información</h5>
+              <p className="text-muted small mb-4">
+                RRHH habilitó la actualización de tus datos de contacto,
+                familiares y contactos de emergencia. Debes guardar esta
+                información antes de continuar usando el sistema.
+              </p>
+              <button
+                type="button"
+                className="btn btn-brand w-100"
+                onClick={() => navigate("/mi-perfil", { replace: true })}
+              >
+                Ir a actualizar mi perfil
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

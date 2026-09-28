@@ -20,7 +20,11 @@ export const useAuthStore = create((set) => ({
       if (respuesta?.token) {
         localStorage.setItem("jwt_token", respuesta.token);
         const perfil = await usuariosService.getMiPerfil();
-        set({ token: respuesta.token, user: perfil, cargando: false });
+        set({
+          token: respuesta.token,
+          user: perfil,
+          cargando: false,
+        });
         return { success: true, data: respuesta };
       }
 
@@ -40,6 +44,10 @@ export const useAuthStore = create((set) => ({
     set({ user: null, token: null });
   },
 
+  // Vuelve a pedir el perfil al backend. Se usa, entre otros casos, justo
+  // después de que el usuario guarda su autogestión de perfil: el backend
+  // apaga "puedeActualizarPerfil" al recibir ese guardado, y este fetch trae
+  // el user actualizado para que el bloqueo en AppLayout se levante solo.
   fetchPerfil: async () => {
     try {
       const perfil = await usuariosService.getMiPerfil();

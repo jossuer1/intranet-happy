@@ -1,6 +1,8 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import AppLayout from "../../components/layout/AppLayout";
 import SectionHeader from "../../components/layout/SectionHeader";
+import UsuarioFormCard from "../../components/usuarios/UsuarioFormCard";
+import { usuariosService } from "../../services/usuariosService";
 import {
   calcularEdad,
   obtenerGeneracion,
@@ -20,8 +22,54 @@ function Campo({ label, valor }) {
 function MiPerfil() {
   const userStore = useAuthStore((state) => state.user);
   const fetchPerfil = useAuthStore((state) => state.fetchPerfil);
+  const queryClient = useQueryClient();
 
-  // TanStack Query gestiona el estado de carga, errores y caché
+  // Fuente de verdad para saber si toca mostrar el formulario de edición:
+  // el store de auth (no la query), porque es lo que UsuarioFormCard
+  // actualiza apenas se guarda, y así el cambio de vista es inmediato.
+  const debeActualizarPerfil = Boolean(userStore?.puedeActualizarPerfil);
+
+  // Usa los endpoints de autogestión (/usuarios/mi-perfil), no el PUT de
+  // RRHH (/usuarios/{id}), que responde 403 para un empleado.
+  // Orden: la foto va ANTES del PUT, porque el PUT es el que hace que el
+  // backend apague puedeActualizarPerfil; después ya no dejaría subirla.
+  const handleGuardarPerfil = async (_idUsuario, payload, fotoArchivo) => {
+    if (fotoArchivo) {
+      await usuariosService.subirMiFoto(fotoArchivo);
+    }
+    await usuariosService.actualizarMiPerfil(payload);
+    // fetchPerfil() ya lo llama UsuarioFormCard internamente tras guardar
+    // (para apagar puedeActualizarPerfil en el store); acá solo invalidamos
+    // la query de TanStack para que la vista de solo lectura que sigue
+    // también quede con los datos frescos, no con la caché vieja.
+    await queryClient.invalidateQueries({ queryKey: ["perfilUsuario"] });
+  };
+
+  if (debeActualizarPerfil) {
+    return (
+      <AppLayout>
+        <SectionHeader titulo="Actualiza tu Perfil" />
+        <div className="container my-4 flex-grow-1">
+          <div className="row justify-content-center">
+            <div className="col-12 col-lg-10">
+              <div className="alert alert-warning shadow-sm">
+                <i className="bi bi-person-vcard me-2"></i>
+                RRHH habilitó la actualización de tu información de contacto,
+                familiares y contactos de emergencia. Debes revisarla y guardar
+                para poder seguir usando el sistema.
+              </div>
+              <UsuarioFormCard
+                usuarioOriginal={userStore}
+                modoAutogestion
+                onGuardar={handleGuardarPerfil}
+              />
+            </div>
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
+
   const {
     data: user,
     isLoading,

@@ -1,113 +1,65 @@
+/* Variables con la paleta de colores oficial HappyPay */
+:root {
+  --brand-color: #1E5A63;
+  --brand-color-hover: #16434a;
+  --brand-light: #eef6f7;
+  --text-dark: #2c3e50;
+  --text-muted: #6c757d;
+}
+
 .auth-page {
-  background: #f6f5f7;
+  background: linear-gradient(135deg, #e9ecef 0%, #f8f9fa 100%);
   display: flex;
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  font-family: "Arial", sans-serif;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  padding: 20px;
 }
 
+
+
+/* ---------- Ajuste General del Contenedor ---------- */
 .auth-container {
-  background: white;
-  border-radius: 10px;
-  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.25), 0 10px 10px rgba(0, 0, 0, 0.22);
+  background-color: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
   position: relative;
   overflow: hidden;
-  width: 768px;
-  max-width: 100%;
-  min-height: 480px;
+  
+  /* Ancho base fluido para pantallas normales */
+  width: 1050px;
+  max-width: 92vw;
+  min-height: 580px;
+  transition: all 0.3s ease;
 }
 
-.password-wrapper {
-  position: relative;
-  width: 100%;
-  margin: 8px 0;
+/* Marca y Logo en el Formulario */
+.auth-brand-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
 }
 
-.password-wrapper input {
-  width: 100%;
-  padding-right: 40px;
-  margin: 0;
+.auth-brand-logo {
+  height: 38px;
+  object-fit: contain;
 }
 
-.password-toggle-icon {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  cursor: pointer;
-  color: #6c757d;
+.auth-brand-name {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--brand-color);
+  letter-spacing: -0.5px;
 }
 
+/* Modificadores de la estructura del formulario */
 .form-container {
   position: absolute;
   top: 0;
   height: 100%;
   transition: all 0.6s ease-in-out;
-}
-
-/* Contenedor relativo para la contraseña */
-.password-input-wrapper {
-  position: relative;
-  width: 100%;
-  margin: 8px 0;
-}
-
-/* El input de contraseña con espacio a la derecha para que el texto no tape el ícono */
-.password-input-wrapper input {
-  width: 100%;
-  padding-right: 45px;
-  margin: 0 !important;
-}
-
-/* El botón del ojito posicionado de forma absoluta y perfectamente centrado */
-.password-toggle-btn {
-  position: absolute;
-  right: 0;
-  top: 0;
-  height: 100%;
-  background: transparent;
-  border: none;
-  padding: 0 15px;
-  cursor: pointer;
-  color: #6c757d;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-top: 0 !important;
-  border-radius: 0 5px 5px 0;
-}
-/* Modifica o añade esto en tu AuthContainer.css */
-.auth-container {
-  background-color: #fff;
-  border-radius: 10px;
-  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.25), 
-              0 10px 10px rgba(0, 0, 0, 0.22);
-  position: relative;
-  overflow: hidden;
-  
-  /* CAMBIO: Usamos un tamaño base más generoso que escala bien */
-  width: 900px;
-  max-width: 90vw;
-  min-height: 560px;
-}
-
-/* Opcional: Para pantallas muy grandes (como tu monitor de 20"+), podemos forzar un poquito más de escala general */
-@media (min-width: 1600px) {
-  .auth-container {
-    width: 1020px;
-    min-height: 620px;
-  }
-  
-  /* Hacemos que los textos y títulos respiren un poco mejor en pantallas grandes */
-  .form-container h1 {
-    font-size: 2.2rem;
-  }
-}
-
-.password-toggle-btn:hover {
-  color: #333;
-  background: rgba(0, 0, 0, 0.03);
 }
 
 .login-container {
@@ -133,6 +85,157 @@
   z-index: 5;
 }
 
+form {
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  padding: 0 45px;
+  height: 100%;
+  text-align: center;
+}
+
+form h1 {
+  font-size: 1.6rem;
+  font-weight: 700;
+  margin-bottom: 6px;
+  color: var(--text-dark);
+}
+
+.auth-subtext {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  margin-bottom: 22px;
+}
+
+/* Inputs de Texto e Iconos */
+.input-field-group {
+  position: relative;
+  width: 100%;
+  margin-bottom: 14px;
+}
+
+.input-field-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #95a5a6;
+  font-size: 1.1rem;
+  z-index: 2;
+}
+
+.input-field-group input {
+  width: 100%;
+  background: #f8f9fa;
+  border: 1px solid #e2e8f0;
+  padding: 12px 14px 12px 42px;
+  border-radius: 8px;
+  font-size: 0.92rem;
+  color: var(--text-dark);
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.input-field-group input:focus {
+  background: #ffffff;
+  border-color: var(--brand-color);
+  box-shadow: 0 0 0 3px rgba(30, 90, 99, 0.15);
+}
+
+.input-field-group input::placeholder {
+  color: #a0aec0;
+}
+
+/* Wrapper para Contraseña con Ojito */
+.password-input-wrapper {
+  position: relative;
+  width: 100%;
+  margin-bottom: 14px;
+}
+
+.password-input-wrapper input {
+  width: 100%;
+  background: #f8f9fa;
+  border: 1px solid #e2e8f0;
+  padding: 12px 45px 12px 42px;
+  border-radius: 8px;
+  font-size: 0.92rem;
+  color: var(--text-dark);
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.password-input-wrapper input:focus {
+  background: #ffffff;
+  border-color: var(--brand-color);
+  box-shadow: 0 0 0 3px rgba(30, 90, 99, 0.15);
+}
+
+.password-toggle-btn {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  padding: 8px 12px;
+  cursor: pointer;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: background 0.15s ease;
+}
+
+.password-toggle-btn:hover {
+  background: #edf2f7;
+  color: var(--text-dark);
+}
+
+/* Botones Principales */
+.btn-submit {
+  border-radius: 8px;
+  border: none;
+  background: var(--brand-color);
+  color: #ffffff;
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 12px 30px;
+  width: 100%;
+  letter-spacing: 0.5px;
+  transition: all 0.2s ease;
+  margin-top: 10px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(30, 90, 99, 0.25);
+}
+
+.btn-submit:hover {
+  background: var(--brand-color-hover);
+  transform: translateY(-1px);
+}
+
+.btn-submit:active {
+  transform: translateY(0);
+}
+
+.switch-link {
+  color: var(--brand-color);
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-decoration: none;
+  margin: 12px 0;
+  transition: color 0.15s ease;
+}
+
+.switch-link:hover {
+  color: var(--brand-color-hover);
+  text-decoration: underline;
+}
+
+/* Overlay Lateral Institucional (Degradado Verde de HappyPay) */
 .auth-overlay-container {
   position: absolute;
   top: 0;
@@ -149,11 +252,8 @@
 }
 
 .auth-overlay {
-  background-image: var(--overlay-img);
-  background-repeat: no-repeat;
-  background-size: cover;
-  background-position: center;
-  color: #fff;
+  background: linear-gradient(135deg, #1E5A63 0%, #0d2c31 100%);
+  color: #ffffff;
   position: relative;
   left: -100%;
   height: 100%;
@@ -179,7 +279,6 @@
   width: 50%;
   transform: translateX(0);
   transition: transform 0.6s ease-in-out;
-  background: rgba(0, 0, 0, 0.35); /* oscurece la imagen para que el texto se lea bien */
 }
 
 .overlay-left {
@@ -200,105 +299,45 @@
 }
 
 .overlay-panel h1 {
-  font-size: 1.6rem;
-  margin-bottom: 10px;
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 12px;
+  color: #ffffff;
 }
 
 .overlay-panel p {
-  font-size: 0.9rem;
-  margin-bottom: 18px;
-  line-height: 1.4;
-}
-
-/* ---------- Formularios ---------- */
-form {
-  background: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  padding: 0 50px;
-  height: 100%;
-  text-align: center;
-}
-
-form h1 {
-  font-size: 1.5rem;
-  margin-bottom: 15px;
-  color: #222;
-}
-
-.auth-subtext {
-  font-size: 0.85rem;
-  color: #666;
-  margin-bottom: 15px;
-}
-
-input {
-  background: #eee;
-  border: none;
-  padding: 12px 15px;
-  margin: 8px 0;
-  width: 100%;
-  border-radius: 5px;
-}
-
-input:disabled {
-  opacity: 0.6;
-}
-
-button {
-  border-radius: 20px;
-  border: 1px solid #ff4b2b;
-  background: #ff4b2b;
-  color: white;
-  font-size: 12px;
-  font-weight: bold;
-  padding: 12px 45px;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  transition: transform 80ms ease-in, opacity 0.2s;
-  margin-top: 15px;
-  cursor: pointer;
-}
-
-button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-button:active {
-  transform: scale(0.95);
-}
-
-button:focus {
-  outline: none;
+  font-size: 0.95rem;
+  margin-bottom: 24px;
+  line-height: 1.5;
+  opacity: 0.9;
 }
 
 button.ghost {
   background: transparent;
-  border-color: #fff;
+  border: 1.5px solid #ffffff;
+  color: #ffffff;
+  border-radius: 8px;
+  font-weight: 600;
+  padding: 10px 32px;
+  font-size: 0.85rem;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-.switch-link {
-  color: #333;
-  font-size: 14px;
-  text-decoration: none;
-  margin: 15px 0;
+button.ghost:hover {
+  background: #ffffff;
+  color: var(--brand-color);
 }
 
-.switch-link:hover {
-  color: #ff4b2b;
-}
-
-/* ---------- Overlay de cambio obligatorio de contraseña ---------- */
+/* Pantalla modal de cambio obligatorio */
 .change-password-overlay {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: white;
+  background: #ffffff;
   z-index: 200;
   display: flex;
   flex-direction: column;
@@ -306,40 +345,115 @@ button.ghost {
   padding: 30px 50px;
 }
 
-.change-password-overlay form {
-  padding: 0;
-  height: auto;
+.auth-page {
+  background: radial-gradient(circle at 10% 20%, #eef6f7 0%, #d4e5e8 90%);
+  position: relative;
+  overflow: hidden;
 }
 
-/* ---------- Responsive ---------- */
+/* Circulo decorativo superior izquierdo */
+.auth-page::before {
+  content: "";
+  position: absolute;
+  width: 400px;
+  height: 400px;
+  top: -100px;
+  left: -100px;
+  background: rgba(30, 90, 99, 0.15);
+  border-radius: 50%;
+  filter: blur(80px);
+}
+
+/* Círculo decorativo inferior derecho */
+.auth-page::after {
+  content: "";
+  position: absolute;
+  width: 500px;
+  height: 500px;
+  bottom: -150px;
+  right: -150px;
+  background: rgba(30, 90, 99, 0.2);
+  border-radius: 50%;
+  filter: blur(100px);
+}
+
 @media screen and (max-width: 768px) {
   .auth-container {
-    width: 95%;
-    min-height: 550px;
+    width: 100%;
+    min-height: 500px;
   }
-
-  .form-container {
+  .auth-overlay-container {
+    display: none;
+  }
+  .login-container, .recuperar-container {
     width: 100%;
   }
 
-  .auth-overlay-container {
-    display: none; /* En móvil ocultamos el panel de imagen para priorizar el formulario */
+  /* ---------- Escalado para Monitor/Pantalla Grande (Desktop / 1080p+) ---------- */
+@media screen and (min-width: 1400px) {
+  .auth-container {
+    width: 1200px;
+    min-height: 680px;
   }
 
-  .auth-container.panel-active .login-container {
-    transform: translateX(-100%);
-    opacity: 0;
+  /* Escalado de la tipografía y botones */
+  form h1 {
+    font-size: 2rem !important;
   }
 
-  .auth-container.panel-active .recuperar-container {
-    transform: translateX(0);
+  .auth-brand-logo {
+    height: 48px !important;
   }
 
-  .recuperar-container {
-    transform: translateX(100%);
+  .auth-brand-name {
+    font-size: 1.7rem !important;
+  }
+
+  .auth-subtext {
+    font-size: 1rem !important;
+    margin-bottom: 28px !important;
+  }
+
+  .input-field-group input,
+  .password-input-wrapper input {
+    padding-top: 15px !important;
+    padding-bottom: 15px !important;
+    font-size: 1.05rem !important;
+  }
+
+  .btn-submit {
+    padding: 15px 30px !important;
+    font-size: 1rem !important;
+  }
+
+  .overlay-panel h1 {
+    font-size: 2.3rem !important;
+  }
+
+  .overlay-panel p {
+    font-size: 1.1rem !important;
+  }
+
+  button.ghost {
+    padding: 12px 40px !important;
+    font-size: 0.95rem !important;
+  }
+}
+
+/* ---------- Escalado para Monitores Ultra-Wide (4K / 1800px+) ---------- */
+@media screen and (min-width: 1800px) {
+  .auth-container {
+    width: 1350px;
+    min-height: 740px;
+  }
+
+  form h1 {
+    font-size: 2.3rem !important;
   }
 
   form {
-    padding: 0 20px;
+    padding: 0 60px !important;
   }
+}
+
 }

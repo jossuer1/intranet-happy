@@ -16,7 +16,6 @@ const Familiares = ({
   return (
     <div className="card border-0 bg-white p-3 mb-4 shadow-sm rounded-3">
       <div className="d-flex justify-content-between align-items-center mb-3">
-        <h6 className="text-primary m-0 fw-bold">👥 Familiares / Hijos</h6>
         <button
           type="button"
           className="btn btn-outline-primary btn-sm"

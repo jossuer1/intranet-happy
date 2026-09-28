@@ -27,7 +27,12 @@ const paginationComponentOptions = {
   selectAllRowsItemText: "Todos",
 };
 
-function TablaUsuarios({ usuarios = [], onEditar, onCambiarEstado }) {
+function TablaUsuarios({
+  usuarios = [],
+  onEditar,
+  onCambiarEstado,
+  onCambiarPermisoPerfil,
+}) {
   const [filterText, setFilterText] = useState("");
   // Usuario cuya información general se muestra en la tarjeta flotante.
   // null = tarjeta cerrada.
@@ -168,7 +173,30 @@ function TablaUsuarios({ usuarios = [], onEditar, onCambiarEstado }) {
                   onCambiarEstado?.(row);
                 }}
               >
-                <i className={`bi ${esActivo ? "bi-person-x" : "bi-person-check"}`}></i>
+                <i
+                  className={`bi ${esActivo ? "bi-person-x" : "bi-person-check"}`}
+                ></i>
+              </button>
+              <button
+                type="button"
+                className={`btn btn-sm d-inline-flex align-items-center justify-content-center ${
+                  row.puedeActualizarPerfil
+                    ? "btn-warning"
+                    : "btn-outline-primary"
+                }`}
+                title={
+                  row.puedeActualizarPerfil
+                    ? "Revocar edición de perfil"
+                    : "Permitir que actualice su perfil"
+                }
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onCambiarPermisoPerfil?.(row);
+                }}
+              >
+                <i
+                  className={`bi ${row.puedeActualizarPerfil ? "bi-unlock-fill" : "bi-person-vcard"}`}
+                ></i>
               </button>
             </div>
           );

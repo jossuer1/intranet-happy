@@ -24,15 +24,13 @@ function HistorialVacacionesPanel({ usuario, onClose }) {
     if (esDescuento) {
       return {
         label: "Vacaciones",
-        badgeClass:
-          "bg-danger-subtle text-danger border border-danger-subtle",
+        badgeClass: "bg-danger-subtle text-danger border border-danger-subtle",
         signo: "−",
       };
     }
     return {
       label: "Ajuste",
-      badgeClass:
-        "bg-success-subtle text-success border border-success-subtle",
+      badgeClass: "bg-success-subtle text-success border border-success-subtle",
       signo: "+",
     };
   };
@@ -175,8 +173,7 @@ function HistorialVacacionesPanel({ usuario, onClose }) {
                 {/* Lista de movimientos: scroll propio, no rompe el resto del panel */}
                 {movimientos.length === 0 ? (
                   <p className="text-muted text-center small py-3 mb-0">
-                    Este colaborador aún no registra movimientos de
-                    vacaciones.
+                    Este colaborador aún no registra movimientos de vacaciones.
                   </p>
                 ) : (
                   <ul

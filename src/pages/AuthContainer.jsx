@@ -3,9 +3,8 @@ import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import { useAuthStore } from "../store/useAuthStore";
 import { authService } from "../services/authService";
+import logoHappyPay from "../assets/images/logo_happy.jpg"; // Ajusta la ruta a tu logo
 import "./AuthContainer.css";
-
-const IMAGEN_OVERLAY = "";
 
 function AuthContainer() {
   const [panelActivo, setPanelActivo] = useState(false);
@@ -18,13 +17,11 @@ function AuthContainer() {
   const [confirmarContrasena, setConfirmarContrasena] = useState("");
   const [procesandoCambio, setProcesandoCambio] = useState(false);
 
-  // ---------- Estados para ver/ocultar contraseñas (el ojito) ----------
   const [mostrarPasswordLogin, setMostrarPasswordLogin] = useState(false);
   const [mostrarNuevaPassword, setMostrarNuevaPassword] = useState(false);
   const [mostrarConfirmarPassword, setMostrarConfirmarPassword] =
     useState(false);
 
-  // ---------- Estados de Recuperar Contraseña ----------
   const [correo, setCorreo] = useState("");
   const [cargandoRecuperacion, setCargandoRecuperacion] = useState(false);
 
@@ -39,16 +36,10 @@ function AuthContainer() {
     showConfirmButton: false,
     timer: 2500,
     timerProgressBar: true,
-    didOpen: (toast) => {
-      toast.addEventListener("mouseenter", Swal.stopTimer);
-      toast.addEventListener("mouseleave", Swal.resumeTimer);
-    },
   });
 
-  // 1. Login normal
   const manejarLogin = async (e) => {
     e.preventDefault();
-
     const resultado = await login(cedula, contrasena);
 
     if (resultado.success) {
@@ -64,7 +55,7 @@ function AuthContainer() {
 
       Toast.fire({
         icon: "success",
-        title: "¡Bienvenido al sistema!",
+        title: "¡Bienvenido a HappyPay!",
       });
       navigate("/dashboard");
     } else {
@@ -75,7 +66,6 @@ function AuthContainer() {
     }
   };
 
-  // 2. Cambio obligatorio de contraseña (primer ingreso)
   const manejarCambioObligatorio = async (e) => {
     e.preventDefault();
 
@@ -105,12 +95,10 @@ function AuthContainer() {
         contrasena,
         nuevaContrasena,
       );
-
       Toast.fire({
         icon: "success",
         title: "¡Contraseña actualizada! Inicia sesión con tu nueva clave.",
       });
-
       setRequiereCambioPassword(false);
       setContrasena("");
       setNuevaContrasena("");
@@ -125,19 +113,16 @@ function AuthContainer() {
     }
   };
 
-  // 3. Recuperar contraseña
   const manejarRecuperacion = async (e) => {
     e.preventDefault();
     setCargandoRecuperacion(true);
 
     try {
       await authService.solicitarRecuperacion(correo);
-
       Toast.fire({
         icon: "success",
         title: "Instrucciones enviadas al correo registrado",
       });
-
       setCorreo("");
       setTimeout(() => setPanelActivo(false), 1800);
     } catch (error) {
@@ -153,36 +138,36 @@ function AuthContainer() {
   return (
     <div className="auth-page">
       <div className={`auth-container ${panelActivo ? "panel-active" : ""}`}>
-        {/* OVERLAY DE CAMBIO OBLIGATORIO (primer ingreso) */}
+        {/* MODAL DE CAMBIO OBLIGATORIO DE CONTRASEÑA */}
         {requiereCambioPassword && (
           <div className="change-password-overlay">
             <div className="text-center mb-3">
-              <div className="alert alert-warning py-2 mb-2" role="alert">
-                <small className="fw-bold">⚠️ Primer ingreso detectado</small>
-              </div>
-              <h4 className="mb-1">Actualiza tu contraseña</h4>
+              <span className="badge bg-warning text-dark px-3 py-2 rounded-pill mb-2">
+                ⚠️ Primer ingreso detectado
+              </span>
+              <h4 className="fw-bold mb-1">Actualiza tu contraseña</h4>
               <p className="text-muted small">
-                Establece una nueva contraseña para continuar.
+                Establece una contraseña segura para continuar.
               </p>
               <div
-                className="text-start alert alert-light border p-2 mt-2"
-                style={{ fontSize: "0.8rem" }}
+                className="text-start bg-light border rounded-3 p-3 mt-2"
+                style={{ fontSize: "0.82rem" }}
               >
                 <p className="mb-1 fw-bold text-dark">
-                  La contraseña debe contener:
+                  La contraseña debe incluir:
                 </p>
                 <ul className="mb-0 ps-3 text-muted">
-                  <li>Mínimo de 8 caracteres</li>
+                  <li>Mínimo 8 caracteres</li>
                   <li>Al menos una letra mayúscula</li>
                   <li>Al menos un número</li>
-                  <li>Al menos un carácter especial (ej. @$!%*?&)</li>
+                  <li>Al menos un carácter especial (@$!%*?&)</li>
                 </ul>
               </div>
             </div>
 
             <form onSubmit={manejarCambioObligatorio}>
-              {/* Nueva Contraseña */}
               <div className="password-input-wrapper">
+                <i className="bi bi-lock input-field-icon"></i>
                 <input
                   type={mostrarNuevaPassword ? "text" : "password"}
                   placeholder="Nueva contraseña"
@@ -203,8 +188,8 @@ function AuthContainer() {
                 </button>
               </div>
 
-              {/* Confirmar Contraseña */}
               <div className="password-input-wrapper">
+                <i className="bi bi-shield-lock input-field-icon"></i>
                 <input
                   type={mostrarConfirmarPassword ? "text" : "password"}
                   placeholder="Confirmar contraseña"
@@ -229,20 +214,15 @@ function AuthContainer() {
 
               <button
                 type="submit"
+                className="btn-submit"
                 disabled={procesandoCambio}
-                style={{ marginTop: "15px" }}
               >
                 {procesandoCambio ? "Guardando..." : "GUARDAR CONTRASEÑA"}
               </button>
 
               <a
                 href="#"
-                className="switch-link"
-                style={{
-                  display: "block",
-                  textAlign: "center",
-                  marginTop: "15px",
-                }}
+                className="switch-link mt-3"
                 onClick={(e) => {
                   e.preventDefault();
                   setRequiereCambioPassword(false);
@@ -256,22 +236,37 @@ function AuthContainer() {
           </div>
         )}
 
-        {/* PANEL: LOGIN */}
+        {/* FORMULARIO DE LOGIN */}
         <div className="form-container login-container">
           <form onSubmit={manejarLogin}>
+            <div className="auth-brand-header">
+              <img
+                src={logoHappyPay}
+                alt="HappyPay"
+                className="auth-brand-logo"
+              />
+              <span className="auth-brand-name">HappyPay</span>
+            </div>
+
             <h1>Iniciar sesión</h1>
+            <p className="auth-subtext">
+              Ingresa tus credenciales para acceder a la intranet
+            </p>
 
-            <input
-              type="text"
-              placeholder="Cédula"
-              value={cedula}
-              onChange={(e) => setCedula(e.target.value)}
-              required
-              disabled={cargando}
-            />
+            <div className="input-field-group">
+              <i className="bi bi-card-heading input-field-icon"></i>
+              <input
+                type="text"
+                placeholder="Número de Cédula"
+                value={cedula}
+                onChange={(e) => setCedula(e.target.value)}
+                required
+                disabled={cargando}
+              />
+            </div>
 
-            {/* Input Contraseña Login */}
             <div className="password-input-wrapper">
+              <i className="bi bi-lock input-field-icon"></i>
               <input
                 type={mostrarPasswordLogin ? "text" : "password"}
                 placeholder="Contraseña"
@@ -303,72 +298,92 @@ function AuthContainer() {
               ¿Olvidaste tu contraseña?
             </a>
 
-            <button type="submit" disabled={cargando}>
-              {cargando ? "Iniciando sesión..." : "Iniciar sesión"}
+            <button type="submit" className="btn-submit" disabled={cargando}>
+              {cargando ? "Iniciando sesión..." : "INICIAR SESIÓN"}
             </button>
           </form>
         </div>
 
-        {/* PANEL: RECUPERAR CONTRASEÑA */}
+        {/* FORMULARIO DE RECUPERACIÓN */}
         <div className="form-container recuperar-container">
           <form onSubmit={manejarRecuperacion}>
-            <h1>Recuperar contraseña</h1>
+            <div className="auth-brand-header">
+              <img
+                src={logoHappyPay}
+                alt="HappyPay"
+                className="auth-brand-logo"
+              />
+              <span className="auth-brand-name">HappyPay</span>
+            </div>
+
+            <h1>Recuperar clave</h1>
             <p className="auth-subtext">
-              Ingresa tu correo y te enviaremos las instrucciones.
+              Ingresa tu correo institucional y te enviaremos las instrucciones
+              de restablecimiento.
             </p>
 
-            <input
-              type="email"
-              placeholder="Correo electrónico"
-              value={correo}
-              onChange={(e) => setCorreo(e.target.value)}
-              required
+            <div className="input-field-group">
+              <i className="bi bi-envelope input-field-icon"></i>
+              <input
+                type="email"
+                placeholder="Correo electrónico"
+                value={correo}
+                onChange={(e) => setCorreo(e.target.value)}
+                required
+                disabled={cargandoRecuperacion}
+              />
+            </div>
+
+            <button
+              type="submit"
+              className="btn-submit"
               disabled={cargandoRecuperacion}
-            />
+            >
+              {cargandoRecuperacion ? "Enviando..." : "ENVIAR INSTRUCCIONES"}
+            </button>
 
             <a
               href="#"
-              className="switch-link"
+              className="switch-link mt-3"
               onClick={(e) => {
                 e.preventDefault();
                 setPanelActivo(false);
               }}
             >
-              Volver al inicio de sesión
+              ← Volver al inicio de sesión
             </a>
-
-            <button type="submit" disabled={cargandoRecuperacion}>
-              {cargandoRecuperacion ? "Enviando..." : "Enviar instrucciones"}
-            </button>
           </form>
         </div>
 
-        {/* OVERLAY CON IMAGEN */}
-        <div
-          className="auth-overlay-container"
-          style={{ "--overlay-img": `url(${IMAGEN_OVERLAY})` }}
-        >
+        {/* OVERLAY INSTITUCIONAL VERDE */}
+        <div className="auth-overlay-container">
           <div className="auth-overlay">
             <div className="overlay-panel overlay-left">
-              <h1>¿Ya la recordaste?</h1>
-              <p>Inicia sesión con tu contraseña actual</p>
+              <h1>¿Recordaste tu clave?</h1>
+              <p>
+                Inicia sesión normalmente para acceder a tu panel y gestionar
+                tus solicitudes.
+              </p>
               <button
                 type="button"
                 className="ghost"
                 onClick={() => setPanelActivo(false)}
               >
-                Iniciar sesión
+                INICIAR SESIÓN
               </button>
             </div>
             <div className="overlay-panel overlay-right">
-              <h1>¿Olvidaste tu contraseña?</h1>
-              <p>Te ayudamos a recuperarla en segundos</p>
+              <h1>¡Hola de nuevo!</h1>
+              <p>
+                Bienvenido a la plataforma centralizada de HappyPay. ¿Tienes
+                problemas para ingresar?
+              </p>
               <button
                 type="button"
                 className="ghost"
                 onClick={() => setPanelActivo(true)}
               >
-                Recuperar
+                RECUPERAR CLAVE
               </button>
             </div>
           </div>

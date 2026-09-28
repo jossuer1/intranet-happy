@@ -3,10 +3,10 @@ import { useQuery } from "@tanstack/react-query";
 import Swal from "sweetalert2";
 import AppLayout from "../../components/layout/AppLayout";
 import SectionHeader from "../../components/layout/SectionHeader";
+import SolicitarVacacionesModal from "../../components/vacaciones/SolicitarVacacionesModal";
 import {
   getSaldo,
   getMisVacaciones,
-  crearSolicitudVacacion,
   getMisSolicitudesVacacion,
   descargarConstanciaSolicitud,
 } from "../../services/vacacionesService";
@@ -69,6 +69,7 @@ function MisVacaciones() {
     isLoading: loadingSaldo,
     isError: errorSaldo,
     error: errSaldo,
+    refetch: refetchSaldo,
   } = useQuery({
     queryKey: ["vacaciones", "saldo", idUsuario],
     queryFn: () => getSaldo(idUsuario),
@@ -103,48 +104,8 @@ function MisVacaciones() {
     select: (data) => (Array.isArray(data) ? data : []),
   });
 
-  const [mostrarForm, setMostrarForm] = useState(false);
-  const [fechaInicioSolicitud, setFechaInicioSolicitud] = useState("");
-  const [fechaFinSolicitud, setFechaFinSolicitud] = useState("");
-  const [motivoSolicitud, setMotivoSolicitud] = useState("");
-  const [enviandoSolicitud, setEnviandoSolicitud] = useState(false);
+  const [modalAbierto, setModalAbierto] = useState(false);
   const [descargandoId, setDescargandoId] = useState(null);
-
-  const enviarSolicitud = async (e) => {
-    e.preventDefault();
-    if (!fechaInicioSolicitud || !fechaFinSolicitud || !motivoSolicitud.trim()) {
-      return;
-    }
-    try {
-      setEnviandoSolicitud(true);
-      await crearSolicitudVacacion({
-        fechaInicio: fechaInicioSolicitud,
-        fechaFin: fechaFinSolicitud,
-        motivo: motivoSolicitud.trim(),
-      });
-      setMostrarForm(false);
-      setFechaInicioSolicitud("");
-      setFechaFinSolicitud("");
-      setMotivoSolicitud("");
-      await refetchSolicitudes();
-      Swal.fire({
-        toast: true,
-        position: "top-end",
-        icon: "success",
-        title: "Solicitud enviada. Ahora la revisará tu jefe directo.",
-        showConfirmButton: false,
-        timer: 2200,
-      });
-    } catch (err) {
-      Swal.fire({
-        icon: "error",
-        title: "No se pudo enviar la solicitud",
-        text: err.message || "Inténtalo de nuevo en unos segundos.",
-      });
-    } finally {
-      setEnviandoSolicitud(false);
-    }
-  };
 
   const descargarConstancia = async (idSolicitud) => {
     try {
@@ -235,70 +196,15 @@ function MisVacaciones() {
                   <h5 className="card-title fw-bold mb-0">
                     Solicitar Vacaciones
                   </h5>
-                  {!mostrarForm && (
-                    <button
-                      type="button"
-                      className="btn btn-brand btn-sm"
-                      onClick={() => setMostrarForm(true)}
-                    >
-                      <i className="bi bi-calendar-plus me-1"></i>
-                      Nueva solicitud
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    className="btn btn-brand btn-sm"
+                    onClick={() => setModalAbierto(true)}
+                  >
+                    <i className="bi bi-calendar-plus me-1"></i>
+                    Nueva solicitud
+                  </button>
                 </div>
-
-                {mostrarForm && (
-                  <form onSubmit={enviarSolicitud} className="row g-3 mb-2">
-                    <div className="col-md-4">
-                      <label className="form-label">Desde</label>
-                      <input
-                        type="date"
-                        className="form-control"
-                        value={fechaInicioSolicitud}
-                        onChange={(e) => setFechaInicioSolicitud(e.target.value)}
-                        required
-                      />
-                    </div>
-                    <div className="col-md-4">
-                      <label className="form-label">Hasta</label>
-                      <input
-                        type="date"
-                        className="form-control"
-                        value={fechaFinSolicitud}
-                        onChange={(e) => setFechaFinSolicitud(e.target.value)}
-                        required
-                      />
-                    </div>
-                    <div className="col-md-4">
-                      <label className="form-label">Motivo</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        placeholder="Ej. Viaje familiar"
-                        value={motivoSolicitud}
-                        onChange={(e) => setMotivoSolicitud(e.target.value)}
-                        required
-                      />
-                    </div>
-                    <div className="col-12 d-flex gap-2">
-                      <button
-                        type="submit"
-                        className="btn btn-brand"
-                        disabled={enviandoSolicitud}
-                      >
-                        {enviandoSolicitud ? "Enviando..." : "Enviar solicitud"}
-                      </button>
-                      <button
-                        type="button"
-                        className="btn btn-outline-secondary"
-                        onClick={() => setMostrarForm(false)}
-                        disabled={enviandoSolicitud}
-                      >
-                        Cancelar
-                      </button>
-                    </div>
-                  </form>
-                )}
 
                 <div className="table-responsive mt-3">
                   <table className="table table-hover align-middle mb-0">
@@ -430,6 +336,17 @@ function MisVacaciones() {
           </>
         )}
       </div>
+
+      {modalAbierto && (
+        <SolicitarVacacionesModal
+          diasDisponibles={saldo?.diasDisponibles}
+          onClose={() => setModalAbierto(false)}
+          onCreada={async () => {
+            setModalAbierto(false);
+            await Promise.all([refetchSolicitudes(), refetchSaldo()]);
+          }}
+        />
+      )}
     </AppLayout>
   );
 }

@@ -43,7 +43,6 @@ const DatosLaborales = ({
 
   return (
     <div>
-      <h5 className="mb-4 text-secondary">Datos Laborales</h5>
       <div className="row g-3">
         <div className="col-md-6">
           <label className="form-label">Área / Departamento</label>
