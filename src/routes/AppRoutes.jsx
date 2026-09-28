@@ -10,6 +10,7 @@ import GestionNovedades from "../pages/GestionNovedades";
 import GestionVacaciones from "../pages/GestionVacaciones";
 import SaldosPersonal from "../pages/SaldosPersonales";
 import GestionCatalogos from "../pages/GestionCatalogos";
+import Perfiles from "../pages/Perfiles";
 
 function AppRoutes() {
   return (
@@ -26,6 +27,7 @@ function AppRoutes() {
         {/* RRHH - Gestión de Usuarios */}
         <Route path="/gestion-usuarios" element={<GestionUsuarios />} />
         <Route path="/gestion-usuarios/crear" element={<GestionUsuarios />} />
+        <Route path="/perfiles/:idUsuario" element={<Perfiles />} />
 
         {/* RRHH - Gestión de Novedades */}
         <Route path="/gestion-novedades" element={<GestionNovedades />} />

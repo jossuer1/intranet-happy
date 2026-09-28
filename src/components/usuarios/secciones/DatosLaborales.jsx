@@ -5,6 +5,7 @@ const DatosLaborales = ({
   handleChange,
   catalogos = {},
   usuariosDisponibles = [],
+  opcionesFijas = {},
   idUsuarioActual = null,
 }) => {
   const handleSwitchChange = (e) => {
@@ -36,10 +37,26 @@ const DatosLaborales = ({
         )
       : catalogos.cargos || [];
 
-  // Un usuario no puede ser su propio jefe directo
+  // Solo se puede elegir como jefe directo a usuarios activos marcados como
+  // jefe (el backend lo valida); y nadie puede ser su propio jefe.
   const posiblesJefes = usuariosDisponibles.filter(
-    (u) => !idUsuarioActual || u.idUsuario !== idUsuarioActual,
+    (u) =>
+      u.esJefe &&
+      u.estado !== false &&
+      (!idUsuarioActual || u.idUsuario !== idUsuarioActual),
   );
+
+  const requiereFechaFin = (opcionesFijas.tiposContratoConFechaFin || []).includes(
+    formData.tipoContrato,
+  );
+
+  // Al cambiar el tipo de contrato, se limpia la fecha de fin si ya no aplica
+  const handleTipoContratoChange = (e) => {
+    handleChange(e);
+    if (!(opcionesFijas.tiposContratoConFechaFin || []).includes(e.target.value)) {
+      handleChange({ target: { name: "fechaFinContrato", value: "" } });
+    }
+  };
 
   return (
     <div>
@@ -152,6 +169,114 @@ const DatosLaborales = ({
             onChange={handleChange}
             required
           />
+        </div>
+        <div className="col-12 mt-3">
+          <div className="card bg-light border-0 p-3 shadow-sm">
+            <h6 className="text-secondary mb-3">Condición Laboral</h6>
+            <div className="row g-3">
+              <div className="col-md-6">
+                <label className="form-label">Tipo de Contrato</label>
+                <select
+                  className="form-select"
+                  name="tipoContrato"
+                  value={formData.tipoContrato || ""}
+                  onChange={handleTipoContratoChange}
+                >
+                  <option value="">Seleccione un tipo...</option>
+                  {(opcionesFijas.tiposContrato || []).map((t) => (
+                    <option key={t} value={t}>
+                      {t}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {requiereFechaFin && (
+                <div className="col-md-6">
+                  <label className="form-label">Fecha de Fin de Contrato *</label>
+                  <input
+                    type="date"
+                    className="form-control"
+                    name="fechaFinContrato"
+                    value={formData.fechaFinContrato || ""}
+                    min={formData.fechaIngreso || undefined}
+                    onChange={handleChange}
+                    required
+                  />
+                  <small className="text-muted">
+                    Debe ser posterior a la fecha de ingreso.
+                  </small>
+                </div>
+              )}
+              <div className="col-md-6">
+                <label className="form-label">Jornada</label>
+                <select
+                  className="form-select"
+                  name="jornada"
+                  value={formData.jornada || ""}
+                  onChange={handleChange}
+                >
+                  <option value="">Seleccione una jornada...</option>
+                  {(opcionesFijas.jornadas || []).map((j) => (
+                    <option key={j} value={j}>
+                      {j}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="col-md-6">
+                <label className="form-label">Cargo IESS</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  name="cargoIess"
+                  maxLength={100}
+                  value={formData.cargoIess || ""}
+                  onChange={handleChange}
+                />
+              </div>
+              <div className="col-12 d-flex flex-wrap gap-4">
+                <div className="form-check form-switch">
+                  <input
+                    className="form-check-input"
+                    type="checkbox"
+                    id="recibeComisionesSwitch"
+                    name="recibeComisiones"
+                    checked={Boolean(formData.recibeComisiones)}
+                    onChange={handleSwitchChange}
+                  />
+                  <label className="form-check-label" htmlFor="recibeComisionesSwitch">
+                    Recibe comisiones
+                  </label>
+                </div>
+                <div className="form-check form-switch">
+                  <input
+                    className="form-check-input"
+                    type="checkbox"
+                    id="acumulaDecimosSwitch"
+                    name="acumulaDecimos"
+                    checked={Boolean(formData.acumulaDecimos)}
+                    onChange={handleSwitchChange}
+                  />
+                  <label className="form-check-label" htmlFor="acumulaDecimosSwitch">
+                    Acumula décimos
+                  </label>
+                </div>
+                <div className="form-check form-switch">
+                  <input
+                    className="form-check-input"
+                    type="checkbox"
+                    id="esJefeSwitch"
+                    name="esJefe"
+                    checked={Boolean(formData.esJefe)}
+                    onChange={handleSwitchChange}
+                  />
+                  <label className="form-check-label fw-bold" htmlFor="esJefeSwitch">
+                    Es jefe (puede ser elegido como jefe directo y aprobar vacaciones)
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
         <div className="col-12 mt-3">
           <div className="card bg-light border-0 p-3 shadow-sm">

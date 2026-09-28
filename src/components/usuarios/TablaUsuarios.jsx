@@ -1,6 +1,6 @@
 import React, { useState, useMemo, memo } from "react";
 import DataTable from "react-data-table-component";
-import UsuarioInfoModal from "./UsuarioInfoModal";
+import { useNavigate } from "react-router-dom";
 
 const customStyles = {
   headCells: {
@@ -26,6 +26,11 @@ const paginationComponentOptions = {
   selectAllRowsItem: true,
   selectAllRowsItemText: "Todos",
 };
+const estaActivo = (u) =>
+  u.estado === "Activo" ||
+  u.estado === 1 ||
+  u.estado === true ||
+  u.idEstado === 1;
 
 function TablaUsuarios({
   usuarios = [],
@@ -36,14 +41,38 @@ function TablaUsuarios({
   const [filterText, setFilterText] = useState("");
   // Usuario cuya información general se muestra en la tarjeta flotante.
   // null = tarjeta cerrada.
-  const [usuarioEnVista, setUsuarioEnVista] = useState(null);
+
+  const [filtroEstado, setFiltroEstado] = useState("todos"); // todos | activos | inactivos
+  const [filtroArea, setFiltroArea] = useState("");
+
+  // Áreas que existen en la lista, sin repetir y ordenadas
+  const areas = useMemo(
+    () =>
+      [...new Set(usuarios.map((u) => u.area).filter(Boolean))].sort((a, b) =>
+        a.localeCompare(b),
+      ),
+    [usuarios],
+  );
+
+  const hayFiltros = filtroEstado !== "todos" || filtroArea || filterText;
+  const limpiarFiltros = () => {
+    setFiltroEstado("todos");
+    setFiltroArea("");
+    setFilterText("");
+  };
+  const navigate = useNavigate();
 
   // Filtrado memoizado para evitar recalcular en cada re-render del padre
   const filteredItems = useMemo(() => {
     const search = filterText.toLowerCase().trim();
-    if (!search) return usuarios;
 
     return usuarios.filter((item) => {
+      if (filtroEstado === "activos" && !estaActivo(item)) return false;
+      if (filtroEstado === "inactivos" && estaActivo(item)) return false;
+      if (filtroArea && item.area !== filtroArea) return false;
+
+      if (!search) return true;
+
       const nombre = (item.nombres || item.nombre || "").toLowerCase();
       const correo = (item.correoEmpresa || item.correo || "").toLowerCase();
       const cedula = (item.cedula || "").toLowerCase();
@@ -54,7 +83,7 @@ function TablaUsuarios({
         cedula.includes(search)
       );
     });
-  }, [usuarios, filterText]);
+  }, [usuarios, filterText, filtroEstado, filtroArea]);
 
   // Definición memoizada de columnas
   const columns = useMemo(
@@ -85,10 +114,16 @@ function TablaUsuarios({
         sortable: true,
       },
       {
+        name: "Área",
+        selector: (row) => row.area || "N/A",
+        sortable: true,
+      },
+      {
         name: "Cargo",
         selector: (row) => row.cargo || row.nombreCargo || "N/A",
         sortable: true,
       },
+
       {
         name: "Vacaciones",
         selector: (row) => (row.tieneVacaciones === false ? "No" : "Sí"),
@@ -147,7 +182,7 @@ function TablaUsuarios({
                 title="Ver información"
                 onClick={(e) => {
                   e.stopPropagation();
-                  setUsuarioEnVista(row);
+                  navigate(`/perfiles/${row.idUsuario}`);
                 }}
               >
                 <i className="bi bi-eye"></i>
@@ -206,14 +241,40 @@ function TablaUsuarios({
         button: true,
       },
     ],
-    [onEditar, onCambiarEstado],
+    [onEditar, onCambiarEstado, navigate, onCambiarPermisoPerfil],
   );
 
   return (
     <div className="card shadow-sm border-0">
       <div className="card-body p-3">
         {/* BUSCADOR CON ICONO DE BOOTSTRAP */}
-        <div className="d-flex justify-content-end mb-3">
+        {/* FILTROS + BUSCADOR */}
+        <div className="d-flex flex-wrap justify-content-end align-items-center gap-2 mb-3">
+          <select
+            className="form-select form-select-sm"
+            style={{ maxWidth: "170px" }}
+            value={filtroEstado}
+            onChange={(e) => setFiltroEstado(e.target.value)}
+          >
+            <option value="todos">Todos los estados</option>
+            <option value="activos">Activos</option>
+            <option value="inactivos">Inactivos</option>
+          </select>
+
+          <select
+            className="form-select form-select-sm"
+            style={{ maxWidth: "200px" }}
+            value={filtroArea}
+            onChange={(e) => setFiltroArea(e.target.value)}
+          >
+            <option value="">Todas las áreas</option>
+            {areas.map((a) => (
+              <option key={a} value={a}>
+                {a}
+              </option>
+            ))}
+          </select>
+
           <div
             className="input-group input-group-sm"
             style={{ maxWidth: "300px" }}
@@ -229,8 +290,17 @@ function TablaUsuarios({
               onChange={(e) => setFilterText(e.target.value)}
             />
           </div>
-        </div>
 
+          {hayFiltros && (
+            <button
+              type="button"
+              className="btn btn-sm btn-outline-secondary"
+              onClick={limpiarFiltros}
+            >
+              Limpiar
+            </button>
+          )}
+        </div>
         {/* TABLA DE DATOS */}
         <DataTable
           columns={columns}
@@ -247,13 +317,6 @@ function TablaUsuarios({
           }
         />
       </div>
-
-      {usuarioEnVista && (
-        <UsuarioInfoModal
-          usuario={usuarioEnVista}
-          onClose={() => setUsuarioEnVista(null)}
-        />
-      )}
     </div>
   );
 }

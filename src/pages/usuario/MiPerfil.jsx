@@ -35,7 +35,8 @@ function MiPerfil() {
   // backend apague puedeActualizarPerfil; después ya no dejaría subirla.
   const handleGuardarPerfil = async (_idUsuario, payload, fotoArchivo) => {
     if (fotoArchivo) {
-      await usuariosService.subirMiFoto(fotoArchivo);
+      // El backend expone POST /usuarios/{id}/foto (no existe /mi-perfil/foto)
+      await usuariosService.subirFotoPerfil(userStore.idUsuario, fotoArchivo);
     }
     await usuariosService.actualizarMiPerfil(payload);
     // fetchPerfil() ya lo llama UsuarioFormCard internamente tras guardar
@@ -44,6 +45,20 @@ function MiPerfil() {
     // también quede con los datos frescos, no con la caché vieja.
     await queryClient.invalidateQueries({ queryKey: ["perfilUsuario"] });
   };
+  const {
+    data: user,
+    isLoading,
+    isError,
+    error,
+  } = useQuery({
+    queryKey: ["perfilUsuario"],
+    queryFn: async () => {
+      if (userStore) return userStore;
+      return await fetchPerfil();
+    },
+    initialData: userStore || undefined,
+    staleTime: 1000 * 60 * 5, // 5 minutos de tiempo de expiración de caché
+  });
 
   if (debeActualizarPerfil) {
     return (
@@ -69,21 +84,6 @@ function MiPerfil() {
       </AppLayout>
     );
   }
-
-  const {
-    data: user,
-    isLoading,
-    isError,
-    error,
-  } = useQuery({
-    queryKey: ["perfilUsuario"],
-    queryFn: async () => {
-      if (userStore) return userStore;
-      return await fetchPerfil();
-    },
-    initialData: userStore || undefined,
-    staleTime: 1000 * 60 * 5, // 5 minutos de tiempo de expiración de caché
-  });
 
   if (isLoading) {
     return (
@@ -261,6 +261,7 @@ function MiPerfil() {
                             <th>Nombre Completo</th>
                             <th>Parentesco</th>
                             <th>Fecha de nacimiento</th>
+                            <th>Fecha de unión</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -275,7 +276,12 @@ function MiPerfil() {
                               <td>
                                 {fam.fechaNacimiento
                                   ? formatearFecha(fam.fechaNacimiento)
-                                  : "N/A"}
+                                  : "—"}
+                              </td>
+                              <td>
+                                {fam.fechaUnion
+                                  ? formatearFecha(fam.fechaUnion)
+                                  : "—"}
                               </td>
                             </tr>
                           ))}

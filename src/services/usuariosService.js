@@ -18,13 +18,6 @@ export const getMiPerfil = () => apiClient.get("/usuarios/mi-perfil");
 export const actualizarMiPerfil = (datosPerfil) =>
   apiClient.put("/usuarios/mi-perfil", datosPerfil);
 
-// Foto del propio empleado (multipart). Devuelve { urlImagenPerfil }.
-export const subirMiFoto = (archivo) => {
-  const formData = new FormData();
-  formData.append("foto", archivo);
-  return apiClient.post("/usuarios/mi-perfil/foto", formData);
-};
-
 export const actualizar = (id, datosUsuario) =>
   apiClient.put(`/usuarios/${id}`, datosUsuario);
 
@@ -60,7 +53,6 @@ export const usuariosService = {
   getPorId,
   getMiPerfil,
   actualizarMiPerfil,
-  subirMiFoto,
   actualizar,
   actualizarUsuario,
   actualizarVacaciones,

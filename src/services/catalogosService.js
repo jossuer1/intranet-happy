@@ -15,6 +15,14 @@ export const getGeneros = () => apiClient.get("/catalogos/generos", false);
 export const getTiposSangre = () =>
   apiClient.get("/catalogos/tipos-sangre", false);
 
+export const getCatalogosFormulario = () =>
+  apiClient.get("/catalogos/formulario-perfil", false);
+
+// Listas fijas validadas por el backend (tipos de contrato, jornadas,
+// parentescos). Devuelve { tiposContrato, tiposContratoConFechaFin, jornadas, parentescosFamiliar }.
+export const getOpcionesFijas = () =>
+  apiClient.get("/catalogos/opciones-fijas", false);
+
 // --- Escrituras (solo rol ADMIN, el backend las protege igual) ---
 
 // Áreas: solo Crear (el backend no expone editar/desactivar)
@@ -75,6 +83,7 @@ export const catalogosService = {
   getEstadosCiviles,
   getGeneros,
   getTiposSangre,
+  getOpcionesFijas,
   crearArea,
   crearCargo,
   crearBanco,
@@ -89,4 +98,5 @@ export const catalogosService = {
   crearTipoSangre,
   actualizarTipoSangre,
   desactivarTipoSangre,
+  getCatalogosFormulario,
 };

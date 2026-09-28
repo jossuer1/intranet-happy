@@ -7,16 +7,7 @@ import Familiares from "./secciones/Familiares";
 import ContactosEmergencia from "./secciones/ContactosEmergencia";
 import DatosBancarios from "./secciones/DatosBancarios";
 import Titulos from "./secciones/Titulos";
-import {
-  getAreas,
-  getCargos,
-  getBancos,
-  getCiudades,
-  getEtnias,
-  getEstadosCiviles,
-  getGeneros,
-  getTiposSangre,
-} from "../../services/catalogosService.js";
+import { useCatalogosFormulario } from "../../hooks/useCatalogo";
 import "./UsuarioFormCard.css";
 
 // <input type="date"> solo muestra valores "yyyy-MM-dd". Si el backend manda
@@ -71,6 +62,24 @@ const CAMPOS_SENSIBLES_AUTOGESTION = [
   "idTipoSangre",
 ];
 
+const CATALOGOS_VACIOS = {
+  areas: [],
+  cargos: [],
+  bancos: [],
+  ciudades: [],
+  etnias: [],
+  estadosCiviles: [],
+  generos: [],
+  tiposSangre: [],
+};
+
+const OPCIONES_VACIAS = {
+  tiposContrato: [],
+  tiposContratoConFechaFin: [],
+  jornadas: [],
+  parentescosFamiliar: [],
+};
+
 const UsuarioFormCard = ({
   usuarioOriginal = null,
   usuariosDisponibles = [],
@@ -95,66 +104,14 @@ const UsuarioFormCard = ({
     handleRemoveItem,
   } = useUsuarioForm();
 
-  const [catalogos, setCatalogos] = useState({
-    areas: [],
-    cargos: [],
-    bancos: [],
-    ciudades: [],
-    etnias: [],
-    estadosCiviles: [],
-    generos: [],
-    tiposSangre: [],
-  });
+  // Catálogos y listas fijas: 1 sola petición (GET /catalogos/formulario-perfil),
+  // en caché 1 hora con React Query.
+  const { data: catalogosData } = useCatalogosFormulario();
+  const catalogos = catalogosData ?? CATALOGOS_VACIOS;
+  const opcionesFijas = catalogosData?.opcionesFijas ?? OPCIONES_VACIAS;
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-
-  // Carga de catálogos
-  useEffect(() => {
-    const cargarCatalogos = async () => {
-      const fetchSeguro = async (fn) => {
-        try {
-          const res = await fn();
-          return res || [];
-        } catch (err) {
-          console.warn("Error al obtener catálogo:", err);
-          return [];
-        }
-      };
-
-      const [
-        resAreas,
-        resCargos,
-        resBancos,
-        resCiudades,
-        resEtnias,
-        resEstadosCiviles,
-        resGeneros,
-        resTiposSangre,
-      ] = await Promise.all([
-        fetchSeguro(getAreas),
-        fetchSeguro(getCargos),
-        fetchSeguro(getBancos),
-        fetchSeguro(getCiudades),
-        fetchSeguro(getEtnias),
-        fetchSeguro(getEstadosCiviles),
-        fetchSeguro(getGeneros),
-        fetchSeguro(getTiposSangre),
-      ]);
-
-      setCatalogos({
-        areas: resAreas,
-        cargos: resCargos,
-        bancos: resBancos,
-        ciudades: resCiudades,
-        etnias: resEtnias,
-        estadosCiviles: resEstadosCiviles,
-        generos: resGeneros,
-        tiposSangre: resTiposSangre,
-      });
-    };
-
-    cargarCatalogos();
-  }, []);
 
   // Cargar datos originales si es edición
   useEffect(() => {
@@ -182,6 +139,13 @@ const UsuarioFormCard = ({
         idCargo: usuarioOriginal.idCargo || "",
         idCiudad: usuarioOriginal.idCiudad || "",
         idJefeDirecto: usuarioOriginal.idJefeDirecto || "",
+        esJefe: usuarioOriginal.esJefe ?? false,
+        cargoIess: usuarioOriginal.cargoIess || "",
+        jornada: usuarioOriginal.jornada || "",
+        tipoContrato: usuarioOriginal.tipoContrato || "",
+        fechaFinContrato: aFechaInput(usuarioOriginal.fechaFinContrato),
+        recibeComisiones: usuarioOriginal.recibeComisiones ?? false,
+        acumulaDecimos: usuarioOriginal.acumulaDecimos ?? false,
         foto: usuarioOriginal.urlImagenPerfil || "",
         tieneVacaciones: usuarioOriginal.tieneVacaciones ?? true,
         diasVacacionesAsignados: usuarioOriginal.diasVacacionesAsignados ?? 15,
@@ -192,6 +156,7 @@ const UsuarioFormCard = ({
         familiares: (usuarioOriginal.familiares || []).map((f) => ({
           ...f,
           fechaNacimiento: aFechaInput(f.fechaNacimiento),
+          fechaUnion: aFechaInput(f.fechaUnion),
         })),
         contactosEmergencia: usuarioOriginal.contactosEmergencia || [],
         datosBancarios: usuarioOriginal.datosBancarios || [],
@@ -229,8 +194,15 @@ const UsuarioFormCard = ({
     formData.cedula?.trim(),
   );
 
+  const requiereFechaFin = (
+    opcionesFijas.tiposContratoConFechaFin || []
+  ).includes(formData.tipoContrato);
+
   const esDatosLaboralesValido = Boolean(
-    formData.idArea && formData.idCargo && formData.fechaIngreso,
+    formData.idArea &&
+    formData.idCargo &&
+    formData.fechaIngreso &&
+    (!requiereFechaFin || formData.fechaFinContrato),
   );
 
   const esDatosBancariosValido = formData.datosBancarios.length > 0;
@@ -306,19 +278,46 @@ const UsuarioFormCard = ({
             diasVacacionesAsignados: formData.tieneVacaciones
               ? Number(formData.diasVacacionesAsignados || 15)
               : null,
+            // Condición laboral. La fecha de fin solo viaja para contratos
+            // que la exigen (EMERGENTE / PRODUCTIVO); el backend rechaza
+            // una fecha de fin en los demás tipos.
+            esJefe: Boolean(formData.esJefe),
+            cargoIess: formData.cargoIess?.trim() || null,
+            jornada: formData.jornada || null,
+            tipoContrato: formData.tipoContrato || null,
+            fechaFinContrato:
+              requiereFechaFin && formData.fechaFinContrato
+                ? new Date(formData.fechaFinContrato).toISOString()
+                : null,
+            recibeComisiones: Boolean(formData.recibeComisiones),
+            acumulaDecimos: Boolean(formData.acumulaDecimos),
           };
+
+      const familiarPayload = (f) => {
+        const esConyuge = normalizarTexto(f.parentesco) === "conyuge";
+        return {
+          nombre: f.nombre,
+          apellido: f.apellido || null,
+          parentesco: f.parentesco || null,
+          // Cónyuge usa fechaUnion; hijo usa fechaNacimiento (el backend
+          // rechaza fechaUnion en un hijo).
+          fechaNacimiento:
+            !esConyuge && f.fechaNacimiento
+              ? new Date(f.fechaNacimiento).toISOString()
+              : null,
+          fechaUnion:
+            esConyuge && f.fechaUnion
+              ? new Date(f.fechaUnion).toISOString()
+              : null,
+        };
+      };
 
       const payload = esEdicion
         ? {
             ...payloadBase,
             familiares: formData.familiares.map((f) => ({
               idFamiliar: f.idFamiliar || null,
-              nombre: f.nombre,
-              apellido: f.apellido || null,
-              parentesco: f.parentesco || null,
-              fechaNacimiento: f.fechaNacimiento
-                ? new Date(f.fechaNacimiento).toISOString()
-                : null,
+              ...familiarPayload(f),
             })),
             contactosEmergencia: formData.contactosEmergencia.map((c) => ({
               idContacto: c.idContacto || null,
@@ -352,14 +351,7 @@ const UsuarioFormCard = ({
           }
         : {
             ...payloadBase,
-            familiares: formData.familiares.map((f) => ({
-              nombre: f.nombre,
-              apellido: f.apellido || null,
-              parentesco: f.parentesco || null,
-              fechaNacimiento: f.fechaNacimiento
-                ? new Date(f.fechaNacimiento).toISOString()
-                : null,
-            })),
+            familiares: formData.familiares.map(familiarPayload),
             titulos: formData.titulos.map((t) => ({
               nombreTitulo: t.nombreTitulo,
               institucion: t.institucion || null,
@@ -540,6 +532,7 @@ const UsuarioFormCard = ({
                     handleChange={handleChange}
                     catalogos={catalogos}
                     usuariosDisponibles={usuariosDisponibles}
+                    opcionesFijas={opcionesFijas}
                     idUsuarioActual={usuarioOriginal?.idUsuario}
                   />
                 </div>
@@ -760,6 +753,7 @@ const UsuarioFormCard = ({
               <div className="accordion-body">
                 <Familiares
                   familiares={formData.familiares}
+                  parentescos={opcionesFijas.parentescosFamiliar}
                   handleItemChange={handleItemChange}
                   handleAddItem={handleAddItem}
                   handleRemoveItem={handleRemoveItem}

@@ -37,8 +37,12 @@ function AppLayout({ children, usuarioRol = null }) {
   const user = useAuthStore((state) => state.user);
 
   const tieneVacaciones = user?.tieneVacaciones ?? true;
+  // "Aprobar Vacaciones" solo aparece para quienes están marcados como jefe
+  const esJefe = Boolean(user?.esJefe);
   const MODULOS_EMPLEADO = MODULOS_EMPLEADO_BASE.filter(
-    (item) => item.key !== "mis-vacaciones" || tieneVacaciones,
+    (item) =>
+      (item.key !== "mis-vacaciones" || tieneVacaciones) &&
+      (item.key !== "aprobar-vacaciones" || esJefe),
   );
 
   const [openGestionUsuarios, setOpenGestionUsuarios] = useState(

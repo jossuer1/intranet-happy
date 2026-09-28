@@ -5,12 +5,20 @@ const Familiares = ({
   handleItemChange,
   handleAddItem,
   handleRemoveItem,
+  parentescos = ["CONYUGE", "HIJO"],
 }) => {
+  const listaParentescos = parentescos.length ? parentescos : ["CONYUGE", "HIJO"];
+  const etiqueta = (p) => (p === "CONYUGE" ? "Cónyuge" : p === "HIJO" ? "Hijo/a" : p);
+  const valorPorDefecto = listaParentescos.includes("HIJO")
+    ? "HIJO"
+    : listaParentescos[0];
+
   const nuevoFamiliar = {
     nombre: "",
     apellido: "",
-    parentesco: "Hijo/a",
+    parentesco: valorPorDefecto,
     fechaNacimiento: "",
+    fechaUnion: "",
   };
 
   return (
@@ -75,24 +83,42 @@ const Familiares = ({
                 <select
                   className="form-select"
                   name="parentesco"
-                  value={familiar.parentesco || "Hijo/a"}
+                  value={familiar.parentesco || valorPorDefecto}
                   onChange={(e) => handleItemChange("familiares", index, e)}
                 >
-                  <option value="Hijo/a">Hijo/a</option>
-                  <option value="Cónyuge">Cónyuge</option>
-                  <option value="Padre/Madre">Padre/Madre</option>
+                  {listaParentescos.map((p) => (
+                    <option key={p} value={p}>
+                      {etiqueta(p)}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div className="col-md-3">
-                <label className="form-label">Fecha de Nacimiento</label>
-                <input
-                  type="date"
-                  className="form-control"
-                  name="fechaNacimiento"
-                  value={familiar.fechaNacimiento || ""}
-                  onChange={(e) => handleItemChange("familiares", index, e)}
-                  required
-                />
+                {familiar.parentesco === "CONYUGE" ? (
+                  <>
+                    <label className="form-label">Fecha de Unión</label>
+                    <input
+                      type="date"
+                      className="form-control"
+                      name="fechaUnion"
+                      value={familiar.fechaUnion || ""}
+                      onChange={(e) => handleItemChange("familiares", index, e)}
+                      required
+                    />
+                  </>
+                ) : (
+                  <>
+                    <label className="form-label">Fecha de Nacimiento</label>
+                    <input
+                      type="date"
+                      className="form-control"
+                      name="fechaNacimiento"
+                      value={familiar.fechaNacimiento || ""}
+                      onChange={(e) => handleItemChange("familiares", index, e)}
+                      required
+                    />
+                  </>
+                )}
               </div>
             </div>
           </div>

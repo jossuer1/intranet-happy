@@ -27,6 +27,13 @@ export const useUsuarioForm = (initialData = {}) => {
     tieneVacaciones: true,
     diasVacacionesAsignados: 15,
     idJefeDirecto: "",
+    esJefe: false,
+    cargoIess: "",
+    jornada: "",
+    tipoContrato: "",
+    fechaFinContrato: "",
+    recibeComisiones: false,
+    acumulaDecimos: false,
 
     // Sublistas
     titulos: [],
