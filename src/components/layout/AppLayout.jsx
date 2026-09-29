@@ -37,7 +37,6 @@ function AppLayout({ children, usuarioRol = null }) {
   const user = useAuthStore((state) => state.user);
 
   const tieneVacaciones = user?.tieneVacaciones ?? true;
-  // "Aprobar Vacaciones" solo aparece para quienes están marcados como jefe
   const esJefe = Boolean(user?.esJefe);
   const MODULOS_EMPLEADO = MODULOS_EMPLEADO_BASE.filter(
     (item) =>
@@ -57,6 +56,7 @@ function AppLayout({ children, usuarioRol = null }) {
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  // Cerrar sidebar al cambiar de ruta
   useEffect(() => {
     setSidebarOpen(false);
   }, [location.pathname]);
@@ -76,15 +76,8 @@ function AppLayout({ children, usuarioRol = null }) {
   const esRRHH = rolUsuario === "RRHH";
   const esADMIN = rolUsuario === "ADMIN" || rolUsuario === "ADMINISTRADOR";
 
-  // Bloqueo real: mientras RRHH mantenga este flag en true, el empleado no
-  // puede navegar a ningún otro módulo. Se apaga solo cuando el backend
-  // recibe el guardado de la actualización (ver fetchPerfil tras guardar en
-  // la página de "Mi Perfil").
   const debeActualizarPerfil = Boolean(user?.puedeActualizarPerfil);
 
-  // Usar esto en vez de navigate(ruta) para cualquier click del sidebar:
-  // si el empleado todavía debe actualizar su perfil, cualquier intento de
-  // ir a otro módulo lo regresa a /mi-perfil en lugar de dejarlo salir.
   const irA = (ruta) => {
     if (debeActualizarPerfil) {
       navigate("/mi-perfil", { replace: true });
@@ -114,7 +107,7 @@ function AppLayout({ children, usuarioRol = null }) {
   );
 
   return (
-    <div className="bg-light min-vh-100 d-flex">
+    <div className="bg-light min-vh-100 d-flex flex-column flex-md-row">
       <style>{`
         .app-sidebar {
           width: 270px;
@@ -157,32 +150,58 @@ function AppLayout({ children, usuarioRol = null }) {
         }
       `}</style>
 
-      {/* Sidebar completo de arriba a abajo */}
-      <aside
-        className={`app-sidebar bg-white border-end px-3 py-3 flex-shrink-0 d-md-block ${
-          sidebarOpen ? "open" : ""
-        }`}
-      >
-        {/* Cabecera del Sidebar con Logo + HappyPay */}
+      {/* BARRA MÓVIL SUPERIOR (Visible solo en pantallas pequeñas) */}
+      <div className="d-md-none bg-white border-bottom px-3 py-2 d-flex align-items-center justify-content-between sticky-top z-3">
         <div
-          className="d-flex align-items-center gap-2 pb-3 mb-3 border-bottom px-2 cursor-pointer"
-          style={{ cursor: "pointer", height: "48px" }}
+          className="d-flex align-items-center gap-2 cursor-pointer"
           onClick={() => irA("/dashboard")}
         >
           <img
             src={logoHappyPay}
             alt="HappyPay Logo"
-            style={{ height: "36px", objectFit: "contain" }}
+            style={{ height: "32px", objectFit: "contain" }}
           />
-          <span className="fw-bold fs-5 text-dark tracking-tight">
+          <span className="fw-bold fs-6 text-dark tracking-tight">
             HappyPay
           </span>
         </div>
 
-        <div className="d-flex justify-content-end d-md-none mb-2">
+        {/* Botón de tres puntos o hamburguesa para abrir menú */}
+        <button
+          type="button"
+          className="btn btn-light border-0 px-2 py-1"
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          aria-label="Abrir menú"
+        >
+          <i className="bi bi-three-dots-vertical fs-4 text-dark"></i>
+        </button>
+      </div>
+
+      {/* Sidebar completo */}
+      <aside
+        className={`app-sidebar bg-white border-end px-3 py-3 flex-shrink-0 ${
+          sidebarOpen ? "open" : ""
+        }`}
+      >
+        {/* Cabecera del Sidebar con Logo + Botón de cerrar para móvil */}
+        <div className="d-flex align-items-center justify-content-between pb-3 mb-3 border-bottom px-2">
+          <div
+            className="d-flex align-items-center gap-2 cursor-pointer"
+            onClick={() => irA("/dashboard")}
+          >
+            <img
+              src={logoHappyPay}
+              alt="HappyPay Logo"
+              style={{ height: "36px", objectFit: "contain" }}
+            />
+            <span className="fw-bold fs-5 text-dark tracking-tight">
+              HappyPay
+            </span>
+          </div>
+
           <button
             type="button"
-            className="btn-close"
+            className="btn-close d-md-none"
             onClick={() => setSidebarOpen(false)}
             aria-label="Cerrar menú"
           ></button>
@@ -406,35 +425,26 @@ function AppLayout({ children, usuarioRol = null }) {
         )}
       </aside>
 
+      {/* Overlay oscuro cuando el menú está desplegado en móviles */}
       {sidebarOpen && (
         <div
-          className="d-md-none"
+          className="d-md-none position-fixed top-0 start-0 w-100 h-100"
           style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(0,0,0,0.4)",
+            background: "rgba(0,0,0,0.5)",
             zIndex: 1049,
           }}
           onClick={() => setSidebarOpen(false)}
         ></div>
       )}
 
-      {/* Contenedor Principal (Navbar Blanco Delgado + Área de Contenido) */}
+      {/* Contenedor Principal */}
       <div className="flex-grow-1 d-flex flex-column min-vh-100 overflow-hidden">
         <Navbar />
 
         <main className="flex-grow-1 p-3 p-md-4 overflow-auto">{children}</main>
       </div>
-      {/*
-        Este overlay solo se ve en el instante antes de que el useEffect de
-        arriba complete el redirect a /mi-perfil (o si por algún motivo la
-        navegación no ocurre). Una vez en /mi-perfil, debeActualizarPerfil
-        sigue siendo true, pero ahí NO debe taparse el formulario: en la
-        página de "Mi Perfil" hay que mostrar en su lugar un aviso fijo (no
-        descartable) usando este mismo `user.puedeActualizarPerfil`, y dejar
-        que el formulario se use. El bloqueo real de "no puede salir" lo da
-        irA() + el useEffect de redirect, no este modal.
-      */}
+
+      {/* Modal de actualización obligatoria de perfil */}
       {debeActualizarPerfil && location.pathname !== "/mi-perfil" && (
         <div
           className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center p-3"

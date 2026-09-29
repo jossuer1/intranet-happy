@@ -23,6 +23,20 @@ const normalizarTexto = (s) =>
 // el id en el catálogo para que el select no quede en "Seleccione...".
 const CAMPOS_ID_DESDE_NOMBRE = [
   {
+    // GET /usuarios/{id} devuelve el área como texto ("departamento") pero
+    // no siempre trae idArea; sin esto el select queda en "Seleccione un área...".
+    campo: "idArea",
+    texto: ["area", "departamento", "nombreArea"],
+    catalogo: "areas",
+    nombres: [
+      "nombreArea",
+      "nombreDepartamento",
+      "nombre",
+      "area",
+      "departamento",
+    ],
+  },
+  {
     campo: "idGenero",
     texto: "genero",
     catalogo: "generos",
@@ -174,13 +188,36 @@ const UsuarioFormCard = ({
     if (!usuarioOriginal) return;
     setFormData((prev) => {
       const cambios = {};
-      CAMPOS_ID_DESDE_NOMBRE.forEach(({ campo, texto, catalogo, nombres }) => {
-        if (prev[campo]) return;
-        const nombre = normalizarTexto(usuarioOriginal[texto]);
-        if (!nombre) return;
-        const item = (catalogos[catalogo] || []).find((c) =>
-          nombres.some((k) => normalizarTexto(c[k]) === nombre),
+
+      // El área se deduce del cargo: cada Cargo del catálogo trae su IdArea,
+      // y GET /usuarios/{id} sí devuelve idCargo (pero no idArea). Es más
+      // fiable que comparar nombres. Si no aplica, abajo se intenta por nombre.
+      if (!prev.idArea && prev.idCargo) {
+        const cargo = (catalogos.cargos || []).find(
+          (c) => String(c.idCargo) === String(prev.idCargo),
         );
+        if (cargo?.idArea) cambios.idArea = cargo.idArea;
+      }
+
+      CAMPOS_ID_DESDE_NOMBRE.forEach(({ campo, texto, catalogo, nombres }) => {
+        if (prev[campo] || cambios[campo]) return;
+        const claves = Array.isArray(texto) ? texto : [texto];
+        const nombre = normalizarTexto(
+          claves.map((k) => usuarioOriginal[k]).find(Boolean),
+        );
+        if (!nombre) return;
+        const lista = catalogos[catalogo] || [];
+        // 1) por los nombres de campo conocidos; 2) si el catálogo usa otro
+        //    nombre de campo, por cualquier propiedad de texto que coincida.
+        const item =
+          lista.find((c) =>
+            nombres.some((k) => normalizarTexto(c[k]) === nombre),
+          ) ||
+          lista.find((c) =>
+            Object.values(c).some(
+              (v) => typeof v === "string" && normalizarTexto(v) === nombre,
+            ),
+          );
         if (item && item[campo] !== undefined) cambios[campo] = item[campo];
       });
       return Object.keys(cambios).length ? { ...prev, ...cambios } : prev;

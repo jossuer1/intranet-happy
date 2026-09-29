@@ -42,6 +42,7 @@ export const useAuthStore = create((set) => ({
   logout: () => {
     localStorage.removeItem("jwt_token");
     set({ user: null, token: null });
+    window.location.href = "/login";
   },
 
   // Vuelve a pedir el perfil al backend. Se usa, entre otros casos, justo

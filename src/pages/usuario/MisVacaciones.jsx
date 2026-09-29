@@ -4,6 +4,8 @@ import Swal from "sweetalert2";
 import AppLayout from "../../components/layout/AppLayout";
 import SectionHeader from "../../components/layout/SectionHeader";
 import SolicitarVacacionesModal from "../../components/vacaciones/SolicitarVacacionesModal";
+import TablaSolicitudes from "../../components/vacaciones/TablaSolicitudes";
+import TablaMovimientos from "../../components/vacaciones/TablaMovimientos";
 import {
   getSaldo,
   getMisVacaciones,
@@ -11,19 +13,6 @@ import {
   descargarConstanciaSolicitud,
 } from "../../services/vacacionesService";
 import { useAuthStore } from "../../store/useAuthStore";
-
-const ESTADOS_SOLICITUD = {
-  PENDIENTE_JEFE: { texto: "Pendiente jefe directo", clase: "bg-warning text-dark" },
-  PENDIENTE_RRHH: { texto: "Pendiente RRHH", clase: "bg-info text-dark" },
-  APROBADA: { texto: "Aprobada", clase: "bg-success" },
-  RECHAZADA_JEFE: { texto: "Rechazada por el jefe", clase: "bg-danger" },
-  RECHAZADA_RRHH: { texto: "Rechazada por RRHH", clase: "bg-danger" },
-};
-
-function BadgeEstadoSolicitud({ estado }) {
-  const info = ESTADOS_SOLICITUD[estado] || { texto: estado, clase: "bg-secondary" };
-  return <span className={`badge ${info.clase}`}>{info.texto}</span>;
-}
 
 function TarjetaResumen({ etiqueta, valor }) {
   return (
@@ -40,17 +29,13 @@ function TarjetaResumen({ etiqueta, valor }) {
   );
 }
 
-// El backend registra movimientos de tipo "Descuento" (vacación tomada) o "Ajuste"
-// (corrección manual). No existe un flujo de aprobación con estados Pendiente/Aprobado.
-function badgeTipoMovimiento(tipo) {
-  return tipo === "Descuento" ? "bg-danger" : "bg-success";
-}
-
 function MisVacaciones() {
   const userStore = useAuthStore((state) => state.user);
   const fetchPerfil = useAuthStore((state) => state.fetchPerfil);
 
-  // 1. Query para cargar el perfil si no existe en el store
+  // Estado de Pestaña activa ('solicitudes' | 'movimientos')
+  const [activeTab, setActiveTab] = useState("solicitudes");
+
   const { data: user, isLoading: loadingPerfil } = useQuery({
     queryKey: ["perfilUsuario"],
     queryFn: fetchPerfil,
@@ -63,7 +48,6 @@ function MisVacaciones() {
     user && user.tieneVacaciones !== false && idUsuario,
   );
 
-  // 2. Saldo actual (GET /vacaciones/saldo/{idUsuario}) -> SaldoVacacionesDto
   const {
     data: saldo,
     isLoading: loadingSaldo,
@@ -77,7 +61,6 @@ function MisVacaciones() {
     staleTime: 1000 * 60 * 2,
   });
 
-  // 3. Historial de movimientos propios (GET /vacaciones/mis-vacaciones) -> VacacionDto[]
   const {
     data: historial,
     isLoading: loadingHistorial,
@@ -91,7 +74,6 @@ function MisVacaciones() {
     select: (data) => (Array.isArray(data) ? data : []),
   });
 
-  // 4. Mis solicitudes de vacaciones (flujo Jefe -> RRHH)
   const {
     data: solicitudes,
     isLoading: loadingSolicitudes,
@@ -130,11 +112,11 @@ function MisVacaciones() {
     }
   };
 
-  const loading = loadingPerfil || (habilitado && (loadingSaldo || loadingHistorial));
+  const loading =
+    loadingPerfil || (habilitado && (loadingSaldo || loadingHistorial));
   const isError = errorSaldo || errorHistorial;
   const error = errSaldo || errHistorial;
 
-  // Guard: Si no tiene el beneficio de vacaciones
   if (user && user.tieneVacaciones === false) {
     return (
       <AppLayout>
@@ -155,8 +137,6 @@ function MisVacaciones() {
     );
   }
 
-  const movimientos = historial || [];
-
   return (
     <AppLayout>
       <SectionHeader titulo="Mis Vacaciones" volverA="/dashboard" />
@@ -175,6 +155,7 @@ function MisVacaciones() {
           </div>
         ) : (
           <>
+            {/* CARDS DE RESUMEN SUPERIOR */}
             <div className="row g-3 mb-4">
               <TarjetaResumen
                 etiqueta="Días asignados"
@@ -190,147 +171,65 @@ function MisVacaciones() {
               />
             </div>
 
+            {/* CONTENEDOR CON PESTAÑAS Y TABLA DINÁMICA */}
             <div className="card shadow-sm border-0 mb-4">
-              <div className="card-body p-4">
-                <div className="d-flex justify-content-between align-items-center mb-3">
-                  <h5 className="card-title fw-bold mb-0">
-                    Solicitar Vacaciones
-                  </h5>
-                  <button
-                    type="button"
-                    className="btn btn-brand btn-sm"
-                    onClick={() => setModalAbierto(true)}
-                  >
-                    <i className="bi bi-calendar-plus me-1"></i>
-                    Nueva solicitud
-                  </button>
-                </div>
+              <div className="card-header bg-white border-bottom pt-3 pb-0 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                {/* PESTAÑAS DE NAVEGACIÓN */}
+                <ul className="nav nav-tabs card-header-tabs border-bottom-0">
+                  <li className="nav-item">
+                    <button
+                      type="button"
+                      className={`nav-link border-0 ${
+                        activeTab === "solicitudes"
+                          ? "active fw-bold text-brand border-bottom border-brand border-2"
+                          : "text-muted"
+                      }`}
+                      onClick={() => setActiveTab("solicitudes")}
+                    >
+                      Solicitar Vacaciones
+                    </button>
+                  </li>
+                  <li className="nav-item">
+                    <button
+                      type="button"
+                      className={`nav-link border-0 ${
+                        activeTab === "movimientos"
+                          ? "active fw-bold text-brand border-bottom border-brand border-2"
+                          : "text-muted"
+                      }`}
+                      onClick={() => setActiveTab("movimientos")}
+                    >
+                      Historial de movimientos
+                    </button>
+                  </li>
+                </ul>
 
-                <div className="table-responsive mt-3">
-                  <table className="table table-hover align-middle mb-0">
-                    <thead className="table-light">
-                      <tr>
-                        <th>Desde</th>
-                        <th>Hasta</th>
-                        <th>Días</th>
-                        <th>Motivo</th>
-                        <th>Estado</th>
-                        <th>Jefe</th>
-                        <th>RRHH</th>
-                        <th></th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {loadingSolicitudes ? (
-                        <tr>
-                          <td colSpan={8} className="text-center text-muted py-3">
-                            Cargando solicitudes...
-                          </td>
-                        </tr>
-                      ) : !solicitudes || solicitudes.length === 0 ? (
-                        <tr>
-                          <td colSpan={8} className="text-center text-muted py-3">
-                            No has enviado solicitudes de vacaciones todavía.
-                          </td>
-                        </tr>
-                      ) : (
-                        solicitudes.map((s) => (
-                          <tr key={s.idSolicitud}>
-                            <td>{new Date(s.fechaInicio).toLocaleDateString()}</td>
-                            <td>{new Date(s.fechaFin).toLocaleDateString()}</td>
-                            <td>{s.diasSolicitados}</td>
-                            <td className="small text-muted">{s.motivo}</td>
-                            <td>
-                              <BadgeEstadoSolicitud estado={s.estado} />
-                            </td>
-                            <td className="small text-muted">
-                              {s.jefeAprobadorNombre || "—"}
-                            </td>
-                            <td className="small text-muted">
-                              {s.rrhhAprobadorNombre || "—"}
-                            </td>
-                            <td>
-                              {s.estado === "APROBADA" && (
-                                <button
-                                  type="button"
-                                  className="btn btn-sm btn-outline-primary"
-                                  disabled={descargandoId === s.idSolicitud}
-                                  onClick={() => descargarConstancia(s.idSolicitud)}
-                                  title="Descargar constancia"
-                                >
-                                  <i className="bi bi-file-earmark-pdf"></i>
-                                </button>
-                              )}
-                            </td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
+                {/* BOTÓN NUEVA SOLICITUD (VISIBLE SIEMPRE O EN PESTAÑA SOLICITUDES) */}
+                <button
+                  type="button"
+                  className="btn btn-brand btn-sm my-1"
+                  onClick={() => setModalAbierto(true)}
+                >
+                  <i className="bi bi-calendar-plus me-1"></i>
+                  Nueva solicitud
+                </button>
               </div>
-            </div>
 
-            <div className="card shadow-sm border-0">
+              {/* CUERPO CON EL COMPONENTE SEGÚN LA PESTAÑA */}
               <div className="card-body p-4">
-                <h5 className="card-title fw-bold mb-4">
-                  Historial de movimientos
-                </h5>
-                <div className="table-responsive">
-                  <table className="table table-hover align-middle">
-                    <thead className="table-light">
-                      <tr>
-                        <th>Tipo</th>
-                        <th>Desde</th>
-                        <th>Hasta</th>
-                        <th>Días</th>
-                        <th>Observación</th>
-                        <th>Registrado por</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {movimientos.length === 0 ? (
-                        <tr>
-                          <td
-                            colSpan="6"
-                            className="text-center text-muted py-4"
-                          >
-                            No tienes movimientos de vacaciones registrados.
-                          </td>
-                        </tr>
-                      ) : (
-                        movimientos.map((m) => (
-                          <tr key={m.idVacacion}>
-                            <td>
-                              <span
-                                className={`badge ${badgeTipoMovimiento(m.tipoMovimiento)}`}
-                              >
-                                {m.tipoMovimiento}
-                              </span>
-                            </td>
-                            <td>
-                              {m.fechaInicio
-                                ? new Date(m.fechaInicio).toLocaleDateString()
-                                : "—"}
-                            </td>
-                            <td>
-                              {m.fechaFin
-                                ? new Date(m.fechaFin).toLocaleDateString()
-                                : "—"}
-                            </td>
-                            <td>{m.diasTomados}</td>
-                            <td className="text-muted small">
-                              {m.observacion || "—"}
-                            </td>
-                            <td className="text-muted small">
-                              {m.registradoPorNombre}
-                            </td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
+                {activeTab === "solicitudes" ? (
+                  <TablaSolicitudes
+                    solicitudes={solicitudes}
+                    loadingSolicitudes={loadingSolicitudes}
+                    descargandoId={descargandoId}
+                    onDescargarConstancia={descargarConstancia}
+                  />
+                ) : (
+                  <TablaMovimientos
+                    movimientos={historial}
+                    loadingHistorial={loadingHistorial}
+                  />
+                )}
               </div>
             </div>
           </>
