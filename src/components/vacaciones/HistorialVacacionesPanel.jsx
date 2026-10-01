@@ -1,5 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
+import Swal from "sweetalert2";
 import { useHistorialUsuario } from "../../hooks/useVacaciones.js";
+import { descargarConstanciaSolicitud } from "../../services/vacacionesService.js";
 
 // Panel (modal centrado) con el saldo + historial de movimientos de un
 // usuario. Se usa igual desde GestionVacaciones y SaldosPersonales: solo
@@ -9,12 +11,48 @@ function HistorialVacacionesPanel({ usuario, onClose }) {
     usuario?.idUsuario || usuario?.idEmpleado || usuario?.id || null;
 
   const { data, isLoading, error } = useHistorialUsuario(idUsuario);
+  const [descargandoId, setDescargandoId] = useState(null);
 
   // useHistorialUsuario devuelve { saldo, historial }
   const { saldo, historial } = data || {};
   const movimientos = Array.isArray(historial) ? historial : [];
 
   if (!usuario) return null;
+
+  // Usa el endpoint que ya existe (/vacaciones/solicitudes/{id}/constancia)
+  const handleDescargarPdf = async (mov) => {
+    const idSolicitud = mov.idSolicitud;
+    try {
+      setDescargandoId(idSolicitud);
+      const blob = await descargarConstanciaSolicitud(idSolicitud);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      // Nombre único: persona + período
+      // Ej: constancia-vacaciones-juan-carlos-perez-gomez-2026-10-07_2026-10-15.pdf
+      const slug = String(usuario.nombre || usuario.nombres || "colaborador")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-zA-Z0-9]+/g, "-")
+        .replace(/^-|-$/g, "")
+        .toLowerCase();
+      const ini = String(mov.fechaInicio || "").split("T")[0];
+      const fin = String(mov.fechaFin || "").split("T")[0];
+      link.download = `constancia-vacaciones-${slug}-${ini}_${fin}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      Swal.fire({
+        icon: "error",
+        title: "No se pudo descargar la constancia",
+        text: err.message || "Inténtalo de nuevo en unos segundos.",
+      });
+    } finally {
+      setDescargandoId(null);
+    }
+  };
 
   // Determina si el movimiento es un Descuento (toma de vacaciones) o un Ajuste/Acreditación
   const getTipoInfo = (mov) => {
@@ -60,9 +98,9 @@ function HistorialVacacionesPanel({ usuario, onClose }) {
         <div
           className="shadow-lg bg-white rounded-4 border"
           style={{
-            width: "480px",
+            width: "900px",
             maxWidth: "100%",
-            maxHeight: "85vh",
+            maxHeight: "88vh",
             display: "flex",
             flexDirection: "column",
             pointerEvents: "auto",
@@ -180,7 +218,7 @@ function HistorialVacacionesPanel({ usuario, onClose }) {
                     className="list-unstyled m-0"
                     style={{
                       overflowY: "auto",
-                      maxHeight: "40vh",
+                      maxHeight: "55vh",
                       paddingRight: "4px",
                     }}
                   >
@@ -191,23 +229,22 @@ function HistorialVacacionesPanel({ usuario, onClose }) {
                       return (
                         <li
                           key={mov.idVacacion}
-                          className="border rounded-3 p-3 mb-2"
+                          className="border rounded-3 p-3 mb-2 d-flex flex-wrap align-items-center gap-3"
                         >
-                          <div className="d-flex justify-content-between align-items-start mb-2">
-                            <div className="d-flex align-items-center gap-2">
-                              <span
-                                className={`badge rounded-pill ${badgeClass}`}
-                              >
-                                {label}
-                              </span>
-                              <span
-                                className={`fw-bold ${
-                                  signo === "−" ? "text-danger" : "text-success"
-                                }`}
-                              >
-                                {signo}
-                                {mov.diasTomados} días
-                              </span>
+                          {/* Columna 1: tipo, días y fecha de registro */}
+                          <div style={{ width: "150px" }}>
+                            <span
+                              className={`badge rounded-pill ${badgeClass}`}
+                            >
+                              {label}
+                            </span>
+                            <div
+                              className={`fw-bold fs-6 mt-1 ${
+                                signo === "−" ? "text-danger" : "text-success"
+                              }`}
+                            >
+                              {signo}
+                              {mov.diasTomados} días
                             </div>
                             <small className="text-muted">
                               {mov.fechaRegistro
@@ -216,32 +253,52 @@ function HistorialVacacionesPanel({ usuario, onClose }) {
                             </small>
                           </div>
 
-                          {tieneRango && (
-                            <div className="small text-dark mb-1 d-flex align-items-center gap-2">
-                              <i className="bi bi-calendar-range text-muted"></i>
-                              <span>
-                                <strong>Desde:</strong>{" "}
-                                {String(mov.fechaInicio).split("T")[0]}{" "}
-                                <span className="text-muted">→</span>{" "}
-                                <strong>Hasta:</strong>{" "}
-                                {String(mov.fechaFin).split("T")[0]}
-                              </span>
-                            </div>
-                          )}
-
-                          {mov.observacion && (
-                            <div className="small text-muted mb-1">
-                              <i className="bi bi-chat-left-text me-1"></i>
-                              {mov.observacion}
-                            </div>
-                          )}
-
+                          {/* Columna 2: período y observación */}
                           <div
-                            className="small text-muted mt-1 pt-1 border-top"
-                            style={{ fontSize: "0.75rem" }}
+                            className="flex-grow-1"
+                            style={{ minWidth: "240px", flexBasis: "300px" }}
                           >
-                            <i className="bi bi-person-check me-1"></i>
-                            Registrado por: {mov.registradoPorNombre}
+                            {tieneRango && (
+                              <div className="small text-dark mb-1 d-flex align-items-center gap-2">
+                                <i className="bi bi-calendar-range text-muted"></i>
+                                <span>
+                                  <strong>Desde:</strong>{" "}
+                                  {String(mov.fechaInicio).split("T")[0]}{" "}
+                                  <span className="text-muted">→</span>{" "}
+                                  <strong>Hasta:</strong>{" "}
+                                  {String(mov.fechaFin).split("T")[0]}
+                                </span>
+                              </div>
+                            )}
+                            {mov.observacion && (
+                              <div className="small text-muted">
+                                <i className="bi bi-chat-left-text me-1"></i>
+                                {mov.observacion}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Columna 3: quién lo registró y PDF */}
+                          <div
+                            className="d-flex flex-column align-items-end gap-2 text-end"
+                            style={{ width: "200px", fontSize: "0.75rem" }}
+                          >
+                            <span className="text-muted">
+                              <i className="bi bi-person-check me-1"></i>
+                              Registrado por: {mov.registradoPorNombre}
+                            </span>
+                            {mov.idSolicitud && (
+                              <button
+                                type="button"
+                                className="btn btn-sm btn-outline-danger"
+                                disabled={descargandoId === mov.idSolicitud}
+                                onClick={() => handleDescargarPdf(mov)}
+                                title="Descargar constancia PDF"
+                              >
+                                <i className="bi bi-file-earmark-pdf me-1"></i>
+                                PDF
+                              </button>
+                            )}
                           </div>
                         </li>
                       );

@@ -34,6 +34,9 @@ function GestionVacaciones() {
 
   // Estado para la búsqueda global
   const [filterText, setFilterText] = useState("");
+  const [filterArea, setFilterArea] = useState("");
+  // "" = todos | "con" = con vacaciones | "sin" = sin vacaciones
+  const [filterVacaciones, setFilterVacaciones] = useState("");
 
   const cargarDatos = async () => {
     try {
@@ -80,12 +83,11 @@ function GestionVacaciones() {
       title: aprobar
         ? "¿Dar el visto bueno final?"
         : "¿Rechazar esta solicitud?",
-      html: `<b>${solicitud.solicitanteNombre}</b><br/>${new Date(
-        solicitud.fechaInicio,
-      ).toLocaleDateString()} — ${new Date(solicitud.fechaFin).toLocaleDateString()}<br/>` +
-        (aprobar
-          ? "Se descontarán los días del saldo del empleado."
-          : ""),
+      html:
+        `<b>${solicitud.solicitanteNombre}</b><br/>${new Date(
+          solicitud.fechaInicio,
+        ).toLocaleDateString()} — ${new Date(solicitud.fechaFin).toLocaleDateString()}<br/>` +
+        (aprobar ? "Se descontarán los días del saldo del empleado." : ""),
       input: "text",
       inputLabel: "Observación (opcional)",
       showCancelButton: true,
@@ -107,7 +109,9 @@ function GestionVacaciones() {
         toast: true,
         position: "top-end",
         icon: "success",
-        title: aprobar ? "Solicitud aprobada y días descontados" : "Solicitud rechazada",
+        title: aprobar
+          ? "Solicitud aprobada y días descontados"
+          : "Solicitud rechazada",
         showConfirmButton: false,
         timer: 2200,
       });
@@ -159,7 +163,7 @@ function GestionVacaciones() {
       Swal.fire(
         "Sin beneficio de vacaciones",
         "Este colaborador no tiene habilitado el beneficio de vacaciones. Actívalo primero desde Gestión de Usuarios.",
-        "info"
+        "info",
       );
       return;
     }
@@ -185,7 +189,7 @@ function GestionVacaciones() {
       Swal.fire(
         "Atención",
         "Por favor ingresa un rango o número de días válido.",
-        "warning"
+        "warning",
       );
       return;
     }
@@ -194,7 +198,7 @@ function GestionVacaciones() {
       Swal.fire(
         "Atención",
         "El motivo / observación es obligatorio.",
-        "warning"
+        "warning",
       );
       return;
     }
@@ -243,13 +247,30 @@ function GestionVacaciones() {
     }
   };
 
-  // Filtrado global sobre nombre y departamento
+  // Áreas disponibles para el filtro (salen de los datos cargados)
+  const areas = [
+    ...new Set(personal.map((p) => p.departamento).filter(Boolean)),
+  ].sort((a, b) => a.localeCompare(b));
+
+  // Filtros combinables: nombre, área y si tiene/no tiene vacaciones
   const filteredItems = personal.filter((item) => {
-    const busqueda = filterText.toLowerCase();
     const nombre = item.nombre ? item.nombre.toLowerCase() : "";
-    const depto = item.departamento ? item.departamento.toLowerCase() : "";
-    return nombre.includes(busqueda) || depto.includes(busqueda);
+    const coincideNombre = nombre.includes(filterText.toLowerCase().trim());
+    const coincideArea = !filterArea || item.departamento === filterArea;
+    const sinBeneficio = item.tieneVacaciones === false;
+    const coincideVacaciones =
+      !filterVacaciones ||
+      (filterVacaciones === "con" && !sinBeneficio) ||
+      (filterVacaciones === "sin" && sinBeneficio);
+    return coincideNombre && coincideArea && coincideVacaciones;
   });
+
+  const hayFiltros = filterText || filterArea || filterVacaciones;
+  const limpiarFiltros = () => {
+    setFilterText("");
+    setFilterArea("");
+    setFilterVacaciones("");
+  };
 
   // Configuración de columnas para React Data Table Component
   const columns = [
@@ -371,17 +392,57 @@ function GestionVacaciones() {
               antigüedad
             </small>
           </div>
-          {!loading && !error && tab === "saldos" && (
-            <input
-              type="search"
-              className="form-control form-control-sm rounded-3"
-              style={{ maxWidth: "260px" }}
-              placeholder="Buscar colaborador..."
-              value={filterText}
-              onChange={(e) => setFilterText(e.target.value)}
-            />
-          )}
         </div>
+
+        {!loading && !error && tab === "saldos" && (
+          <div className="row g-2 mb-3 align-items-center">
+            <div className="col-12 col-md-4">
+              <input
+                type="search"
+                className="form-control form-control-sm rounded-3"
+                placeholder="Buscar por nombre..."
+                value={filterText}
+                onChange={(e) => setFilterText(e.target.value)}
+              />
+            </div>
+            <div className="col-6 col-md-3">
+              <select
+                className="form-select form-select-sm rounded-3"
+                value={filterArea}
+                onChange={(e) => setFilterArea(e.target.value)}
+              >
+                <option value="">Todas las áreas</option>
+                {areas.map((a) => (
+                  <option key={a} value={a}>
+                    {a}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="col-6 col-md-3">
+              <select
+                className="form-select form-select-sm rounded-3"
+                value={filterVacaciones}
+                onChange={(e) => setFilterVacaciones(e.target.value)}
+              >
+                <option value="">Con y sin vacaciones</option>
+                <option value="con">Con vacaciones</option>
+                <option value="sin">Sin vacaciones</option>
+              </select>
+            </div>
+            <div className="col-12 col-md-2">
+              {hayFiltros && (
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline-secondary rounded-3 w-100"
+                  onClick={limpiarFiltros}
+                >
+                  <i className="bi bi-x-circle me-1"></i>Limpiar
+                </button>
+              )}
+            </div>
+          </div>
+        )}
 
         <ul className="nav nav-pills mb-4 gap-2">
           <li className="nav-item">
@@ -650,8 +711,8 @@ function GestionVacaciones() {
                     {procesando
                       ? "Guardando..."
                       : tipoOperacion === "DESCUENTO"
-                      ? "Registrar Período Vacacional"
-                      : "Acreditar Días"}
+                        ? "Registrar Período Vacacional"
+                        : "Acreditar Días"}
                   </button>
                 </div>
               </div>
