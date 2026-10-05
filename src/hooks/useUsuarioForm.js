@@ -14,6 +14,7 @@ export const useUsuarioForm = (initialData = {}) => {
     idEstadoCivil: "",
     idEtnia: "",
     idTipoSangre: "",
+    nacionalidad: "ECUATORIANA",
     foto: "", // Base64 (solo para <img> de vista previa) o URL ya existente en edición
     fotoArchivo: null, // File real que se sube a Cloudinary al guardar
 
@@ -29,6 +30,7 @@ export const useUsuarioForm = (initialData = {}) => {
     idJefeDirecto: "",
     esJefe: false,
     cargoIess: "",
+    sectorial: "",
     jornada: "",
     tipoContrato: "",
     fechaFinContrato: "",
@@ -40,12 +42,14 @@ export const useUsuarioForm = (initialData = {}) => {
     familiares: [],
     contactosEmergencia: [],
     datosBancarios: [],
+    periodosIess: [],
 
     // Listas de IDs a eliminar (solo para edición)
     titulosAEliminar: [],
     familiaresAEliminar: [],
     contactosEmergenciaAEliminar: [],
     datosBancariosAEliminar: [],
+    periodosIessAEliminar: [],
     ...initialData,
   });
 

@@ -369,6 +369,15 @@ function Perfiles() {
                     </span>
                   </div>
 
+                  <div className="col-6 col-md-4 col-xxl-4 p-3 border-end">
+                    <span className="text-muted small d-block mb-1">
+                      Sectorial
+                    </span>
+                    <span className="fw-semibold text-dark">
+                      {info.sectorial || "—"}
+                    </span>
+                  </div>
+
                   <div className="col-6 col-md-4 col-xxl-3 p-3 border-end">
                     <span className="text-muted small d-block mb-1">
                       Vacaciones
@@ -389,6 +398,42 @@ function Perfiles() {
                       {info.direccion ? ` · ${info.direccion}` : ""}
                     </span>
                   </div>
+
+                  {info.periodosIess && info.periodosIess.length > 0 && (
+                    <div className="col-12 p-3 border-top">
+                      <span className="text-muted small d-block mb-2">
+                        Historial de contratos
+                      </span>
+                      <div className="table-responsive">
+                        <table className="table table-sm align-middle mb-0 small">
+                          <thead>
+                            <tr className="text-muted">
+                              <th>Inicio</th>
+                              <th>Fin</th>
+                              <th>Cargo</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {info.periodosIess.map((per, idx) => (
+                              <tr key={per.idPeriodoIess || idx}>
+                                <td>{formatearFecha(per.fechaIngreso)}</td>
+                                <td>
+                                  {per.fechaSalida ? (
+                                    formatearFecha(per.fechaSalida)
+                                  ) : (
+                                    <span className="badge bg-success-subtle text-success border border-success-subtle">
+                                      Vigente
+                                    </span>
+                                  )}
+                                </td>
+                                <td>{per.cargoIess || "—"}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -410,6 +455,16 @@ function Perfiles() {
                     <span className="text-muted d-block">Cédula / ID</span>
                     <span className="fw-semibold text-dark">
                       {info.cedula || "—"}
+                    </span>
+                  </div>
+
+                  <div className="col-6">
+                    <span className="text-muted d-block">Nacionalidad</span>
+                    <span className="fw-semibold text-dark">
+                      {info.nacionalidad
+                        ? info.nacionalidad.charAt(0) +
+                          info.nacionalidad.slice(1).toLowerCase()
+                        : "—"}
                     </span>
                   </div>
 
@@ -707,6 +762,16 @@ function Perfiles() {
                                         " " +
                                         (fam.apellido || "")}
                                     </div>
+
+                                    {fam.cedula && (
+                                      <div
+                                        className="text-muted small mt-1"
+                                        style={{ fontSize: "0.75rem" }}
+                                      >
+                                        <i className="bi bi-person-vcard me-1"></i>
+                                        C.I: {fam.cedula}
+                                      </div>
+                                    )}
 
                                     {fechaReferencia && (
                                       <>

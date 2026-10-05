@@ -203,6 +203,7 @@ function UsuarioInfoModal({ usuario, onClose }) {
               <SeccionTitulo>Información Personal</SeccionTitulo>
               <div className="row">
                 <InfoItem label="Cédula" valor={info.cedula} />
+                <InfoItem label="Nacionalidad" valor={info.nacionalidad} />
                 <InfoItem
                   label="Fecha de nacimiento"
                   valor={formatearFecha(info.fechaNacimiento)}
@@ -256,6 +257,7 @@ function UsuarioInfoModal({ usuario, onClose }) {
                   valor={info.cargo || info.nombreCargo}
                 />
                 <InfoItem label="Departamento" valor={info.departamento} />
+                <InfoItem label="Sectorial" valor={info.sectorial} />
                 <InfoItem
                   label="Fecha de ingreso"
                   valor={formatearFecha(info.fechaIngreso)}
@@ -271,6 +273,27 @@ function UsuarioInfoModal({ usuario, onClose }) {
                 />
               </div>
 
+              {info.periodosIess && info.periodosIess.length > 0 && (
+                <div className="mt-3">
+                  <p className="text-uppercase text-muted fw-bold small mb-2">
+                    Historial de contratos
+                  </p>
+                  <TablaMini headers={["Inicio", "Fin", "Cargo"]}>
+                    {info.periodosIess.map((per, idx) => (
+                      <tr key={per.idPeriodoIess || idx}>
+                        <td>{formatearFecha(per.fechaIngreso)}</td>
+                        <td>
+                          {per.fechaSalida
+                            ? formatearFecha(per.fechaSalida)
+                            : "Vigente"}
+                        </td>
+                        <td>{per.cargoIess || "N/A"}</td>
+                      </tr>
+                    ))}
+                  </TablaMini>
+                </div>
+              )}
+
               <hr className="my-3 text-muted opacity-25" />
 
               {/* 3. FAMILIARES Y CONTACTOS */}
@@ -285,6 +308,7 @@ function UsuarioInfoModal({ usuario, onClose }) {
                     headers={[
                       "Nombre Completo",
                       "Parentesco",
+                      "Cédula",
                       "Fecha de nacimiento",
                     ]}
                   >
@@ -294,6 +318,7 @@ function UsuarioInfoModal({ usuario, onClose }) {
                           {fam.nombre} {fam.apellido || ""}
                         </td>
                         <td>{fam.parentesco || "N/A"}</td>
+                        <td>{fam.cedula || "N/A"}</td>
                         <td>
                           {fam.fechaNacimiento
                             ? formatearFecha(fam.fechaNacimiento)

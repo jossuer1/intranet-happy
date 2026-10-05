@@ -7,6 +7,7 @@ import Familiares from "./secciones/Familiares";
 import ContactosEmergencia from "./secciones/ContactosEmergencia";
 import DatosBancarios from "./secciones/DatosBancarios";
 import Titulos from "./secciones/Titulos";
+import PeriodosContrato from "./secciones/PeriodosContrato";
 import { useCatalogosFormulario } from "../../hooks/useCatalogo";
 import "./UsuarioFormCard.css";
 
@@ -69,6 +70,7 @@ const CAMPOS_SENSIBLES_AUTOGESTION = [
   "nombre",
   "apellido",
   "cedula",
+  "nacionalidad",
   "fechaNacimiento",
   "idGenero",
   "idEstadoCivil",
@@ -92,6 +94,7 @@ const OPCIONES_VACIAS = {
   tiposContratoConFechaFin: [],
   jornadas: [],
   parentescosFamiliar: [],
+  nacionalidades: [],
 };
 
 const UsuarioFormCard = ({
@@ -155,6 +158,8 @@ const UsuarioFormCard = ({
         idJefeDirecto: usuarioOriginal.idJefeDirecto || "",
         esJefe: usuarioOriginal.esJefe ?? false,
         cargoIess: usuarioOriginal.cargoIess || "",
+        sectorial: usuarioOriginal.sectorial || "",
+        nacionalidad: usuarioOriginal.nacionalidad || "ECUATORIANA",
         jornada: usuarioOriginal.jornada || "",
         tipoContrato: usuarioOriginal.tipoContrato || "",
         fechaFinContrato: aFechaInput(usuarioOriginal.fechaFinContrato),
@@ -174,10 +179,17 @@ const UsuarioFormCard = ({
         })),
         contactosEmergencia: usuarioOriginal.contactosEmergencia || [],
         datosBancarios: usuarioOriginal.datosBancarios || [],
+        periodosIess: (usuarioOriginal.periodosIess || []).map((per) => ({
+          idPeriodoIess: per.idPeriodoIess,
+          fechaIngreso: aFechaInput(per.fechaIngreso),
+          fechaSalida: aFechaInput(per.fechaSalida),
+          cargoIess: per.cargoIess || "",
+        })),
         titulosAEliminar: [],
         familiaresAEliminar: [],
         contactosEmergenciaAEliminar: [],
         datosBancariosAEliminar: [],
+        periodosIessAEliminar: [],
       };
       setFormData((prev) => ({ ...prev, ...initialData }));
     }
@@ -261,6 +273,59 @@ const UsuarioFormCard = ({
       return;
     }
 
+    // Cédulas de familiares: 10 dígitos, sin repetirse entre sí ni con la del
+    // empleado (el backend también lo valida; aquí se avisa antes de enviar).
+    const cedulasFam = formData.familiares
+      .map((f) => f.cedula?.trim())
+      .filter(Boolean);
+    if (cedulasFam.some((c) => !/^\d{10}$/.test(c))) {
+      setError("La cédula de cada familiar debe tener exactamente 10 dígitos.");
+      return;
+    }
+    if (new Set(cedulasFam).size !== cedulasFam.length) {
+      setError("Hay familiares con la misma cédula.");
+      return;
+    }
+    if (cedulasFam.includes(formData.cedula?.trim())) {
+      setError("La cédula de un familiar no puede ser la del empleado.");
+      return;
+    }
+
+    // Períodos de contrato (solo se editan en edición por RRHH). Mismas reglas
+    // que el backend: inicio obligatorio, fin >= inicio, sin traslapes y solo
+    // el último puede quedar abierto.
+    if (esEdicion && !modoAutogestion) {
+      const periodos = formData.periodosIess;
+      if (periodos.some((per) => !per.fechaIngreso)) {
+        setError("Cada período de contrato necesita su fecha de inicio.");
+        return;
+      }
+      const ordenados = [...periodos].sort((a, b) =>
+        a.fechaIngreso.localeCompare(b.fechaIngreso),
+      );
+      for (let i = 0; i < ordenados.length; i++) {
+        const { fechaIngreso, fechaSalida } = ordenados[i];
+        if (fechaSalida && fechaSalida < fechaIngreso) {
+          setError(
+            "En un período de contrato, la fecha de fin no puede ser anterior a la de inicio.",
+          );
+          return;
+        }
+        if (i < ordenados.length - 1) {
+          if (!fechaSalida) {
+            setError("Solo el último período de contrato puede quedar sin fecha de fin.");
+            return;
+          }
+          if (fechaSalida >= ordenados[i + 1].fechaIngreso) {
+            setError(
+              "Los períodos de contrato no pueden traslaparse: cada uno debe terminar antes del inicio del siguiente.",
+            );
+            return;
+          }
+        }
+      }
+    }
+
     setLoading(true);
 
     try {
@@ -320,6 +385,10 @@ const UsuarioFormCard = ({
             // una fecha de fin en los demás tipos.
             esJefe: Boolean(formData.esJefe),
             cargoIess: formData.cargoIess?.trim() || null,
+            // Sectorial: en edición, "" le dice al backend que lo borre
+            // (null significaría "no tocar").
+            sectorial: formData.sectorial?.trim() || (esEdicion ? "" : null),
+            nacionalidad: formData.nacionalidad || "ECUATORIANA",
             jornada: formData.jornada || null,
             tipoContrato: formData.tipoContrato || null,
             fechaFinContrato:
@@ -336,6 +405,7 @@ const UsuarioFormCard = ({
           nombre: f.nombre,
           apellido: f.apellido || null,
           parentesco: f.parentesco || null,
+          cedula: f.cedula?.trim() || null,
           // Cónyuge usa fechaUnion; hijo usa fechaNacimiento (el backend
           // rechaza fechaUnion en un hijo).
           fechaNacimiento:
@@ -384,6 +454,15 @@ const UsuarioFormCard = ({
               })),
               titulosAEliminar: formData.titulosAEliminar,
               datosBancariosAEliminar: formData.datosBancariosAEliminar,
+              periodosIess: formData.periodosIess.map((per) => ({
+                idPeriodoIess: per.idPeriodoIess || null,
+                fechaIngreso: new Date(per.fechaIngreso).toISOString(),
+                fechaSalida: per.fechaSalida
+                  ? new Date(per.fechaSalida).toISOString()
+                  : null,
+                cargoIess: per.cargoIess?.trim() || null,
+              })),
+              periodosIessAEliminar: formData.periodosIessAEliminar,
             }),
           }
         : {
@@ -513,6 +592,7 @@ const UsuarioFormCard = ({
                   handleChange={handleChange}
                   handleFotoChange={handleFotoChange}
                   catalogos={catalogos}
+                  opcionesFijas={opcionesFijas}
                   camposSoloLectura={
                     modoAutogestion ? CAMPOS_SENSIBLES_AUTOGESTION : []
                   }
@@ -681,6 +761,62 @@ const UsuarioFormCard = ({
                 <div className="accordion-body">
                   <Titulos
                     titulos={formData.titulos}
+                    handleItemChange={handleItemChange}
+                    handleAddItem={handleAddItem}
+                    handleRemoveItem={handleRemoveItem}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 4b. HISTORIAL DE CONTRATOS (solo al editar; oculto en autogestión) */}
+          {esEdicion && !modoAutogestion && (
+            <div className="accordion-item shadow-sm mb-3">
+              <h2 className="accordion-header" id="headingPeriodos">
+                <button
+                  className="accordion-button collapsed"
+                  type="button"
+                  data-bs-toggle="collapse"
+                  data-bs-target="#collapsePeriodos"
+                  aria-expanded="false"
+                  aria-controls="collapsePeriodos"
+                >
+                  <div className="d-flex align-items-center justify-content-between w-100 me-3">
+                    <span className="fw-bold d-flex align-items-center gap-2">
+                      <i className="bi bi-clock-history text-primary"></i>
+                      Historial de Contratos
+                    </span>
+                    <span
+                      className={`badge rounded-pill d-flex align-items-center gap-1 ${
+                        formData.periodosIess.length > 0
+                          ? "bg-success-subtle text-success border border-success"
+                          : "bg-light text-secondary border"
+                      }`}
+                    >
+                      <i
+                        className={`bi ${
+                          formData.periodosIess.length > 0
+                            ? "bi-check-circle-fill"
+                            : "bi-dash-circle"
+                        }`}
+                      ></i>
+                      {formData.periodosIess.length > 0
+                        ? `${formData.periodosIess.length} Período(s)`
+                        : "Opcional / Sin registros"}
+                    </span>
+                  </div>
+                </button>
+              </h2>
+              <div
+                id="collapsePeriodos"
+                className="accordion-collapse collapse"
+                aria-labelledby="headingPeriodos"
+                data-bs-parent="#accordionUsuario"
+              >
+                <div className="accordion-body">
+                  <PeriodosContrato
+                    periodos={formData.periodosIess}
                     handleItemChange={handleItemChange}
                     handleAddItem={handleAddItem}
                     handleRemoveItem={handleRemoveItem}

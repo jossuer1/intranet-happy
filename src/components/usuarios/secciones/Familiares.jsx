@@ -17,6 +17,7 @@ const Familiares = ({
     nombre: "",
     apellido: "",
     parentesco: valorPorDefecto,
+    cedula: "",
     fechaNacimiento: "",
     fechaUnion: "",
   };
@@ -92,6 +93,26 @@ const Familiares = ({
                     </option>
                   ))}
                 </select>
+              </div>
+              <div className="col-md-3">
+                <label className="form-label">Cédula</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  name="cedula"
+                  inputMode="numeric"
+                  maxLength={10}
+                  placeholder="10 dígitos (opcional)"
+                  value={familiar.cedula || ""}
+                  onChange={(e) =>
+                    handleItemChange(
+                      "familiares",
+                      index,
+                      "cedula",
+                      e.target.value.replace(/\D/g, ""),
+                    )
+                  }
+                />
               </div>
               <div className="col-md-3">
                 {familiar.parentesco === "CONYUGE" ? (

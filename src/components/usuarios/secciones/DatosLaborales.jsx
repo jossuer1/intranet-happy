@@ -234,6 +234,18 @@ const DatosLaborales = ({
                   onChange={handleChange}
                 />
               </div>
+              <div className="col-md-6">
+                <label className="form-label">Sectorial</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  name="sectorial"
+                  maxLength={60}
+                  value={formData.sectorial || ""}
+                  onChange={handleChange}
+                  placeholder="Ej. 1910000000012 o BAJO FACTURA"
+                />
+              </div>
               <div className="col-12 d-flex flex-wrap gap-4">
                 <div className="form-check form-switch">
                   <input

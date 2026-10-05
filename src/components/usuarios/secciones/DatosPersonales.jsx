@@ -5,6 +5,7 @@ const DatosPersonales = ({
   handleChange,
   handleFotoChange,
   catalogos,
+  opcionesFijas = {},
   camposSoloLectura = [],
 }) => {
   const esSoloLectura = (campo) => camposSoloLectura.includes(campo);
@@ -159,6 +160,27 @@ const DatosPersonales = ({
               onChange={handleChange}
               disabled={esSoloLectura("fechaNacimiento")}
             />
+          </div>
+          <div className="col-md-4">
+            <label className="form-label fw-semibold text-center d-block">
+              Nacionalidad
+            </label>
+            <select
+              name="nacionalidad"
+              className="form-select"
+              value={formData.nacionalidad || ""}
+              onChange={handleChange}
+              disabled={esSoloLectura("nacionalidad")}
+            >
+              {(opcionesFijas.nacionalidades?.length
+                ? opcionesFijas.nacionalidades
+                : ["ECUATORIANA"]
+              ).map((n) => (
+                <option key={n} value={n}>
+                  {n.charAt(0) + n.slice(1).toLowerCase()}
+                </option>
+              ))}
+            </select>
           </div>
           <div className="col-md-4">
             <label className="form-label fw-semibold text-center d-block">
