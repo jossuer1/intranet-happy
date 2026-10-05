@@ -28,9 +28,13 @@ function AprobarVacaciones() {
     const confirmacion = await Swal.fire({
       icon: "question",
       title: aprobar ? "¿Aprobar esta solicitud?" : "¿Rechazar esta solicitud?",
-      html: `<b>${solicitud.solicitanteNombre}</b><br/>${new Date(
-        solicitud.fechaInicio,
-      ).toLocaleDateString()} — ${new Date(solicitud.fechaFin).toLocaleDateString()}`,
+      html:
+        `<b>${solicitud.solicitanteNombre}</b><br/>${new Date(
+          solicitud.fechaInicio,
+        ).toLocaleDateString()} — ${new Date(solicitud.fechaFin).toLocaleDateString()}` +
+        (aprobar
+          ? "<br/><small>Se descontarán los días del saldo y se enviarán los 3 documentos por correo.</small>"
+          : ""),
       input: "text",
       inputLabel: "Observación (opcional)",
       inputPlaceholder: "Ej. Aprobado, coordinar entrega de pendientes",
@@ -53,10 +57,10 @@ function AprobarVacaciones() {
         position: "top-end",
         icon: "success",
         title: aprobar
-          ? "Solicitud aprobada, pasa a RRHH"
+          ? "Solicitud aprobada. Los documentos se enviaron por correo"
           : "Solicitud rechazada",
         showConfirmButton: false,
-        timer: 2000,
+        timer: 2800,
       });
     } catch (err) {
       Swal.fire({

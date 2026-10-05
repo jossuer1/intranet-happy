@@ -360,7 +360,7 @@ function Perfiles() {
                     </span>
                   </div>
 
-                  <div className="col-6 col-md-4 col-xxl-4 p-3 border-end">
+                  <div className="col-6 p-3 border-end">
                     <span className="text-muted small d-block mb-1">
                       Cargo IESS
                     </span>
@@ -369,7 +369,7 @@ function Perfiles() {
                     </span>
                   </div>
 
-                  <div className="col-6 col-md-4 col-xxl-4 p-3 border-end">
+                  <div className="col-6 p-3">
                     <span className="text-muted small d-block mb-1">
                       Sectorial
                     </span>
@@ -378,24 +378,37 @@ function Perfiles() {
                     </span>
                   </div>
 
-                  <div className="col-6 col-md-4 col-xxl-3 p-3 border-end">
+                  <div className="col-6 col-md-4 p-3 border-top border-end">
                     <span className="text-muted small d-block mb-1">
-                      Vacaciones
+                      Región
                     </span>
-                    <span className="badge bg-success-subtle text-success border border-success-subtle">
-                      {info.diasVacacionesAsignados
-                        ? `${info.diasVacacionesAsignados} días`
-                        : "0 días"}
+                    <span className="fw-semibold text-dark">
+                      {info.region || "—"}
                     </span>
                   </div>
-
-                  <div className="col-12 col-md-4 col-xxl-5 p-3">
+                  <div className="col-6 col-md-4 p-3 border-top border-end">
                     <span className="text-muted small d-block mb-1">
-                      Ciudad y dirección
+                      Provincia
+                    </span>
+                    <span className="fw-semibold text-dark">
+                      {info.provincia || "—"}
+                    </span>
+                  </div>
+                  <div className="col-12 col-md-4 p-3 border-top">
+                    <span className="text-muted small d-block mb-1">
+                      Ciudad
                     </span>
                     <span className="fw-semibold text-dark">
                       {info.ciudad || "—"}
-                      {info.direccion ? ` · ${info.direccion}` : ""}
+                    </span>
+                  </div>
+
+                  <div className="col-12 p-3 border-top">
+                    <span className="text-muted small d-block mb-1">
+                      Dirección
+                    </span>
+                    <span className="fw-semibold text-dark">
+                      {info.direccion || "—"}
                     </span>
                   </div>
 
@@ -502,18 +515,6 @@ function Perfiles() {
                   </div>
 
                   <div className="col-6">
-                    <span className="text-muted d-block">Tipo de sangre</span>
-                    {info.tipoSangre ? (
-                      <span className="badge bg-danger-subtle text-danger border border-danger-subtle mt-1">
-                        <i className="bi bi-droplet-fill me-1"></i>
-                        {info.tipoSangre}
-                      </span>
-                    ) : (
-                      <span className="fw-semibold">—</span>
-                    )}
-                  </div>
-
-                  <div className="col-6">
                     <span className="text-muted d-block">Etnia</span>
                     <span className="fw-semibold text-dark">
                       {info.etnia || "—"}
@@ -587,9 +588,18 @@ function Perfiles() {
                         </div>
                         <div className="text-muted small mt-1">
                           {t.institucion || "N/A"}
-                          {" · "}
-                          {fechaODash(t.fechaObtencion)}
+                          {t.culminado !== false &&
+                            ` · ${fechaODash(t.fechaObtencion)}`}
                         </div>
+                        <span
+                          className={`badge mt-2 ${
+                            t.culminado !== false
+                              ? "bg-success-subtle text-success border border-success-subtle"
+                              : "bg-warning-subtle text-warning-emphasis border border-warning-subtle"
+                          }`}
+                        >
+                          {t.culminado !== false ? "Culminado" : "En curso"}
+                        </span>
                       </div>
                     ))}
                   </div>

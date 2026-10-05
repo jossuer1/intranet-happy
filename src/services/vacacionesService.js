@@ -37,7 +37,7 @@ export const registrarAjusteVacaciones = registrarAjuste;
 export const acreditarDiasVacaciones = (ajusteDto) =>
   apiClient.post("/vacaciones/ajuste", ajusteDto);
 
-// --- Flujo de solicitudes: Empleado -> Jefe Directo -> RRHH ---
+// --- Flujo de solicitudes: Empleado -> Jefe Directo (RRHH solo recibe los documentos) ---
 
 // El empleado logueado crea una solicitud (fechaInicio, fechaFin, motivo)
 export const crearSolicitudVacacion = (dto) =>
@@ -58,39 +58,24 @@ export const responderSolicitudComoJefe = (idSolicitud, aprobar, observacion) =>
     observacion: observacion || null,
   });
 
-// Exclusivo RRHH: solicitudes ya aprobadas por el jefe, esperando el visto bueno final
-export const getSolicitudesPendientesRrhh = () =>
-  apiClient.get("/vacaciones/solicitudes/pendientes-rrhh");
+// Exclusivo RRHH: todas las solicitudes de la empresa (RRHH ya no aprueba nada:
+// la única aprobación es la del jefe directo; aquí solo consulta y descarga).
+export const getTodasSolicitudes = () =>
+  apiClient.get("/vacaciones/solicitudes/todas");
 
-// Exclusivo RRHH: aprobación (o rechazo) final; si aprueba, se descuentan los días
-export const responderSolicitudComoRrhh = (idSolicitud, aprobar, observacion) =>
-  apiClient.patch(`/vacaciones/solicitudes/${idSolicitud}/rrhh`, {
-    aprobar,
-    observacion: observacion || null,
-  });
+// --- Documentos de una solicitud APROBADA (se generan al vuelo en el backend) ---
+// Ambas devuelven { blob, nombre } para que quien las llame guarde el archivo
+// (ver utils/descargas.js). Las pueden pedir el empleado, su jefe directo y RRHH.
 
-// Descarga la constancia en PDF de una solicitud ya aprobada.
-// Devuelve el Blob para que quien la llame arme la descarga (no pasa por
-// apiClient porque la respuesta no es JSON, es un archivo).
-export const descargarConstanciaSolicitud = async (idSolicitud) => {
-  const BASE_URL = import.meta.env.VITE_API_URL;
-  const token = localStorage.getItem("jwt_token");
-  const res = await fetch(
-    `${BASE_URL}/vacaciones/solicitudes/${idSolicitud}/constancia`,
-    { headers: { Authorization: `Bearer ${token}` } },
+// Los 3 documentos juntos en un .zip
+export const descargarDocumentosSolicitud = (idSolicitud) =>
+  apiClient.getBlob(`/vacaciones/solicitudes/${idSolicitud}/documentos`);
+
+// Un solo documento en PDF: 1 = solicitud, 2 = acta, 3 = declaración de goce y pago
+export const descargarDocumentoSolicitud = (idSolicitud, numero) =>
+  apiClient.getBlob(
+    `/vacaciones/solicitudes/${idSolicitud}/documentos/${numero}`,
   );
-  if (!res.ok) {
-    let mensaje = `No se pudo generar la constancia (${res.status})`;
-    try {
-      const data = await res.json();
-      mensaje = data?.mensaje || mensaje;
-    } catch {
-      /* la respuesta de error puede no ser JSON */
-    }
-    throw new Error(mensaje);
-  }
-  return res.blob();
-};
 
 export const vacacionesService = {
   getSaldo,
@@ -109,7 +94,7 @@ export const vacacionesService = {
   getMisSolicitudesVacacion,
   getSolicitudesPendientesJefe,
   responderSolicitudComoJefe,
-  getSolicitudesPendientesRrhh,
-  responderSolicitudComoRrhh,
-  descargarConstanciaSolicitud,
+  getTodasSolicitudes,
+  descargarDocumentosSolicitud,
+  descargarDocumentoSolicitud,
 };

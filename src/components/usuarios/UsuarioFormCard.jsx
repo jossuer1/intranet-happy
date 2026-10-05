@@ -442,9 +442,11 @@ const UsuarioFormCard = ({
                 idTitulo: t.idTitulo || null,
                 nombreTitulo: t.nombreTitulo,
                 institucion: t.institucion || null,
-                fechaObtencion: t.fechaObtencion
-                  ? new Date(t.fechaObtencion).toISOString()
-                  : null,
+                culminado: t.culminado !== false,
+                fechaObtencion:
+                  t.culminado !== false && t.fechaObtencion
+                    ? new Date(t.fechaObtencion).toISOString()
+                    : null,
               })),
               datosBancarios: formData.datosBancarios.map((b) => ({
                 idDatoBancario: b.idDatoBancario || null,
@@ -471,9 +473,11 @@ const UsuarioFormCard = ({
             titulos: formData.titulos.map((t) => ({
               nombreTitulo: t.nombreTitulo,
               institucion: t.institucion || null,
-              fechaObtencion: t.fechaObtencion
-                ? new Date(t.fechaObtencion).toISOString()
-                : null,
+              culminado: t.culminado !== false,
+              fechaObtencion:
+                t.culminado !== false && t.fechaObtencion
+                  ? new Date(t.fechaObtencion).toISOString()
+                  : null,
             })),
             contactosEmergencia: formData.contactosEmergencia.map((c) => ({
               nombre: c.nombre,

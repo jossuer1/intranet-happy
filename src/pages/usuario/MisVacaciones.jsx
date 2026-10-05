@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import Swal from "sweetalert2";
 import AppLayout from "../../components/layout/AppLayout";
 import SectionHeader from "../../components/layout/SectionHeader";
 import SolicitarVacacionesModal from "../../components/vacaciones/SolicitarVacacionesModal";
@@ -10,7 +9,6 @@ import {
   getSaldo,
   getMisVacaciones,
   getMisSolicitudesVacacion,
-  descargarConstanciaSolicitud,
 } from "../../services/vacacionesService";
 import { useAuthStore } from "../../store/useAuthStore";
 
@@ -87,30 +85,6 @@ function MisVacaciones() {
   });
 
   const [modalAbierto, setModalAbierto] = useState(false);
-  const [descargandoId, setDescargandoId] = useState(null);
-
-  const descargarConstancia = async (idSolicitud) => {
-    try {
-      setDescargandoId(idSolicitud);
-      const blob = await descargarConstanciaSolicitud(idSolicitud);
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `constancia-vacaciones-${idSolicitud}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
-    } catch (err) {
-      Swal.fire({
-        icon: "error",
-        title: "No se pudo descargar la constancia",
-        text: err.message || "Inténtalo de nuevo en unos segundos.",
-      });
-    } finally {
-      setDescargandoId(null);
-    }
-  };
 
   const loading =
     loadingPerfil || (habilitado && (loadingSaldo || loadingHistorial));
@@ -221,8 +195,6 @@ function MisVacaciones() {
                   <TablaSolicitudes
                     solicitudes={solicitudes}
                     loadingSolicitudes={loadingSolicitudes}
-                    descargandoId={descargandoId}
-                    onDescargarConstancia={descargarConstancia}
                   />
                 ) : (
                   <TablaMovimientos

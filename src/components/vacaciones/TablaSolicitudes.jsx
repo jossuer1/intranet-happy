@@ -1,17 +1,17 @@
 import React from "react";
+import DescargarDocumentos from "./DescargarDocumentos";
 
 const ESTADOS_SOLICITUD = {
   PENDIENTE_JEFE: {
     texto: "Pendiente jefe directo",
     clase: "bg-warning text-dark",
   },
-  PENDIENTE_RRHH: { texto: "Pendiente RRHH", clase: "bg-info text-dark" },
   APROBADA: { texto: "Aprobada", clase: "bg-success" },
   RECHAZADA_JEFE: { texto: "Rechazada por el jefe", clase: "bg-danger" },
-  RECHAZADA_RRHH: { texto: "Rechazada por RRHH", clase: "bg-danger" },
+  ANULADA: { texto: "Anulada", clase: "bg-secondary" },
 };
 
-function BadgeEstadoSolicitud({ estado }) {
+export function BadgeEstadoSolicitud({ estado }) {
   const info = ESTADOS_SOLICITUD[estado] || {
     texto: estado,
     clase: "bg-secondary",
@@ -19,12 +19,7 @@ function BadgeEstadoSolicitud({ estado }) {
   return <span className={`badge ${info.clase}`}>{info.texto}</span>;
 }
 
-export function TablaSolicitudes({
-  solicitudes,
-  loadingSolicitudes,
-  descargandoId,
-  onDescargarConstancia,
-}) {
+export function TablaSolicitudes({ solicitudes, loadingSolicitudes }) {
   return (
     <div className="table-responsive">
       <table className="table table-hover align-middle mb-0">
@@ -36,14 +31,13 @@ export function TablaSolicitudes({
             <th>Motivo</th>
             <th>Estado</th>
             <th>Jefe</th>
-            <th>RRHH</th>
-            <th className="text-end">Constancia</th>
+            <th className="text-end">Documentos</th>
           </tr>
         </thead>
         <tbody>
           {loadingSolicitudes ? (
             <tr>
-              <td colSpan={8} className="text-center text-muted py-4">
+              <td colSpan={7} className="text-center text-muted py-4">
                 <div
                   className="spinner-border spinner-border-sm text-primary me-2"
                   role="status"
@@ -53,7 +47,7 @@ export function TablaSolicitudes({
             </tr>
           ) : !solicitudes || solicitudes.length === 0 ? (
             <tr>
-              <td colSpan={8} className="text-center text-muted py-4">
+              <td colSpan={7} className="text-center text-muted py-4">
                 No has enviado solicitudes de vacaciones todavía.
               </td>
             </tr>
@@ -72,21 +66,9 @@ export function TablaSolicitudes({
                 <td className="small text-muted">
                   {s.jefeAprobadorNombre || "—"}
                 </td>
-                <td className="small text-muted">
-                  {s.rrhhAprobadorNombre || "—"}
-                </td>
                 <td className="text-end">
                   {s.estado === "APROBADA" ? (
-                    <button
-                      type="button"
-                      className="btn btn-sm btn-outline-primary"
-                      disabled={descargandoId === s.idSolicitud}
-                      onClick={() => onDescargarConstancia(s.idSolicitud)}
-                      title="Descargar constancia PDF"
-                    >
-                      <i className="bi bi-file-earmark-pdf me-1"></i>
-                      PDF
-                    </button>
+                    <DescargarDocumentos idSolicitud={s.idSolicitud} />
                   ) : (
                     <span className="text-muted small">—</span>
                   )}

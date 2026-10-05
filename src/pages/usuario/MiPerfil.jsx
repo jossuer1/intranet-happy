@@ -364,13 +364,37 @@ function MiPerfil() {
                     </span>
                   </div>
 
-                  <div className="col-12 p-3">
+                  <div className="col-6 col-md-4 p-3 border-bottom">
                     <span className="text-muted small d-block mb-1">
-                      Ciudad y dirección
+                      Región
+                    </span>
+                    <span className="fw-semibold text-dark">
+                      {user.region || "—"}
+                    </span>
+                  </div>
+                  <div className="col-6 col-md-4 p-3 border-bottom">
+                    <span className="text-muted small d-block mb-1">
+                      Provincia
+                    </span>
+                    <span className="fw-semibold text-dark">
+                      {user.provincia || "—"}
+                    </span>
+                  </div>
+                  <div className="col-12 col-md-4 p-3 border-bottom">
+                    <span className="text-muted small d-block mb-1">
+                      Ciudad
                     </span>
                     <span className="fw-semibold text-dark">
                       {user.ciudad || "—"}
-                      {user.direccion ? ` · ${user.direccion}` : ""}
+                    </span>
+                  </div>
+
+                  <div className="col-12 p-3">
+                    <span className="text-muted small d-block mb-1">
+                      Dirección
+                    </span>
+                    <span className="fw-semibold text-dark">
+                      {user.direccion || "—"}
                     </span>
                   </div>
                 </div>
@@ -428,18 +452,6 @@ function MiPerfil() {
                     <span className="fw-semibold text-dark">
                       {generacionCalculada || "—"}
                     </span>
-                  </div>
-
-                  <div className="col-6">
-                    <span className="text-muted d-block">Tipo de sangre</span>
-                    {user.tipoSangre ? (
-                      <span className="badge bg-danger-subtle text-danger border border-danger-subtle mt-1">
-                        <i className="bi bi-droplet-fill me-1"></i>
-                        {user.tipoSangre}
-                      </span>
-                    ) : (
-                      <span className="fw-semibold">—</span>
-                    )}
                   </div>
 
                   <div className="col-6">
@@ -516,9 +528,18 @@ function MiPerfil() {
                         </div>
                         <div className="text-muted small mt-1">
                           {t.institucion || "N/A"}
-                          {" · "}
-                          {fechaODash(t.fechaObtencion)}
+                          {t.culminado !== false &&
+                            ` · ${fechaODash(t.fechaObtencion)}`}
                         </div>
+                        <span
+                          className={`badge mt-2 ${
+                            t.culminado !== false
+                              ? "bg-success-subtle text-success border border-success-subtle"
+                              : "bg-warning-subtle text-warning-emphasis border border-warning-subtle"
+                          }`}
+                        >
+                          {t.culminado !== false ? "Culminado" : "En curso"}
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -532,15 +553,13 @@ function MiPerfil() {
             </div>
           </div>
 
-          {/* CONTACTO Y BENEFICIOS (una sola tarjeta, junto a Formación) */}
+          {/* CONTACTO (junto a Formación) */}
           <div className="col-12 col-xl-4">
             <div className="card border-0 shadow-sm h-100">
               <div className="card-body p-3 p-lg-4">
                 <div className="d-flex align-items-center gap-2 mb-3">
                   <i className="bi bi-person-lines-fill fs-5 text-brand"></i>
-                  <h6 className="fw-bold mb-0 text-dark">
-                    Contacto y Beneficios
-                  </h6>
+                  <h6 className="fw-bold mb-0 text-dark">Contacto</h6>
                 </div>
 
                 <div className="d-flex flex-column gap-3 small">
@@ -560,34 +579,6 @@ function MiPerfil() {
                     </span>
                   </div>
 
-                  {(user.recibeComisiones !== undefined ||
-                    user.acumulaDecimos !== undefined) && (
-                    <>
-                      <hr className="my-1 text-muted opacity-25" />
-
-                      <div>
-                        <span className="text-muted d-block mb-2">
-                          Beneficios y pagos
-                        </span>
-                        <div className="d-flex flex-wrap gap-2">
-                          <span className="badge bg-light text-dark border py-2 px-3">
-                            Comisiones:{" "}
-                            <strong>
-                              {user.recibeComisiones ? "Sí" : "No"}
-                            </strong>
-                          </span>
-                          <span className="badge bg-light text-dark border py-2 px-3">
-                            Décimos:{" "}
-                            <strong>
-                              {user.acumulaDecimos
-                                ? "Acumulado"
-                                : "Mensualizado"}
-                            </strong>
-                          </span>
-                        </div>
-                      </div>
-                    </>
-                  )}
                 </div>
               </div>
             </div>

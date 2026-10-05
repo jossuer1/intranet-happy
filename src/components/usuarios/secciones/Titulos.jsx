@@ -9,7 +9,14 @@ const Titulos = ({
   const nuevoTitulo = {
     nombreTitulo: "",
     institucion: "",
+    culminado: true,
     fechaObtencion: "",
+  };
+
+  // Al marcar "En curso" se limpia la fecha de obtención (no aplica).
+  const cambiarEstado = (index, culminado) => {
+    handleItemChange("titulos", index, "culminado", culminado);
+    if (!culminado) handleItemChange("titulos", index, "fechaObtencion", "");
   };
 
   return (
@@ -50,7 +57,7 @@ const Titulos = ({
             </div>
 
             <div className="row g-3">
-              <div className="col-md-5">
+              <div className="col-md-4">
                 <label className="form-label">Nombre del Título *</label>
                 <input
                   type="text"
@@ -62,7 +69,7 @@ const Titulos = ({
                   required
                 />
               </div>
-              <div className="col-md-4">
+              <div className="col-md-3">
                 <label className="form-label">Institución</label>
                 <input
                   type="text"
@@ -73,6 +80,19 @@ const Titulos = ({
                   placeholder="Ej. Escuela Politécnica Nacional"
                 />
               </div>
+              <div className="col-md-2">
+                <label className="form-label">Estado *</label>
+                <select
+                  className="form-select"
+                  value={titulo.culminado === false ? "false" : "true"}
+                  onChange={(e) =>
+                    cambiarEstado(index, e.target.value === "true")
+                  }
+                >
+                  <option value="true">Culminado</option>
+                  <option value="false">En curso</option>
+                </select>
+              </div>
               <div className="col-md-3">
                 <label className="form-label">Fecha Obtención</label>
                 <input
@@ -81,6 +101,7 @@ const Titulos = ({
                   name="fechaObtencion"
                   value={titulo.fechaObtencion || ""}
                   onChange={(e) => handleItemChange("titulos", index, e)}
+                  disabled={titulo.culminado === false}
                 />
               </div>
             </div>

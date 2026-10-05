@@ -262,6 +262,8 @@ function UsuarioInfoModal({ usuario, onClose }) {
                   label="Fecha de ingreso"
                   valor={formatearFecha(info.fechaIngreso)}
                 />
+                <InfoItem label="Región" valor={info.region} />
+                <InfoItem label="Provincia" valor={info.provincia} />
                 <InfoItem label="Ciudad" valor={info.ciudad || info.idCiudad} />
                 <InfoItem
                   label="Jefe Directo"
@@ -396,12 +398,14 @@ function UsuarioInfoModal({ usuario, onClose }) {
                   headers={[
                     "Título obtenido",
                     "Institución educativa superior",
+                    "Estado",
                   ]}
                 >
                   {info.titulos.map((t, idx) => (
                     <tr key={t.idTitulo || idx}>
                       <td className="fw-medium">{t.nombreTitulo}</td>
                       <td>{t.institucion || "N/A"}</td>
+                      <td>{t.culminado !== false ? "Culminado" : "En curso"}</td>
                     </tr>
                   ))}
                 </TablaMini>

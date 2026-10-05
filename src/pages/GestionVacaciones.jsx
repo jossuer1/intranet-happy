@@ -3,13 +3,13 @@ import DataTable from "react-data-table-component";
 import Swal from "sweetalert2";
 import AppLayout from "../components/layout/AppLayout";
 import HistorialVacacionesPanel from "../components/vacaciones/HistorialVacacionesPanel";
+import DescargarDocumentos from "../components/vacaciones/DescargarDocumentos";
+import { BadgeEstadoSolicitud } from "../components/vacaciones/TablaSolicitudes";
 import {
   getResumenVacaciones,
   registrarDescuentoVacaciones,
   registrarAjusteVacaciones,
-  getSolicitudesPendientesRrhh,
-  responderSolicitudComoRrhh,
-  descargarConstanciaSolicitud,
+  getTodasSolicitudes,
 } from "../services/vacacionesService";
 
 function GestionVacaciones() {
@@ -18,10 +18,8 @@ function GestionVacaciones() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const [solicitudesPendientes, setSolicitudesPendientes] = useState([]);
+  const [solicitudes, setSolicitudes] = useState([]);
   const [loadingSolicitudes, setLoadingSolicitudes] = useState(true);
-  const [procesandoSolicitudId, setProcesandoSolicitudId] = useState(null);
-  const [descargandoId, setDescargandoId] = useState(null);
 
   const [usuarioSeleccionado, setUsuarioSeleccionado] = useState(null);
   const [usuarioHistorial, setUsuarioHistorial] = useState(null);
@@ -55,15 +53,17 @@ function GestionVacaciones() {
     cargarDatos();
   }, []);
 
-  const cargarSolicitudesPendientes = async () => {
+  // RRHH ya no aprueba solicitudes (solo el jefe directo): aquí solo las consulta
+  // y descarga los documentos de las aprobadas.
+  const cargarSolicitudes = async () => {
     try {
       setLoadingSolicitudes(true);
-      const data = await getSolicitudesPendientesRrhh();
-      setSolicitudesPendientes(Array.isArray(data) ? data : []);
+      const data = await getTodasSolicitudes();
+      setSolicitudes(Array.isArray(data) ? data : []);
     } catch (err) {
       Swal.fire({
         icon: "error",
-        title: "No se pudieron cargar las solicitudes pendientes",
+        title: "No se pudieron cargar las solicitudes",
         text: err.message || "Inténtalo de nuevo en unos segundos.",
       });
     } finally {
@@ -73,81 +73,9 @@ function GestionVacaciones() {
 
   useEffect(() => {
     if (tab === "solicitudes") {
-      cargarSolicitudesPendientes();
+      cargarSolicitudes();
     }
   }, [tab]);
-
-  const responderSolicitud = async (solicitud, aprobar) => {
-    const confirmacion = await Swal.fire({
-      icon: "question",
-      title: aprobar
-        ? "¿Dar el visto bueno final?"
-        : "¿Rechazar esta solicitud?",
-      html:
-        `<b>${solicitud.solicitanteNombre}</b><br/>${new Date(
-          solicitud.fechaInicio,
-        ).toLocaleDateString()} — ${new Date(solicitud.fechaFin).toLocaleDateString()}<br/>` +
-        (aprobar ? "Se descontarán los días del saldo del empleado." : ""),
-      input: "text",
-      inputLabel: "Observación (opcional)",
-      showCancelButton: true,
-      confirmButtonText: aprobar ? "Sí, aprobar" : "Sí, rechazar",
-      cancelButtonText: "Cancelar",
-    });
-    if (!confirmacion.isConfirmed) return;
-
-    try {
-      setProcesandoSolicitudId(solicitud.idSolicitud);
-      await responderSolicitudComoRrhh(
-        solicitud.idSolicitud,
-        aprobar,
-        confirmacion.value || null,
-      );
-      await cargarSolicitudesPendientes();
-      cargarDatos();
-      Swal.fire({
-        toast: true,
-        position: "top-end",
-        icon: "success",
-        title: aprobar
-          ? "Solicitud aprobada y días descontados"
-          : "Solicitud rechazada",
-        showConfirmButton: false,
-        timer: 2200,
-      });
-    } catch (err) {
-      Swal.fire({
-        icon: "error",
-        title: "No se pudo registrar la respuesta",
-        text: err.message || "Inténtalo de nuevo en unos segundos.",
-      });
-    } finally {
-      setProcesandoSolicitudId(null);
-    }
-  };
-
-  const descargarConstancia = async (idSolicitud) => {
-    try {
-      setDescargandoId(idSolicitud);
-      const blob = await descargarConstanciaSolicitud(idSolicitud);
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `constancia-vacaciones-${idSolicitud}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
-    } catch (err) {
-      Swal.fire({
-        icon: "error",
-        title: "No se pudo descargar la constancia",
-        text: err.message || "Inténtalo de nuevo en unos segundos.",
-      });
-    } finally {
-      setDescargandoId(null);
-    }
-  };
 
   const calcularDiasRango = () => {
     if (!fechaInicio || !fechaFin) return 0;
@@ -460,12 +388,7 @@ function GestionVacaciones() {
               className={`nav-link ${tab === "solicitudes" ? "active bg-brand" : "text-dark bg-white border"}`}
               onClick={() => setTab("solicitudes")}
             >
-              Solicitudes Pendientes
-              {solicitudesPendientes.length > 0 && (
-                <span className="badge bg-danger ms-2">
-                  {solicitudesPendientes.length}
-                </span>
-              )}
+              Solicitudes
             </button>
           </li>
         </ul>
@@ -477,10 +400,10 @@ function GestionVacaciones() {
                 <span className="visually-hidden">Cargando solicitudes...</span>
               </div>
             </div>
-          ) : solicitudesPendientes.length === 0 ? (
+          ) : solicitudes.length === 0 ? (
             <div className="text-center text-muted py-5">
               <i className="bi bi-check2-circle fs-1 d-block mb-3"></i>
-              No hay solicitudes esperando el visto bueno de RRHH.
+              Todavía no hay solicitudes de vacaciones.
             </div>
           ) : (
             <div className="table-responsive">
@@ -492,47 +415,31 @@ function GestionVacaciones() {
                     <th>Hasta</th>
                     <th>Días</th>
                     <th>Motivo</th>
-                    <th>Jefe aprobó</th>
-                    <th className="text-end">Acciones</th>
+                    <th>Estado</th>
+                    <th>Jefe</th>
+                    <th className="text-end">Documentos</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {solicitudesPendientes.map((s) => (
+                  {solicitudes.map((s) => (
                     <tr key={s.idSolicitud}>
                       <td className="fw-semibold">{s.solicitanteNombre}</td>
                       <td>{new Date(s.fechaInicio).toLocaleDateString()}</td>
                       <td>{new Date(s.fechaFin).toLocaleDateString()}</td>
                       <td>{s.diasSolicitados}</td>
                       <td className="small text-muted">{s.motivo}</td>
+                      <td>
+                        <BadgeEstadoSolicitud estado={s.estado} />
+                      </td>
                       <td className="small text-muted">
                         {s.jefeAprobadorNombre || "—"}
                       </td>
                       <td className="text-end">
-                        <button
-                          type="button"
-                          className="btn btn-sm btn-outline-success me-2"
-                          disabled={procesandoSolicitudId === s.idSolicitud}
-                          onClick={() => responderSolicitud(s, true)}
-                        >
-                          <i className="bi bi-check-lg"></i> Aprobar
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn-sm btn-outline-danger me-2"
-                          disabled={procesandoSolicitudId === s.idSolicitud}
-                          onClick={() => responderSolicitud(s, false)}
-                        >
-                          <i className="bi bi-x-lg"></i> Rechazar
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn-sm btn-outline-primary"
-                          disabled={descargandoId === s.idSolicitud}
-                          onClick={() => descargarConstancia(s.idSolicitud)}
-                          title="Descargar constancia"
-                        >
-                          <i className="bi bi-file-earmark-pdf"></i>
-                        </button>
+                        {s.estado === "APROBADA" ? (
+                          <DescargarDocumentos idSolicitud={s.idSolicitud} />
+                        ) : (
+                          <span className="text-muted small">—</span>
+                        )}
                       </td>
                     </tr>
                   ))}

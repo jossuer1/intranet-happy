@@ -51,6 +51,27 @@ export const apiClient = {
     });
     return handleResponse(res);
   },
+  // Descarga de archivos (PDF, ZIP...). Devuelve { blob, nombre } donde "nombre" es
+  // el que manda el backend en Content-Disposition (o null si no viene).
+  // Si la respuesta es un error, handleResponse lanza Error con el mensaje del backend.
+  getBlob: async (endpoint) => {
+    const res = await fetch(`${BASE_URL}${endpoint}`, {
+      headers: getHeaders(true, true),
+    });
+    if (!res.ok) return handleResponse(res);
+
+    const disposicion = res.headers.get("content-disposition") || "";
+    const coincide = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(disposicion);
+    let nombre = null;
+    if (coincide) {
+      try {
+        nombre = decodeURIComponent(coincide[1]);
+      } catch {
+        nombre = coincide[1];
+      }
+    }
+    return { blob: await res.blob(), nombre };
+  },
   post: async (endpoint, body, includeAuth = true, isAuthRequest = false) => {
     const esFormData = body instanceof FormData;
     const res = await fetch(`${BASE_URL}${endpoint}`, {

@@ -1,7 +1,7 @@
-import React, { useState } from "react";
-import Swal from "sweetalert2";
+import React from "react";
 import { useHistorialUsuario } from "../../hooks/useVacaciones.js";
-import { descargarConstanciaSolicitud } from "../../services/vacacionesService.js";
+import DescargarDocumentos from "./DescargarDocumentos.jsx";
+import { slugify } from "../../utils/descargas.js";
 
 // Panel (modal centrado) con el saldo + historial de movimientos de un
 // usuario. Se usa igual desde GestionVacaciones y SaldosPersonales: solo
@@ -11,7 +11,6 @@ function HistorialVacacionesPanel({ usuario, onClose }) {
     usuario?.idUsuario || usuario?.idEmpleado || usuario?.id || null;
 
   const { data, isLoading, error } = useHistorialUsuario(idUsuario);
-  const [descargandoId, setDescargandoId] = useState(null);
 
   // useHistorialUsuario devuelve { saldo, historial }
   const { saldo, historial } = data || {};
@@ -19,39 +18,13 @@ function HistorialVacacionesPanel({ usuario, onClose }) {
 
   if (!usuario) return null;
 
-  // Usa el endpoint que ya existe (/vacaciones/solicitudes/{id}/constancia)
-  const handleDescargarPdf = async (mov) => {
-    const idSolicitud = mov.idSolicitud;
-    try {
-      setDescargandoId(idSolicitud);
-      const blob = await descargarConstanciaSolicitud(idSolicitud);
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      // Nombre único: persona + período
-      // Ej: constancia-vacaciones-juan-carlos-perez-gomez-2026-10-07_2026-10-15.pdf
-      const slug = String(usuario.nombre || usuario.nombres || "colaborador")
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .replace(/[^a-zA-Z0-9]+/g, "-")
-        .replace(/^-|-$/g, "")
-        .toLowerCase();
-      const ini = String(mov.fechaInicio || "").split("T")[0];
-      const fin = String(mov.fechaFin || "").split("T")[0];
-      link.download = `constancia-vacaciones-${slug}-${ini}_${fin}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
-    } catch (err) {
-      Swal.fire({
-        icon: "error",
-        title: "No se pudo descargar la constancia",
-        text: err.message || "Inténtalo de nuevo en unos segundos.",
-      });
-    } finally {
-      setDescargandoId(null);
-    }
+  // Prefijo para los archivos descargados: persona + período
+  // Ej: juan-carlos-perez-gomez-2026-10-07_2026-10-15
+  const prefijoArchivo = (mov) => {
+    const slug = slugify(usuario.nombre || usuario.nombres || "colaborador");
+    const ini = String(mov.fechaInicio || "").split("T")[0];
+    const fin = String(mov.fechaFin || "").split("T")[0];
+    return `${slug}-${ini}_${fin}`;
   };
 
   // Determina si el movimiento es un Descuento (toma de vacaciones) o un Ajuste/Acreditación
@@ -278,7 +251,7 @@ function HistorialVacacionesPanel({ usuario, onClose }) {
                             )}
                           </div>
 
-                          {/* Columna 3: quién lo registró y PDF */}
+                          {/* Columna 3: quién lo registró y documentos */}
                           <div
                             className="d-flex flex-column align-items-end gap-2 text-end"
                             style={{ width: "200px", fontSize: "0.75rem" }}
@@ -288,16 +261,11 @@ function HistorialVacacionesPanel({ usuario, onClose }) {
                               Registrado por: {mov.registradoPorNombre}
                             </span>
                             {mov.idSolicitud && (
-                              <button
-                                type="button"
-                                className="btn btn-sm btn-outline-danger"
-                                disabled={descargandoId === mov.idSolicitud}
-                                onClick={() => handleDescargarPdf(mov)}
-                                title="Descargar constancia PDF"
-                              >
-                                <i className="bi bi-file-earmark-pdf me-1"></i>
-                                PDF
-                              </button>
+                              <DescargarDocumentos
+                                idSolicitud={mov.idSolicitud}
+                                prefijo={prefijoArchivo(mov)}
+                                variante="danger"
+                              />
                             )}
                           </div>
                         </li>
