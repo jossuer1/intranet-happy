@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef, useState } from "react";
 
 function PublicarBanner({
   nuevoTitulo,
@@ -7,7 +7,28 @@ function PublicarBanner({
   onImagenChange,
   onSubmit,
   onCancelar,
+  publicando = false,
 }) {
+  // El ref bloquea al instante (el estado se actualiza con un pequeño retraso,
+  // y varios clics rápidos podrían colarse antes de que el botón se deshabilite).
+  const enviandoRef = useRef(false);
+  const [enviando, setEnviando] = useState(false);
+  const bloqueado = enviando || publicando;
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (enviandoRef.current) return; // ya hay una petición en curso: ignorar
+
+    enviandoRef.current = true;
+    setEnviando(true);
+    try {
+      await onSubmit(e);
+    } finally {
+      enviandoRef.current = false;
+      setEnviando(false);
+    }
+  };
+
   return (
     <div className="card border-0 shadow-sm rounded-4 overflow-hidden bg-white">
       {/* Header Superior */}
@@ -27,6 +48,7 @@ function PublicarBanner({
             type="button"
             className="btn btn-outline-secondary px-3 rounded-3"
             onClick={onCancelar}
+            disabled={bloqueado}
           >
             Cancelar
           </button>
@@ -34,14 +56,28 @@ function PublicarBanner({
             type="submit"
             form="form-publicar-banner"
             className="btn btn-success px-4 rounded-3 fw-semibold shadow-sm"
+            disabled={bloqueado}
           >
-            <i className="bi bi-send-fill me-2"></i>Publicar
+            {bloqueado ? (
+              <>
+                <span
+                  className="spinner-border spinner-border-sm me-2"
+                  role="status"
+                  aria-hidden="true"
+                ></span>
+                Publicando...
+              </>
+            ) : (
+              <>
+                <i className="bi bi-send-fill me-2"></i>Publicar
+              </>
+            )}
           </button>
         </div>
       </div>
 
       <div className="card-body p-4">
-        <form id="form-publicar-banner" onSubmit={onSubmit}>
+        <form id="form-publicar-banner" onSubmit={handleSubmit}>
           <div className="row g-4">
             {/* COLUMNA IZQUIERDA: Formulario */}
             <div className="col-lg-6 d-flex flex-column justify-content-between">
