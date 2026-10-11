@@ -26,6 +26,7 @@ export const useHistorialUsuario = (idUsuario) => {
       return { saldo, historial };
     },
     enabled: !!idUsuario,
+    staleTime: 0, // el historial siempre se pide fresco al abrir el panel
   });
 };
 

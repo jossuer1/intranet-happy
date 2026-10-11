@@ -1,3 +1,5 @@
+import { queryClient } from "../lib/queryClient";
+
 const BASE_URL = import.meta.env.VITE_API_URL;
 
 const getToken = () => localStorage.getItem("jwt_token");
@@ -13,9 +15,20 @@ const getHeaders = (includeAuth = true, isMultipart = false) => {
   return headers;
 };
 
-async function handleResponse(respuesta, isAuthRequest = false) {
+// Después de cualquier cambio exitoso (POST/PUT/PATCH/DELETE) se marcan como
+// desactualizadas TODAS las consultas en caché: las pantallas abiertas se
+// refrescan solas y las demás piden datos nuevos al volver a abrirse. Así nadie
+// tiene que salir y volver a entrar para ver sus cambios.
+const refrescarCache = (respuesta, isAuthRequest) => {
+  if (respuesta.ok && !isAuthRequest) {
+    queryClient.invalidateQueries();
+  }
+};
+
+async function handleResponse(respuesta, isAuthRequest = false, esCambio = false) {
   if (respuesta.status === 401 && !isAuthRequest) {
     localStorage.removeItem("jwt_token");
+    queryClient.clear();
     window.location.href = "/login";
     throw new Error("Sesión expirada. Por favor, inicia sesión nuevamente.");
   }
@@ -40,6 +53,8 @@ async function handleResponse(respuesta, isAuthRequest = false) {
 
     throw new Error(errorMsg);
   }
+
+  if (esCambio) refrescarCache(respuesta, isAuthRequest);
 
   return data;
 }
@@ -79,7 +94,7 @@ export const apiClient = {
       headers: getHeaders(includeAuth, esFormData),
       body: esFormData ? body : JSON.stringify(body),
     });
-    return handleResponse(res, isAuthRequest);
+    return handleResponse(res, isAuthRequest, true);
   },
   put: async (endpoint, body, includeAuth = true) => {
     const esFormData = body instanceof FormData;
@@ -88,7 +103,7 @@ export const apiClient = {
       headers: getHeaders(includeAuth, esFormData),
       body: esFormData ? body : JSON.stringify(body),
     });
-    return handleResponse(res);
+    return handleResponse(res, false, true);
   },
   patch: async (endpoint, body, includeAuth = true) => {
     const res = await fetch(`${BASE_URL}${endpoint}`, {
@@ -96,14 +111,14 @@ export const apiClient = {
       headers: getHeaders(includeAuth),
       body: JSON.stringify(body),
     });
-    return handleResponse(res);
+    return handleResponse(res, false, true);
   },
   delete: async (endpoint, includeAuth = true) => {
     const res = await fetch(`${BASE_URL}${endpoint}`, {
       method: "DELETE",
       headers: getHeaders(includeAuth),
     });
-    return handleResponse(res);
+    return handleResponse(res, false, true);
   },
 };
 

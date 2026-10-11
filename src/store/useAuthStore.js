@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { queryClient } from "../lib/queryClient";
 import { authService } from "../services/authService";
 import { usuariosService } from "../services/usuariosService";
 
@@ -41,6 +42,7 @@ export const useAuthStore = create((set) => ({
 
   logout: () => {
     localStorage.removeItem("jwt_token");
+    queryClient.clear(); // que el siguiente usuario no vea datos en caché del anterior
     set({ user: null, token: null });
     window.location.href = "/login";
   },

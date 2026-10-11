@@ -17,6 +17,9 @@ function Dashboard() {
       const respuesta = await getImagenesActivas();
       return Array.isArray(respuesta) ? respuesta : [];
     },
+    staleTime: 0, // los banners cambian desde RRHH: siempre revalidar al entrar
+    refetchOnWindowFocus: true,
+    refetchInterval: 1000 * 60, // y cada minuto mientras la página esté abierta
   });
 
   useEffect(() => {
