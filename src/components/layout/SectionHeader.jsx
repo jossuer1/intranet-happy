@@ -1,21 +1,34 @@
+import { useContext } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
+import { TopBarContext } from "./TopBarContext";
 
 /**
- * Título de sección + volver, integrado al fondo de la página
- * (a propósito NO es un <nav> con su propia barra/sombra: eso se
- * veía como un segundo navbar apilado sobre el principal).
+ * Título de la vista (flecha de volver + título). NO ocupa una fila propia:
+ * se dibuja dentro de la fila superior de AppLayout, a la izquierda de la
+ * tarjeta del usuario, para que ambos compartan la misma línea y el contenido
+ * suba hasta arriba.
  *
- * @param {string} titulo - Título del módulo/página
- * @param {string} volverA - Ruta a la que navega el botón "Volver" (default: /dashboard)
- * @param {React.ReactNode} acciones - Slot opcional a la derecha (botones extra)
+ * @param {string} titulo - Título de la vista
+ * @param {string} subtitulo - Texto pequeño opcional debajo del título
+ * @param {string} volverA - Ruta del botón "Volver" (default: /dashboard)
+ * @param {boolean} mostrarVolver - false = sin flecha (p. ej. Inicio o Administración)
+ * @param {React.ReactNode} acciones - Slot opcional a la derecha del título
  */
-function SectionHeader({ titulo, volverA = "/dashboard", acciones }) {
+function SectionHeader({
+  titulo,
+  subtitulo,
+  volverA = "/dashboard",
+  mostrarVolver = true,
+  acciones,
+}) {
   const navigate = useNavigate();
+  const contenedor = useContext(TopBarContext);
 
-  return (
-    <div className="container-fluid px-4 pt-4 pb-1">
-      <div className="d-flex justify-content-between align-items-center flex-wrap gap-3">
-        <div className="d-flex align-items-center gap-3">
+  const contenido = (
+    <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 w-100">
+      <div className="d-flex align-items-center gap-3" style={{ minWidth: 0 }}>
+        {mostrarVolver && (
           <button
             type="button"
             className="btn btn-light border d-inline-flex align-items-center justify-content-center rounded-circle p-0"
@@ -31,13 +44,31 @@ function SectionHeader({ titulo, volverA = "/dashboard", acciones }) {
               />
             </svg>
           </button>
-          <h4 className="mb-0 fw-bold text-dark">{titulo}</h4>
+        )}
+        <div style={{ minWidth: 0 }}>
+          <h4 className="mb-0 fw-bold text-dark text-truncate">{titulo}</h4>
+          {subtitulo && (
+            <small className="text-muted d-block text-truncate">
+              {subtitulo}
+            </small>
+          )}
         </div>
-
-        {acciones && <div className="d-flex align-items-center gap-2">{acciones}</div>}
       </div>
+
+      {acciones && (
+        <div className="d-flex align-items-center gap-2">{acciones}</div>
+      )}
     </div>
   );
+
+  // Fuera de AppLayout (no debería pasar): se dibuja como antes, en su propia fila
+  if (contenedor === undefined) {
+    return <div className="container-fluid px-4 pt-4 pb-1">{contenido}</div>;
+  }
+  // AppLayout aún montando la fila superior (dura un instante, antes de pintar)
+  if (contenedor === null) return null;
+
+  return createPortal(contenido, contenedor);
 }
 
 export default SectionHeader;

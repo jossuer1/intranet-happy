@@ -9,8 +9,9 @@
 }
 
 .form-usuario-wrapper {
-  max-width: 1100px;
-  margin: 0 auto;
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto; /* centrado en el área de trabajo */
   padding-bottom: 90px;
 }
 
@@ -142,15 +143,6 @@
   --hp-border-color: #e2e8f0;
 }
 
-/* 1. ANCHO Y ALINEACIÓN PRINCIPAL */
-.form-usuario-wrapper {
-  /* Ancho completo aprovechando el espacio de trabajo */
-  width: 100%;
-  max-width: 1100px; /* Ajusta según el ancho máximo de tu layout */
-  margin: 0;          /* Alinea a la izquierda en lugar de centrar con margin: 0 auto */
-  padding-bottom: 90px;
-}
-
 /* 2. HEADER "Crear Nuevo Registro" ALINEADO Y DEL MISMO ANCHO */
 .form-header-card {
   width: 100%;
@@ -230,6 +222,9 @@
   font-weight: 600 !important;
 }
 
+/* Barra fija de acciones (Cancelar / Guardar).
+   En escritorio arranca donde termina el menú lateral (270px) para no
+   quedar debajo de él, y su contenido se alinea con el ancho del formulario. */
 .fixed-bottom-bar {
   position: fixed;
   bottom: 0;
@@ -238,20 +233,22 @@
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(8px);
   border-top: 1px solid var(--hp-border-color);
-  padding: 14px 30px;
+  padding: 14px 24px;
   z-index: 1040;
   box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.06);
 }
-/* Footer Fijo Único */
-.fixed-bottom-bar {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(8px);
-  border-top: 1px solid var(--hp-border-color);
-  padding: 14px 30px;
-  z-index: 1040;
-  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.06);
+
+@media (min-width: 768px) {
+  .fixed-bottom-bar {
+    left: 270px;
+  }
+}
+
+.fixed-bottom-bar-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 1rem;
 }

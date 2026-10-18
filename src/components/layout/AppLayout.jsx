@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import Navbar from "./Navbar";
+import { TopBarContext } from "./TopBarContext";
 import { useAuthStore } from "../../store/useAuthStore";
 import logoHappyPay from "../../assets/images/logo_happy.jpg";
+import logoHappyPayBlanco from "../../assets/images/logo_happy_blanco.png";
 
 const MODULOS_EMPLEADO_BASE = [
   {
@@ -55,6 +57,8 @@ function AppLayout({ children, usuarioRol = null }) {
   );
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  // Zona izquierda de la fila superior: cada página mete aquí su título
+  const [zonaTitulo, setZonaTitulo] = useState(null);
 
   // Cerrar sidebar al cambiar de ruta
   useEffect(() => {
@@ -118,19 +122,70 @@ function AppLayout({ children, usuarioRol = null }) {
           z-index: 1045;
         }
 
+        .app-sidebar {
+          background-color: #055158;
+          color: #fff;
+        }
+
         .sidebar-section-title {
           font-size: 0.72rem;
           letter-spacing: 0.08em;
-          color: #8c98a4;
+          color: rgba(255, 255, 255, 0.6);
         }
 
-        .sidebar-item-btn {
+        .sidebar-divider {
+          border-color: rgba(255, 255, 255, 0.3);
+          opacity: 1;
+        }
+
+        .app-sidebar .sidebar-item-btn {
+          color: #fff;
+          background-color: transparent;
           transition: all 0.15s ease-in-out;
           font-size: 0.92rem;
         }
 
-        .sidebar-item-btn:hover {
-          background-color: rgba(30, 90, 99, 0.06) !important;
+        .app-sidebar .sidebar-sub-btn {
+          color: rgba(255, 255, 255, 0.78);
+        }
+
+        .app-sidebar .sidebar-item-btn:hover,
+        .app-sidebar .sidebar-item-btn:focus-visible {
+          background-color: rgba(255, 255, 255, 0.1);
+          color: #fff;
+        }
+
+        /* Ítem de la página actual */
+        .app-sidebar .sidebar-item-btn.is-active {
+          background-color: #2c6d72;
+          color: #fff;
+        }
+
+        /* Grupo desplegado que contiene la página actual */
+        .app-sidebar .sidebar-item-btn.is-active-parent {
+          background-color: rgba(255, 255, 255, 0.08);
+          color: #fff;
+        }
+
+        .app-sidebar .border-start {
+          border-color: rgba(255, 255, 255, 0.3) !important;
+        }
+
+        /* Fila superior: título de la vista (izq.) + tarjeta del usuario (der.).
+           El padding lateral coincide con el de los contenedores de las páginas
+           (main + container-fluid px-4) para que todo quede alineado. */
+        .topbar {
+          padding: 1rem 2.5rem 0;
+        }
+        .topbar-titulo {
+          flex: 1 1 auto;
+          min-width: 0;
+          min-height: 56px; /* misma altura que la tarjeta del usuario */
+          display: flex;
+          align-items: center;
+        }
+        @media (min-width: 768px) {
+          .topbar { padding-inline: 3rem; }
         }
 
         @media (max-width: 767.98px) {
@@ -179,29 +234,29 @@ function AppLayout({ children, usuarioRol = null }) {
 
       {/* Sidebar completo */}
       <aside
-        className={`app-sidebar bg-white border-end px-3 py-3 flex-shrink-0 ${
+        className={`app-sidebar px-3 py-3 flex-shrink-0 ${
           sidebarOpen ? "open" : ""
         }`}
       >
         {/* Cabecera del Sidebar con Logo + Botón de cerrar para móvil */}
-        <div className="d-flex align-items-center justify-content-between pb-3 mb-3 border-bottom px-2">
+        <div className="d-flex align-items-center justify-content-between pb-3 mb-2 px-2">
           <div
             className="d-flex align-items-center gap-2 cursor-pointer"
             onClick={() => irA("/dashboard")}
           >
             <img
-              src={logoHappyPay}
+              src={logoHappyPayBlanco}
               alt="HappyPay Logo"
               style={{ height: "36px", objectFit: "contain" }}
             />
-            <span className="fw-bold fs-5 text-dark tracking-tight">
+            <span className="fw-bold fs-5 text-white tracking-tight">
               HappyPay
             </span>
           </div>
 
           <button
             type="button"
-            className="btn-close d-md-none"
+            className="btn-close btn-close-white d-md-none"
             onClick={() => setSidebarOpen(false)}
             aria-label="Cerrar menú"
           ></button>
@@ -222,8 +277,8 @@ function AppLayout({ children, usuarioRol = null }) {
                       type="button"
                       className={`nav-link w-100 text-start border-0 d-flex align-items-center gap-3 py-2.5 px-3 rounded-2 sidebar-item-btn ${
                         activo
-                          ? "bg-brand text-white fw-semibold shadow-sm"
-                          : "text-dark bg-transparent"
+                          ? "is-active fw-semibold"
+                          : ""
                       }`}
                       onClick={() => irA(item.ruta)}
                     >
@@ -240,7 +295,7 @@ function AppLayout({ children, usuarioRol = null }) {
         {/* Administración RRHH */}
         {esRRHH && (
           <div>
-            <hr className="text-muted opacity-25 my-3" />
+            <hr className="sidebar-divider my-3" />
             <small className="text-uppercase fw-bold sidebar-section-title d-block mb-2 px-2">
               Administración RRHH
             </small>
@@ -251,8 +306,8 @@ function AppLayout({ children, usuarioRol = null }) {
                   type="button"
                   className={`nav-link w-100 text-start border-0 d-flex align-items-center justify-content-between py-2.5 px-3 rounded-2 sidebar-item-btn ${
                     esGestionUsuariosActivo
-                      ? "text-brand fw-semibold bg-brand-soft"
-                      : "text-dark bg-transparent"
+                      ? "is-active-parent fw-semibold"
+                      : ""
                   }`}
                   onClick={() => setOpenGestionUsuarios(!openGestionUsuarios)}
                 >
@@ -272,8 +327,8 @@ function AppLayout({ children, usuarioRol = null }) {
                         type="button"
                         className={`nav-link w-100 text-start border-0 py-2 px-3 rounded-2 small d-flex align-items-center gap-2 sidebar-item-btn ${
                           location.pathname === "/gestion-usuarios"
-                            ? "bg-brand text-white fw-semibold shadow-sm"
-                            : "text-secondary bg-transparent"
+                            ? "is-active fw-semibold"
+                            : "sidebar-sub-btn"
                         }`}
                         onClick={() => irA("/gestion-usuarios")}
                       >
@@ -286,8 +341,8 @@ function AppLayout({ children, usuarioRol = null }) {
                         type="button"
                         className={`nav-link w-100 text-start border-0 py-2 px-3 rounded-2 small d-flex align-items-center gap-2 sidebar-item-btn ${
                           location.pathname === "/gestion-usuarios/crear"
-                            ? "bg-brand text-white fw-semibold shadow-sm"
-                            : "text-secondary bg-transparent"
+                            ? "is-active fw-semibold"
+                            : "sidebar-sub-btn"
                         }`}
                         onClick={() => irA("/gestion-usuarios/crear")}
                       >
@@ -305,8 +360,8 @@ function AppLayout({ children, usuarioRol = null }) {
                   type="button"
                   className={`nav-link w-100 text-start border-0 d-flex align-items-center justify-content-between py-2.5 px-3 rounded-2 sidebar-item-btn ${
                     esGestionNovedadesActivo
-                      ? "text-brand fw-semibold bg-brand-soft"
-                      : "text-dark bg-transparent"
+                      ? "is-active-parent fw-semibold"
+                      : ""
                   }`}
                   onClick={() => setOpenGestionNovedades(!openGestionNovedades)}
                 >
@@ -327,8 +382,8 @@ function AppLayout({ children, usuarioRol = null }) {
                         className={`nav-link w-100 text-start border-0 py-2 px-3 rounded-2 small d-flex align-items-center gap-2 sidebar-item-btn ${
                           location.pathname === "/gestion-novedades" ||
                           location.pathname === "/gestion-novedades/activos"
-                            ? "bg-brand text-white fw-semibold shadow-sm"
-                            : "text-secondary bg-transparent"
+                            ? "is-active fw-semibold"
+                            : "sidebar-sub-btn"
                         }`}
                         onClick={() => irA("/gestion-novedades/activos")}
                       >
@@ -341,8 +396,8 @@ function AppLayout({ children, usuarioRol = null }) {
                         type="button"
                         className={`nav-link w-100 text-start border-0 py-2 px-3 rounded-2 small d-flex align-items-center gap-2 sidebar-item-btn ${
                           location.pathname === "/gestion-novedades/publicar"
-                            ? "bg-brand text-white fw-semibold shadow-sm"
-                            : "text-secondary bg-transparent"
+                            ? "is-active fw-semibold"
+                            : "sidebar-sub-btn"
                         }`}
                         onClick={() => irA("/gestion-novedades/publicar")}
                       >
@@ -360,8 +415,8 @@ function AppLayout({ children, usuarioRol = null }) {
                   type="button"
                   className={`nav-link w-100 text-start border-0 d-flex align-items-center justify-content-between py-2.5 px-3 rounded-2 sidebar-item-btn ${
                     esGestionVacacionesActivo
-                      ? "text-brand fw-semibold bg-brand-soft"
-                      : "text-dark bg-transparent"
+                      ? "is-active-parent fw-semibold"
+                      : ""
                   }`}
                   onClick={() =>
                     setOpenGestionVacaciones(!openGestionVacaciones)
@@ -383,8 +438,8 @@ function AppLayout({ children, usuarioRol = null }) {
                         type="button"
                         className={`nav-link w-100 text-start border-0 py-2 px-3 rounded-2 small d-flex align-items-center gap-2 sidebar-item-btn ${
                           location.pathname === "/gestion-vacaciones"
-                            ? "bg-brand text-white fw-semibold shadow-sm"
-                            : "text-secondary bg-transparent"
+                            ? "is-active fw-semibold"
+                            : "sidebar-sub-btn"
                         }`}
                         onClick={() => irA("/gestion-vacaciones")}
                       >
@@ -411,13 +466,13 @@ function AppLayout({ children, usuarioRol = null }) {
                   type="button"
                   className={`nav-link w-100 text-start border-0 d-flex align-items-center gap-3 py-2.5 px-3 rounded-2 sidebar-item-btn ${
                     location.pathname === "/gestion-catalogos"
-                      ? "bg-brand text-white fw-semibold shadow-sm"
-                      : "text-dark bg-transparent"
+                      ? "is-active fw-semibold"
+                      : ""
                   }`}
                   onClick={() => irA("/gestion-catalogos")}
                 >
                   <i className="bi bi-collection fs-5"></i>
-                  <span>Catálogos</span>
+                  <span>Catálogos y roles</span>
                 </button>
               </li>
             </ul>
@@ -439,9 +494,18 @@ function AppLayout({ children, usuarioRol = null }) {
 
       {/* Contenedor Principal */}
       <div className="flex-grow-1 d-flex flex-column min-vh-100 overflow-hidden">
-        <Navbar />
+        {/* Una sola fila arriba: título a la izquierda, tarjeta a la derecha */}
+        <div className="topbar d-flex align-items-center justify-content-between gap-3">
+          <div ref={setZonaTitulo} className="topbar-titulo"></div>
+          <Navbar />
+        </div>
 
-        <main className="flex-grow-1 p-3 p-md-4 overflow-auto">{children}</main>
+        {/* Sin padding superior: el contenido sube hasta pegarse a la fila de arriba */}
+        <main className="flex-grow-1 px-3 px-md-4 pt-0 pb-3 pb-md-4 overflow-auto">
+          <TopBarContext.Provider value={zonaTitulo}>
+            {children}
+          </TopBarContext.Provider>
+        </main>
       </div>
 
       {/* Modal de actualización obligatoria de perfil */}

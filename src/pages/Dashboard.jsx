@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import AppLayout from "../components/layout/AppLayout";
+import SectionHeader from "../components/layout/SectionHeader";
 import { getImagenesActivas } from "../services/imagenesService.js";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../store/useAuthStore";
@@ -40,8 +41,9 @@ function Dashboard() {
 
   return (
     <AppLayout>
-      <div className="container-fluid px-3 px-md-4 py-3 flex-grow-1 d-flex flex-column">
-        <h5 className="mb-3 text-secondary fw-semibold">Novedades</h5>
+      <SectionHeader titulo="Novedades" mostrarVolver={false} />
+
+      <div className="container-fluid px-3 px-md-4 pt-1 pb-3 flex-grow-1 d-flex flex-column">
 
         {user?.puedeActualizarPerfil && (
           <div className="alert alert-warning d-flex justify-content-between align-items-center shadow-sm mb-3">

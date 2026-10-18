@@ -38,6 +38,21 @@ function Vacio({ icono = "bi-info-circle", texto }) {
 
 /* ----------------------------- PANELES ----------------------------- */
 
+// Cuadro con título para agrupar datos (se usan dos por pestaña, lado a lado).
+function Cuadro({ titulo, icono, children }) {
+  return (
+    <div className="border rounded-3 p-3 p-lg-4 h-100">
+      <div className="d-flex align-items-center gap-2 mb-3 pb-2 border-bottom">
+        <i className={`bi ${icono} text-brand`}></i>
+        <h6 className="fw-bold mb-0 text-dark small text-uppercase">
+          {titulo}
+        </h6>
+      </div>
+      {children}
+    </div>
+  );
+}
+
 function PanelPersonal({ info, esRRHH }) {
   const edad = info.fechaNacimiento
     ? `${calcularEdad(info.fechaNacimiento)} años`
@@ -47,133 +62,174 @@ function PanelPersonal({ info, esRRHH }) {
     : null;
 
   return (
-    <div className="row g-4">
-      <Campo etiqueta="Cédula / ID">{info.cedula}</Campo>
-      {esRRHH && (
-        <Campo etiqueta="Nacionalidad">
-          {info.nacionalidad
-            ? info.nacionalidad.charAt(0) +
-              info.nacionalidad.slice(1).toLowerCase()
-            : null}
-        </Campo>
-      )}
-      <Campo etiqueta="Género">{info.genero}</Campo>
-      <Campo etiqueta="Fecha de nacimiento">
-        {info.fechaNacimiento
-          ? `${formatearFecha(info.fechaNacimiento)}${edad ? ` (${edad})` : ""}`
-          : null}
-      </Campo>
-      <Campo etiqueta="Estado civil">{info.estadoCivil}</Campo>
-      <Campo etiqueta="Generación">{generacion}</Campo>
-      <Campo etiqueta="Etnia">{info.etnia}</Campo>
-
-      <div className="col-12">
-        <hr className="my-0 text-muted opacity-25" />
+    <div className="row g-3">
+      {/* Cuadro 1: datos de identidad */}
+      <div className="col-12 col-lg-6">
+        <Cuadro titulo="Información principal" icono="bi-person-vcard">
+          <div className="row g-3">
+            <Campo etiqueta="Cédula / ID" className="col-12 col-sm-6">
+              {info.cedula}
+            </Campo>
+            <Campo etiqueta="Nacionalidad" className="col-12 col-sm-6">
+              {info.nacionalidad
+                ? info.nacionalidad.charAt(0) +
+                  info.nacionalidad.slice(1).toLowerCase()
+                : null}
+            </Campo>
+            <Campo etiqueta="Fecha de nacimiento" className="col-12 col-sm-6">
+              {info.fechaNacimiento
+                ? `${formatearFecha(info.fechaNacimiento)}${edad ? ` (${edad})` : ""}`
+                : null}
+            </Campo>
+            <Campo etiqueta="Generación" className="col-12 col-sm-6">
+              {generacion}
+            </Campo>
+            <Campo etiqueta="Estado civil" className="col-12 col-sm-6">
+              {info.estadoCivil}
+            </Campo>
+          </div>
+        </Cuadro>
       </div>
 
-      <Campo etiqueta="Correo personal" className="col-12 col-md-6 col-lg-4">
-        {info.correoPersonal}
-      </Campo>
-      <Campo etiqueta="Teléfono personal" className="col-12 col-md-6 col-lg-4">
-        {info.celularPersonal}
-      </Campo>
+      {/* Cuadro 2: datos complementarios y de contacto */}
+      <div className="col-12 col-lg-6">
+        <Cuadro titulo="Contacto y otros datos" icono="bi-person-lines-fill">
+          <div className="row g-3">
+            <Campo etiqueta="Género" className="col-12 col-sm-6">
+              {info.genero}
+            </Campo>
+            <Campo etiqueta="Etnia" className="col-12 col-sm-6">
+              {info.etnia}
+            </Campo>
+            <Campo etiqueta="Correo personal" className="col-12 col-sm-6">
+              {info.correoPersonal}
+            </Campo>
+            <Campo etiqueta="Teléfono personal" className="col-12 col-sm-6">
+              {info.celularPersonal}
+            </Campo>
 
-      {esRRHH && (
-        <>
-          <div className="col-12">
-            <hr className="my-0 text-muted opacity-25" />
+            {esRRHH && (
+              <div className="col-12">
+                <span className="text-muted small d-block mb-2">
+                  Beneficios y pagos
+                </span>
+                <div className="d-flex flex-wrap gap-2">
+                  <span className="badge bg-light text-dark border py-2 px-3">
+                    Comisiones:{" "}
+                    <strong>{info.recibeComisiones ? "Sí" : "No"}</strong>
+                  </span>
+                  <span className="badge bg-light text-dark border py-2 px-3">
+                    Décimos:{" "}
+                    <strong>
+                      {info.acumulaDecimos ? "Acumulado" : "Mensualizado"}
+                    </strong>
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
-          <div className="col-12">
-            <span className="text-muted small d-block mb-2">
-              Beneficios y pagos
-            </span>
-            <div className="d-flex flex-wrap gap-2">
-              <span className="badge bg-light text-dark border py-2 px-3">
-                Comisiones:{" "}
-                <strong>{info.recibeComisiones ? "Sí" : "No"}</strong>
-              </span>
-              <span className="badge bg-light text-dark border py-2 px-3">
-                Décimos:{" "}
-                <strong>
-                  {info.acumulaDecimos ? "Acumulado" : "Mensualizado"}
-                </strong>
-              </span>
-            </div>
-          </div>
-        </>
-      )}
+        </Cuadro>
+      </div>
     </div>
   );
 }
 
 function PanelLaboral({ info, esRRHH }) {
+  const tienePeriodos = esRRHH && info.periodosIess?.length > 0;
+
   return (
-    <div className="row g-4">
-      <Campo etiqueta="Jefe directo">
-        {info.jefeDirecto || "Sin asignar"}
-      </Campo>
-      <Campo etiqueta="Fecha de ingreso">
-        {info.fechaIngreso ? formatearFecha(info.fechaIngreso) : null}
-      </Campo>
-      <Campo etiqueta="Jornada">{info.jornada}</Campo>
-
-      {esRRHH && (
-        <>
-          <Campo etiqueta="Tipo de contrato">{info.tipoContrato}</Campo>
-          <Campo etiqueta="Fin de contrato">
-            {info.fechaFinContrato
-              ? formatearFecha(info.fechaFinContrato)
-              : "No aplica"}
-          </Campo>
-          <Campo etiqueta="Cargo IESS">{info.cargoIess}</Campo>
-          <Campo etiqueta="Sectorial">{info.sectorial}</Campo>
-        </>
-      )}
-
-      <div className="col-12">
-        <hr className="my-0 text-muted opacity-25" />
+    <div className="row g-3">
+      {/* Cuadro izquierdo: datos del puesto */}
+      <div className="col-12 col-lg-6">
+        <Cuadro titulo="Datos laborales" icono="bi-briefcase">
+          <div className="row g-3">
+            <Campo etiqueta="Jefe directo" className="col-12 col-sm-6">
+              {info.jefeDirecto || "Sin asignar"}
+            </Campo>
+            <Campo etiqueta="Fecha de ingreso" className="col-12 col-sm-6">
+              {info.fechaIngreso ? formatearFecha(info.fechaIngreso) : null}
+            </Campo>
+            <Campo etiqueta="Jornada" className="col-12 col-sm-6">
+              {info.jornada}
+            </Campo>
+            {esRRHH && (
+              <>
+                <Campo etiqueta="Tipo de contrato" className="col-12 col-sm-6">
+                  {info.tipoContrato}
+                </Campo>
+                <Campo etiqueta="Fin de contrato" className="col-12 col-sm-6">
+                  {info.fechaFinContrato
+                    ? formatearFecha(info.fechaFinContrato)
+                    : "No aplica"}
+                </Campo>
+                <Campo etiqueta="Cargo IESS" className="col-12 col-sm-6">
+                  {info.cargoIess}
+                </Campo>
+                <Campo etiqueta="Sectorial" className="col-12 col-sm-6">
+                  {info.sectorial}
+                </Campo>
+              </>
+            )}
+          </div>
+        </Cuadro>
       </div>
 
-      <Campo etiqueta="Región">{info.region}</Campo>
-      <Campo etiqueta="Provincia">{info.provincia}</Campo>
-      <Campo etiqueta="Ciudad">{info.ciudad}</Campo>
-      <Campo etiqueta="Dirección" className="col-12">
-        {info.direccion}
-      </Campo>
-
-      {esRRHH && info.periodosIess && info.periodosIess.length > 0 && (
-        <div className="col-12">
-          <span className="text-muted small d-block mb-2">
-            Historial de contratos
-          </span>
-          <div className="table-responsive border rounded">
-            <table className="table table-sm align-middle mb-0 small">
-              <thead className="table-light">
-                <tr className="text-muted">
-                  <th>Inicio</th>
-                  <th>Fin</th>
-                  <th>Cargo</th>
-                </tr>
-              </thead>
-              <tbody>
-                {info.periodosIess.map((per, idx) => (
-                  <tr key={per.idPeriodoIess || idx}>
-                    <td>{formatearFecha(per.fechaIngreso)}</td>
-                    <td>
-                      {per.fechaSalida ? (
-                        formatearFecha(per.fechaSalida)
-                      ) : (
-                        <span className="badge bg-success-subtle text-success border border-success-subtle">
-                          Vigente
-                        </span>
-                      )}
-                    </td>
-                    <td>{per.cargoIess || "—"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      {/* Cuadro derecho: ubicación */}
+      <div className="col-12 col-lg-6">
+        <Cuadro titulo="Ubicación" icono="bi-geo-alt">
+          <div className="row g-3">
+            <Campo etiqueta="Región" className="col-12 col-sm-6">
+              {info.region}
+            </Campo>
+            <Campo etiqueta="Provincia" className="col-12 col-sm-6">
+              {info.provincia}
+            </Campo>
+            <Campo etiqueta="Ciudad" className="col-12 col-sm-6">
+              {info.ciudad}
+            </Campo>
+            <Campo etiqueta="Dirección" className="col-12">
+              {info.direccion}
+            </Campo>
           </div>
+        </Cuadro>
+      </div>
+
+      {/* Historial de contratos: solo si existe, ocupa todo el ancho */}
+      {tienePeriodos && (
+        <div className="col-12">
+          <Cuadro titulo="Historial de contratos" icono="bi-clock-history">
+            <div
+              className="table-responsive"
+              style={{ maxHeight: "180px", overflowY: "auto" }}
+            >
+              <table className="table table-sm align-middle mb-0 small">
+                <thead className="table-light sticky-top">
+                  <tr className="text-muted">
+                    <th>Inicio</th>
+                    <th>Fin</th>
+                    <th>Cargo</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {info.periodosIess.map((per, idx) => (
+                    <tr key={per.idPeriodoIess || idx}>
+                      <td>{formatearFecha(per.fechaIngreso)}</td>
+                      <td>
+                        {per.fechaSalida ? (
+                          formatearFecha(per.fechaSalida)
+                        ) : (
+                          <span className="badge bg-success-subtle text-success border border-success-subtle">
+                            Vigente
+                          </span>
+                        )}
+                      </td>
+                      <td>{per.cargoIess || "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Cuadro>
         </div>
       )}
     </div>
@@ -268,9 +324,7 @@ function PanelFamiliares({ info, esRRHH }) {
 function PanelEmergencia({ info }) {
   const contactos = info.contactosEmergencia || [];
   if (contactos.length === 0)
-    return (
-      <Vacio icono="bi-telephone" texto="Sin contactos de emergencia." />
-    );
+    return <Vacio icono="bi-telephone" texto="Sin contactos de emergencia." />;
 
   return (
     <div className="row g-3">
@@ -336,7 +390,11 @@ function PerfilPestanas({ info, esRRHH = false }) {
   const [activa, setActiva] = useState("personal");
 
   const pestanas = [
-    { id: "personal", etiqueta: "Información personal", icono: "bi-person-vcard" },
+    {
+      id: "personal",
+      etiqueta: "Información personal",
+      icono: "bi-person-vcard",
+    },
     { id: "laboral", etiqueta: "Datos laborales", icono: "bi-briefcase" },
     {
       id: "formacion",
@@ -364,8 +422,6 @@ function PerfilPestanas({ info, esRRHH = false }) {
     },
   ];
 
-  const actual = pestanas.find((p) => p.id === activa);
-
   return (
     <div className="card border-0 shadow-sm">
       {/* Barra de pestañas (en pantallas chicas se desliza hacia el lado) */}
@@ -377,7 +433,11 @@ function PerfilPestanas({ info, esRRHH = false }) {
           {pestanas.map((p) => {
             const seleccionada = p.id === activa;
             return (
-              <li className="nav-item flex-shrink-0" key={p.id} role="presentation">
+              <li
+                className="nav-item flex-shrink-0"
+                key={p.id}
+                role="presentation"
+              >
                 <button
                   type="button"
                   role="tab"
@@ -394,7 +454,9 @@ function PerfilPestanas({ info, esRRHH = false }) {
                   {p.cantidad !== undefined && p.cantidad > 0 && (
                     <span
                       className={`badge rounded-pill ${
-                        seleccionada ? "bg-white text-dark" : "bg-light text-dark border"
+                        seleccionada
+                          ? "bg-white text-dark"
+                          : "bg-light text-dark border"
                       }`}
                     >
                       {p.cantidad}
@@ -413,11 +475,6 @@ function PerfilPestanas({ info, esRRHH = false }) {
         role="tabpanel"
         style={{ minHeight: "280px" }}
       >
-        <div className="d-flex align-items-center gap-2 mb-3">
-          <i className={`bi ${actual.icono} fs-5 text-brand`}></i>
-          <h6 className="fw-bold mb-0 text-dark">{actual.etiqueta}</h6>
-        </div>
-
         {activa === "personal" && <PanelPersonal info={info} esRRHH={esRRHH} />}
         {activa === "laboral" && <PanelLaboral info={info} esRRHH={esRRHH} />}
         {activa === "formacion" && <PanelFormacion info={info} />}

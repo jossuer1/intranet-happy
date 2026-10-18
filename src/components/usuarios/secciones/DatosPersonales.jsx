@@ -221,7 +221,7 @@ const DatosPersonales = ({
             </select>
           </div>
 
-          <div className="col-md-6 col-lg-6">
+          <div className="col-md-4">
             <label className="form-label fw-semibold text-center d-block">
               Etnia
             </label>
@@ -240,7 +240,7 @@ const DatosPersonales = ({
               ))}
             </select>
           </div>
-          <div className="col-md-6 col-lg-6">
+          <div className="col-md-4">
             <label className="form-label fw-semibold text-center d-block">
               Tipo de Sangre
             </label>

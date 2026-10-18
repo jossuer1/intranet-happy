@@ -1,5 +1,8 @@
 import React from "react";
 
+// Dominio corporativo: es el único permitido para el correo empresarial.
+const DOMINIO_EMPRESA = "@happypay.ec";
+
 const DatosLaborales = ({
   formData,
   handleChange,
@@ -8,6 +11,24 @@ const DatosLaborales = ({
   opcionesFijas = {},
   idUsuarioActual = null,
 }) => {
+  // El usuario solo escribe la parte antes de la @; el dominio va fijo.
+  // Si pega un correo completo (o con otro dominio) se descarta lo que sigue a
+  // la @ y los caracteres no válidos, y siempre se guarda con @happypay.ec.
+  const parteLocalCorreo = String(formData.correoEmpresa || "").split("@")[0];
+
+  const handleCorreoEmpresaChange = (e) => {
+    const local = e.target.value
+      .split("@")[0]
+      .replace(/[^a-zA-Z0-9._%+-]/g, "")
+      .toLowerCase();
+    handleChange({
+      target: {
+        name: "correoEmpresa",
+        value: local ? `${local}${DOMINIO_EMPRESA}` : "",
+      },
+    });
+  };
+
   const handleSwitchChange = (e) => {
     const { name, checked } = e.target;
     handleChange({
@@ -46,14 +67,16 @@ const DatosLaborales = ({
       (!idUsuarioActual || u.idUsuario !== idUsuarioActual),
   );
 
-  const requiereFechaFin = (opcionesFijas.tiposContratoConFechaFin || []).includes(
-    formData.tipoContrato,
-  );
+  const requiereFechaFin = (
+    opcionesFijas.tiposContratoConFechaFin || []
+  ).includes(formData.tipoContrato);
 
   // Al cambiar el tipo de contrato, se limpia la fecha de fin si ya no aplica
   const handleTipoContratoChange = (e) => {
     handleChange(e);
-    if (!(opcionesFijas.tiposContratoConFechaFin || []).includes(e.target.value)) {
+    if (
+      !(opcionesFijas.tiposContratoConFechaFin || []).includes(e.target.value)
+    ) {
       handleChange({ target: { name: "fechaFinContrato", value: "" } });
     }
   };
@@ -139,14 +162,21 @@ const DatosLaborales = ({
         </div>
         <div className="col-md-6">
           <label className="form-label">Correo Empresarial</label>
-          <input
-            type="email"
-            className="form-control"
-            name="correoEmpresa"
-            value={formData.correoEmpresa || ""}
-            onChange={handleChange}
-            placeholder="usuario@empresa.com"
-          />
+          <div className="input-group">
+            <input
+              type="text"
+              className="form-control"
+              name="correoEmpresa"
+              value={parteLocalCorreo}
+              onChange={handleCorreoEmpresaChange}
+              placeholder="nombre.apellido"
+              autoComplete="off"
+              spellCheck={false}
+            />
+            <span className="input-group-text fw-semibold text-muted">
+              {DOMINIO_EMPRESA}
+            </span>
+          </div>
         </div>
         <div className="col-md-6">
           <label className="form-label">Celular Empresarial</label>
@@ -192,7 +222,9 @@ const DatosLaborales = ({
               </div>
               {requiereFechaFin && (
                 <div className="col-md-6">
-                  <label className="form-label">Fecha de Fin de Contrato *</label>
+                  <label className="form-label">
+                    Fecha de Fin de Contrato *
+                  </label>
                   <input
                     type="date"
                     className="form-control"
@@ -256,7 +288,10 @@ const DatosLaborales = ({
                     checked={Boolean(formData.recibeComisiones)}
                     onChange={handleSwitchChange}
                   />
-                  <label className="form-check-label" htmlFor="recibeComisionesSwitch">
+                  <label
+                    className="form-check-label"
+                    htmlFor="recibeComisionesSwitch"
+                  >
                     Recibe comisiones
                   </label>
                 </div>
@@ -269,7 +304,10 @@ const DatosLaborales = ({
                     checked={Boolean(formData.acumulaDecimos)}
                     onChange={handleSwitchChange}
                   />
-                  <label className="form-check-label" htmlFor="acumulaDecimosSwitch">
+                  <label
+                    className="form-check-label"
+                    htmlFor="acumulaDecimosSwitch"
+                  >
                     Acumula décimos
                   </label>
                 </div>
@@ -282,8 +320,12 @@ const DatosLaborales = ({
                     checked={Boolean(formData.esJefe)}
                     onChange={handleSwitchChange}
                   />
-                  <label className="form-check-label fw-bold" htmlFor="esJefeSwitch">
-                    Es jefe (puede ser elegido como jefe directo y aprobar vacaciones)
+                  <label
+                    className="form-check-label fw-bold"
+                    htmlFor="esJefeSwitch"
+                  >
+                    Es jefe (puede ser elegido como jefe directo y aprobar
+                    vacaciones)
                   </label>
                 </div>
               </div>

@@ -313,7 +313,9 @@ const UsuarioFormCard = ({
         }
         if (i < ordenados.length - 1) {
           if (!fechaSalida) {
-            setError("Solo el último período de contrato puede quedar sin fecha de fin.");
+            setError(
+              "Solo el último período de contrato puede quedar sin fecha de fin.",
+            );
             return;
           }
           if (fechaSalida >= ordenados[i + 1].fechaIngreso) {
@@ -941,38 +943,40 @@ const UsuarioFormCard = ({
         </div>
 
         {/* ÚNICO BOTÓN DE GUARDAR FIJO ABAJO */}
-        <div className="fixed-bottom-bar d-flex justify-content-end align-items-center gap-3">
-          {onCancelar && (
+        <div className="fixed-bottom-bar">
+          <div className="fixed-bottom-bar-inner">
+            {onCancelar && (
+              <button
+                type="button"
+                className="btn btn-hp-secondary px-4"
+                onClick={onCancelar}
+                disabled={loading}
+              >
+                Cancelar
+              </button>
+            )}
             <button
-              type="button"
-              className="btn btn-hp-secondary px-4"
-              onClick={onCancelar}
+              type="submit"
+              className="btn btn-hp-primary px-4 shadow-sm d-flex align-items-center gap-2"
               disabled={loading}
             >
-              Cancelar
+              {loading ? (
+                <>
+                  <span
+                    className="spinner-border spinner-border-sm"
+                    role="status"
+                    aria-hidden="true"
+                  ></span>
+                  {esEdicion ? "Guardando..." : "Creando..."}
+                </>
+              ) : (
+                <>
+                  <i className="bi bi-floppy-fill"></i>
+                  {esEdicion ? "Guardar Cambios" : "Guardar Usuario Completo"}
+                </>
+              )}
             </button>
-          )}
-          <button
-            type="submit"
-            className="btn btn-hp-primary px-4 shadow-sm d-flex align-items-center gap-2"
-            disabled={loading}
-          >
-            {loading ? (
-              <>
-                <span
-                  className="spinner-border spinner-border-sm"
-                  role="status"
-                  aria-hidden="true"
-                ></span>
-                {esEdicion ? "Guardando..." : "Creando..."}
-              </>
-            ) : (
-              <>
-                <i className="bi bi-floppy-fill"></i>
-                {esEdicion ? "Guardar Cambios" : "Guardar Usuario Completo"}
-              </>
-            )}
-          </button>
+          </div>
         </div>
       </form>
     </div>
