@@ -2,6 +2,12 @@ import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import Navbar from "./Navbar";
 import { TopBarContext } from "./TopBarContext";
+import {
+  SECCIONES_CATALOGO,
+  SECCION_ROLES,
+  RUTA_ADMIN,
+  seccionDesdeUrl,
+} from "../catalogos/seccionesAdmin";
 import { useAuthStore } from "../../store/useAuthStore";
 import logoHappyPay from "../../assets/images/logo_happy.jpg";
 import logoHappyPayBlanco from "../../assets/images/logo_happy_blanco.png";
@@ -56,14 +62,17 @@ function AppLayout({ children, usuarioRol = null }) {
     location.pathname.startsWith("/gestion-vacaciones"),
   );
 
+  // Grupo "Catálogos y roles" del ADMIN: abierto por defecto (es su única pantalla)
+  const [openCatalogos, setOpenCatalogos] = useState(true);
+
   const [sidebarOpen, setSidebarOpen] = useState(false);
   // Zona izquierda de la fila superior: cada página mete aquí su título
   const [zonaTitulo, setZonaTitulo] = useState(null);
 
-  // Cerrar sidebar al cambiar de ruta
+  // Cerrar sidebar al cambiar de ruta (o de sección: ?seccion=...)
   useEffect(() => {
     setSidebarOpen(false);
-  }, [location.pathname]);
+  }, [location.pathname, location.search]);
 
   const rolUsuario = String(
     usuarioRol ??
@@ -89,6 +98,11 @@ function AppLayout({ children, usuarioRol = null }) {
     }
     navigate(ruta);
   };
+
+  // Administración (ADMIN): ¿estoy en esa pantalla y en qué sección?
+  const enAdmin = location.pathname === RUTA_ADMIN;
+  const seccionAdmin = seccionDesdeUrl(location.search);
+  const irASeccionAdmin = (key) => irA(`${RUTA_ADMIN}?seccion=${key}`);
 
   useEffect(() => {
     if (esADMIN && location.pathname !== "/gestion-catalogos") {
@@ -276,9 +290,7 @@ function AppLayout({ children, usuarioRol = null }) {
                     <button
                       type="button"
                       className={`nav-link w-100 text-start border-0 d-flex align-items-center gap-3 py-2.5 px-3 rounded-2 sidebar-item-btn ${
-                        activo
-                          ? "is-active fw-semibold"
-                          : ""
+                        activo ? "is-active fw-semibold" : ""
                       }`}
                       onClick={() => irA(item.ruta)}
                     >
@@ -454,7 +466,7 @@ function AppLayout({ children, usuarioRol = null }) {
           </div>
         )}
 
-        {/* Administración (ADMIN) */}
+        {/* Administración (ADMIN): "Catálogos y roles" con sus secciones debajo */}
         {esADMIN && (
           <div>
             <small className="text-uppercase fw-bold sidebar-section-title d-block mb-2 px-2">
@@ -464,16 +476,60 @@ function AppLayout({ children, usuarioRol = null }) {
               <li className="nav-item">
                 <button
                   type="button"
-                  className={`nav-link w-100 text-start border-0 d-flex align-items-center gap-3 py-2.5 px-3 rounded-2 sidebar-item-btn ${
-                    location.pathname === "/gestion-catalogos"
-                      ? "is-active fw-semibold"
-                      : ""
+                  className={`nav-link w-100 text-start border-0 d-flex align-items-center justify-content-between py-2.5 px-3 rounded-2 sidebar-item-btn ${
+                    enAdmin ? "is-active-parent fw-semibold" : ""
                   }`}
-                  onClick={() => irA("/gestion-catalogos")}
+                  onClick={() => setOpenCatalogos(!openCatalogos)}
+                  aria-expanded={openCatalogos}
                 >
-                  <i className="bi bi-collection fs-5"></i>
-                  <span>Catálogos y roles</span>
+                  <div className="d-flex align-items-center gap-3">
+                    <i className="bi bi-collection fs-5"></i>
+                    <span>Catálogos y roles</span>
+                  </div>
+                  <i
+                    className={`bi bi-chevron-${openCatalogos ? "down" : "right"} small opacity-75`}
+                  ></i>
                 </button>
+
+                {openCatalogos && (
+                  <ul className="nav nav-pills flex-column ms-3 mt-1 ps-2 border-start gap-1">
+                    {SECCIONES_CATALOGO.map((sec) => (
+                      <li className="nav-item" key={sec.key}>
+                        <button
+                          type="button"
+                          className={`nav-link w-100 text-start border-0 py-2 px-3 rounded-2 small d-flex align-items-center gap-2 sidebar-item-btn ${
+                            enAdmin && seccionAdmin === sec.key
+                              ? "is-active fw-semibold"
+                              : "sidebar-sub-btn"
+                          }`}
+                          onClick={() => irASeccionAdmin(sec.key)}
+                        >
+                          <i className={`bi ${sec.icono}`}></i>
+                          <span>{sec.titulo}</span>
+                        </button>
+                      </li>
+                    ))}
+
+                    {/* Roles de usuario: separado, porque no es un catálogo */}
+                    <li aria-hidden="true">
+                      <hr className="sidebar-divider my-1" />
+                    </li>
+                    <li className="nav-item">
+                      <button
+                        type="button"
+                        className={`nav-link w-100 text-start border-0 py-2 px-3 rounded-2 small d-flex align-items-center gap-2 sidebar-item-btn ${
+                          enAdmin && seccionAdmin === SECCION_ROLES.key
+                            ? "is-active fw-semibold"
+                            : "sidebar-sub-btn"
+                        }`}
+                        onClick={() => irASeccionAdmin(SECCION_ROLES.key)}
+                      >
+                        <i className={`bi ${SECCION_ROLES.icono}`}></i>
+                        <span>{SECCION_ROLES.titulo}</span>
+                      </button>
+                    </li>
+                  </ul>
+                )}
               </li>
             </ul>
           </div>

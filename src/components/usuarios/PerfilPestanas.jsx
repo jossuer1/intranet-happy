@@ -39,9 +39,11 @@ function Vacio({ icono = "bi-info-circle", texto }) {
 /* ----------------------------- PANELES ----------------------------- */
 
 // Cuadro con título para agrupar datos (se usan dos por pestaña, lado a lado).
-function Cuadro({ titulo, icono, children }) {
+// className: por defecto "h-100" (ocupa toda la altura de su columna). Si dos
+// cuadros van apilados en una misma columna, se les pasa "" o "flex-grow-1".
+function Cuadro({ titulo, icono, children, className = "h-100" }) {
   return (
-    <div className="border rounded-3 p-3 p-lg-4 h-100">
+    <div className={`border rounded-3 p-3 p-lg-4 ${className}`}>
       <div className="d-flex align-items-center gap-2 mb-3 pb-2 border-bottom">
         <i className={`bi ${icono} text-brand`}></i>
         <h6 className="fw-bold mb-0 text-dark small text-uppercase">
@@ -174,9 +176,17 @@ function PanelLaboral({ info, esRRHH }) {
         </Cuadro>
       </div>
 
-      {/* Cuadro derecho: ubicación */}
-      <div className="col-12 col-lg-6">
-        <Cuadro titulo="Ubicación" icono="bi-geo-alt">
+      {/* Columna derecha: Ubicación y, justo debajo, el Historial de contratos.
+          Así el historial sube y comparte la altura del cuadro de la izquierda
+          en vez de ocupar una fila entera más abajo. */}
+      <div className="col-12 col-lg-6 d-flex flex-column gap-3">
+        {/* Si no hay historial, Ubicación rellena toda la columna */}
+        <Cuadro
+          titulo="Ubicación"
+          icono="bi-geo-alt"
+          className={tienePeriodos ? "" : "flex-grow-1"}
+        >
+          {/* 2 × 2: Región | Provincia  /  Ciudad | Dirección (sin huecos) */}
           <div className="row g-3">
             <Campo etiqueta="Región" className="col-12 col-sm-6">
               {info.region}
@@ -187,17 +197,20 @@ function PanelLaboral({ info, esRRHH }) {
             <Campo etiqueta="Ciudad" className="col-12 col-sm-6">
               {info.ciudad}
             </Campo>
-            <Campo etiqueta="Dirección" className="col-12">
+            <Campo etiqueta="Dirección" className="col-12 col-sm-6">
               {info.direccion}
             </Campo>
           </div>
         </Cuadro>
-      </div>
 
-      {/* Historial de contratos: solo si existe, ocupa todo el ancho */}
-      {tienePeriodos && (
-        <div className="col-12">
-          <Cuadro titulo="Historial de contratos" icono="bi-clock-history">
+        {/* Historial de contratos: solo si existe. flex-grow-1 = rellena el
+            alto sobrante si la columna izquierda es más alta. */}
+        {tienePeriodos && (
+          <Cuadro
+            titulo="Historial de contratos"
+            icono="bi-clock-history"
+            className="flex-grow-1"
+          >
             <div
               className="table-responsive"
               style={{ maxHeight: "180px", overflowY: "auto" }}
@@ -230,8 +243,8 @@ function PanelLaboral({ info, esRRHH }) {
               </table>
             </div>
           </Cuadro>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
