@@ -10,9 +10,10 @@
 
 .form-usuario-wrapper {
   width: 100%;
+  min-width: 0; /* evita que el contenido ensanche el contenedor flex */
   max-width: 1280px;
   margin: 0 auto; /* centrado en el área de trabajo */
-  padding-bottom: 90px;
+  padding-bottom: 80px;
 }
 
 /* Header */
@@ -193,10 +194,10 @@
   box-sizing: border-box;
 }
 
-/* Badges de Validación */
-.badge {
-  font-size: 0.8rem;
-  padding: 6px 12px;
+/* Badges de Validación (solo dentro del formulario) */
+.form-usuario-wrapper .badge {
+  font-size: 0.7rem;
+  padding: 0.3em 0.6em;
   font-weight: 600;
 }
 
@@ -251,4 +252,61 @@
   justify-content: flex-end;
   align-items: center;
   gap: 1rem;
+}
+
+/* ───────── Vista compacta (que quepa sin hacer zoom) ───────── */
+.form-usuario-wrapper .form-header-card {
+  padding: 10px 18px;
+  margin-bottom: 12px !important;
+}
+
+.form-usuario-wrapper .form-header-card h4 {
+  font-size: 1.15rem;
+}
+
+.form-usuario-wrapper label {
+  font-size: 0.82rem;
+  margin-bottom: 4px;
+}
+
+.form-usuario-wrapper .form-control,
+.form-usuario-wrapper .form-select {
+  padding: 7px 12px;
+  font-size: 0.88rem;
+}
+
+.form-usuario-wrapper .row {
+  --bs-gutter-y: 0.7rem;
+  --bs-gutter-x: 1rem;
+}
+
+.form-usuario-wrapper .btn {
+  padding: 6px 12px;
+}
+
+/* ───────── Pestañas: todas visibles, sin scroll, fijas arriba ───────── */
+.tabs-usuario-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: #ffffff;
+  border-radius: 0.375rem 0.375rem 0 0;
+}
+
+.tabs-usuario {
+  display: flex;
+  flex-wrap: wrap; /* si no caben en una línea, bajan a una segunda */
+  gap: 0.4rem;
+}
+
+.tabs-usuario .nav-link {
+  padding: 0.45rem 0.7rem;
+  font-size: 0.84rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.tabs-usuario .badge {
+  font-size: 0.66rem;
+  padding: 0.25em 0.5em;
 }

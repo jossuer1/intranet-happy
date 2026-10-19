@@ -9,6 +9,8 @@ import DatosBancarios from "./secciones/DatosBancarios";
 import Titulos from "./secciones/Titulos";
 import PeriodosContrato from "./secciones/PeriodosContrato";
 import { useCatalogosFormulario } from "../../hooks/useCatalogo";
+import { toastError } from "../../utils/toast";
+import { validarUsuario } from "../../utils/validacionesUsuario";
 import "./UsuarioFormCard.css";
 
 // <input type="date"> solo muestra valores "yyyy-MM-dd". Si el backend manda
@@ -128,7 +130,7 @@ const UsuarioFormCard = ({
   const opcionesFijas = catalogosData?.opcionesFijas ?? OPCIONES_VACIAS;
 
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [seccionActiva, setSeccionActiva] = useState("personales");
 
   // Cargar datos originales si es edición
   useEffect(() => {
@@ -259,73 +261,94 @@ const UsuarioFormCard = ({
   const esContactosValido = formData.contactosEmergencia.length > 0;
   const esFamiliaresValido = formData.familiares.length > 0;
 
+  // Cambia a la pestaña donde está el error y sube al inicio del formulario,
+  // para que el usuario vea de inmediato qué le falta.
+  const mostrarSeccion = (idSeccion) => {
+    if (!idSeccion) return;
+    setSeccionActiva(idSeccion);
+    setTimeout(() => {
+      document
+        .getElementById("tabsUsuario")
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 50);
+  };
+
+  // Pestañas del formulario. `requerido` => muestra "Requerido" mientras falte.
+  const pestanas = [
+    {
+      id: "personales",
+      etiqueta: "Personales",
+      icono: "bi-person-vcard",
+      requerido: true,
+      completo: esDatosPersonalesValido,
+    },
+    !modoAutogestion && {
+      id: "laborales",
+      etiqueta: "Laborales",
+      icono: "bi-briefcase",
+      requerido: true,
+      completo: esDatosLaboralesValido,
+    },
+    !modoAutogestion && {
+      id: "bancarios",
+      etiqueta: "Bancaria",
+      icono: "bi-credit-card-2-front",
+      requerido: true,
+      completo: esDatosBancariosValido,
+      cantidad: formData.datosBancarios.length,
+    },
+    !modoAutogestion && {
+      id: "titulos",
+      etiqueta: "Títulos",
+      icono: "bi-mortarboard",
+      requerido: false,
+      completo: esTitulosValido,
+      cantidad: formData.titulos.length,
+    },
+    esEdicion &&
+      !modoAutogestion && {
+        id: "periodos",
+        etiqueta: "Contratos",
+        icono: "bi-clock-history",
+        requerido: false,
+        completo: formData.periodosIess.length > 0,
+        cantidad: formData.periodosIess.length,
+      },
+    {
+      id: "contactos",
+      etiqueta: "Emergencia",
+      icono: "bi-telephone-plus",
+      requerido: true,
+      completo: esContactosValido,
+      cantidad: formData.contactosEmergencia.length,
+    },
+    {
+      id: "familiares",
+      etiqueta: "Familiares",
+      icono: "bi-people",
+      requerido: false,
+      completo: esFamiliaresValido,
+      cantidad: formData.familiares.length,
+    },
+  ].filter(Boolean);
+
+  const indiceActivo = Math.max(
+    0,
+    pestanas.findIndex((p) => p.id === seccionActiva),
+  );
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
 
-    if (
-      !esDatosPersonalesValido ||
-      (!modoAutogestion && !esDatosLaboralesValido)
-    ) {
-      setError(
-        "Por favor complete todos los campos obligatorios en Datos Personales y Datos Laborales.",
-      );
+    const errorValidacion = validarUsuario(formData, {
+      modoAutogestion,
+      esEdicion,
+      requiereFechaFin,
+    });
+    if (errorValidacion) {
+      toastError(errorValidacion.mensaje);
+      mostrarSeccion(errorValidacion.seccion);
       return;
-    }
-
-    // Cédulas de familiares: 10 dígitos, sin repetirse entre sí ni con la del
-    // empleado (el backend también lo valida; aquí se avisa antes de enviar).
-    const cedulasFam = formData.familiares
-      .map((f) => f.cedula?.trim())
-      .filter(Boolean);
-    if (cedulasFam.some((c) => !/^\d{10}$/.test(c))) {
-      setError("La cédula de cada familiar debe tener exactamente 10 dígitos.");
-      return;
-    }
-    if (new Set(cedulasFam).size !== cedulasFam.length) {
-      setError("Hay familiares con la misma cédula.");
-      return;
-    }
-    if (cedulasFam.includes(formData.cedula?.trim())) {
-      setError("La cédula de un familiar no puede ser la del empleado.");
-      return;
-    }
-
-    // Períodos de contrato (solo se editan en edición por RRHH). Mismas reglas
-    // que el backend: inicio obligatorio, fin >= inicio, sin traslapes y solo
-    // el último puede quedar abierto.
-    if (esEdicion && !modoAutogestion) {
-      const periodos = formData.periodosIess;
-      if (periodos.some((per) => !per.fechaIngreso)) {
-        setError("Cada período de contrato necesita su fecha de inicio.");
-        return;
-      }
-      const ordenados = [...periodos].sort((a, b) =>
-        a.fechaIngreso.localeCompare(b.fechaIngreso),
-      );
-      for (let i = 0; i < ordenados.length; i++) {
-        const { fechaIngreso, fechaSalida } = ordenados[i];
-        if (fechaSalida && fechaSalida < fechaIngreso) {
-          setError(
-            "En un período de contrato, la fecha de fin no puede ser anterior a la de inicio.",
-          );
-          return;
-        }
-        if (i < ordenados.length - 1) {
-          if (!fechaSalida) {
-            setError(
-              "Solo el último período de contrato puede quedar sin fecha de fin.",
-            );
-            return;
-          }
-          if (fechaSalida >= ordenados[i + 1].fechaIngreso) {
-            setError(
-              "Los períodos de contrato no pueden traslaparse: cada uno debe terminar antes del inicio del siguiente.",
-            );
-            return;
-          }
-        }
-      }
     }
 
     setLoading(true);
@@ -508,7 +531,7 @@ const UsuarioFormCard = ({
         await fetchPerfil();
       }
     } catch (err) {
-      setError(
+      toastError(
         err.message ||
           (esEdicion
             ? "Error al actualizar la información del usuario"
@@ -521,7 +544,7 @@ const UsuarioFormCard = ({
 
   return (
     <div className="form-usuario-wrapper">
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} noValidate>
         {/* ENCABEZADO */}
         <div className="form-header-card mb-4">
           <h4 className="fw-bold m-0 d-flex align-items-center gap-2">
@@ -536,409 +559,156 @@ const UsuarioFormCard = ({
               ? "Editar Registro de Usuario"
               : "Crear Nuevo Registro de Usuario"}
           </h4>
-          <span className="text-muted small">
-            Despliega o colapse cada sección. Los indicadores visuales muestran
-            el estado de llenado.
-          </span>
         </div>
 
-        {error && (
-          <div className="alert alert-danger shadow-sm mb-4" role="alert">
-            <i className="bi bi-exclamation-triangle-fill me-2"></i>
-            {error}
-          </div>
-        )}
-
-        {/* CONTENEDOR TIPO ACORDEÓN */}
-        <div className="accordion accordion-custom mb-5" id="accordionUsuario">
-          {/* 1. DATOS PERSONALES */}
-          <div className="accordion-item shadow-sm mb-3">
-            <h2 className="accordion-header" id="headingPersonales">
-              <button
-                className="accordion-button"
-                type="button"
-                data-bs-toggle="collapse"
-                data-bs-target="#collapsePersonales"
-                aria-expanded="true"
-                aria-controls="collapsePersonales"
-              >
-                <div className="d-flex align-items-center justify-content-between w-100 me-3">
-                  <span className="fw-bold d-flex align-items-center gap-2">
-                    <i className="bi bi-person-vcard text-primary"></i>
-                    Datos Personales
-                  </span>
-                  <span
-                    className={`badge rounded-pill d-flex align-items-center gap-1 ${
-                      esDatosPersonalesValido
-                        ? "bg-success-subtle text-success border border-success"
-                        : "bg-warning-subtle text-warning-emphasis border border-warning"
-                    }`}
+        {/* PESTAÑAS (mismo estilo que el perfil del colaborador) */}
+        <div className="card border-0 shadow-sm mb-5" id="tabsUsuario">
+          <div className="card-header tabs-usuario-header bg-white border-bottom p-2">
+            <ul className="nav nav-pills tabs-usuario" role="tablist">
+              {pestanas.map((p) => {
+                const seleccionada = p.id === pestanas[indiceActivo].id;
+                const faltante = p.requerido && !p.completo;
+                return (
+                  <li
+                    className="nav-item flex-shrink-0"
+                    key={p.id}
+                    role="presentation"
                   >
-                    <i
-                      className={`bi ${
-                        esDatosPersonalesValido
-                          ? "bi-check-circle-fill"
-                          : "bi-exclamation-circle-fill"
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={seleccionada}
+                      className={`nav-link d-flex align-items-center gap-2 ${
+                        seleccionada
+                          ? "active bg-brand"
+                          : "text-dark bg-white border"
                       }`}
-                    ></i>
-                    {esDatosPersonalesValido ? "Completado" : "Requerido"}
-                  </span>
-                </div>
-              </button>
-            </h2>
-            <div
-              id="collapsePersonales"
-              className="accordion-collapse collapse show"
-              aria-labelledby="headingPersonales"
-              data-bs-parent="#accordionUsuario"
-            >
-              <div className="accordion-body">
-                <DatosPersonales
+                      onClick={() => setSeccionActiva(p.id)}
+                    >
+                      <i className={`bi ${p.icono}`}></i>
+                      {p.etiqueta}
+                      {faltante ? (
+                        <span className="badge rounded-pill d-flex align-items-center gap-1 bg-warning-subtle text-warning-emphasis border border-warning">
+                          <i className="bi bi-exclamation-circle-fill"></i>
+                          Requerido
+                        </span>
+                      ) : p.completo ? (
+                        <span className="badge rounded-pill d-flex align-items-center gap-1 bg-success-subtle text-success border border-success">
+                          <i className="bi bi-check-circle-fill"></i>
+                          {p.cantidad !== undefined ? p.cantidad : "Completado"}
+                        </span>
+                      ) : (
+                        <span className="badge rounded-pill bg-light text-secondary border">
+                          Opcional
+                        </span>
+                      )}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+
+          <div className="card-body p-3" role="tabpanel">
+            {/* Todos los paneles quedan montados; solo se oculta el inactivo */}
+            <div className={seccionActiva === "personales" ? "" : "d-none"}>
+              <DatosPersonales
+                formData={formData}
+                handleChange={handleChange}
+                handleFotoChange={handleFotoChange}
+                catalogos={catalogos}
+                opcionesFijas={opcionesFijas}
+                camposSoloLectura={
+                  modoAutogestion ? CAMPOS_SENSIBLES_AUTOGESTION : []
+                }
+              />
+            </div>
+
+            {!modoAutogestion && (
+              <div className={seccionActiva === "laborales" ? "" : "d-none"}>
+                <DatosLaborales
                   formData={formData}
                   handleChange={handleChange}
-                  handleFotoChange={handleFotoChange}
                   catalogos={catalogos}
+                  usuariosDisponibles={usuariosDisponibles}
                   opcionesFijas={opcionesFijas}
-                  camposSoloLectura={
-                    modoAutogestion ? CAMPOS_SENSIBLES_AUTOGESTION : []
-                  }
+                  idUsuarioActual={usuarioOriginal?.idUsuario}
                 />
               </div>
-            </div>
-          </div>
+            )}
 
-          {/* 2. DATOS LABORALES (oculto en autogestión: el empleado no puede tocarlos) */}
-          {!modoAutogestion && (
-            <div className="accordion-item shadow-sm mb-3">
-              <h2 className="accordion-header" id="headingLaborales">
-                <button
-                  className="accordion-button collapsed"
-                  type="button"
-                  data-bs-toggle="collapse"
-                  data-bs-target="#collapseLaborales"
-                  aria-expanded="false"
-                  aria-controls="collapseLaborales"
-                >
-                  <div className="d-flex align-items-center justify-content-between w-100 me-3">
-                    <span className="fw-bold d-flex align-items-center gap-2">
-                      <i className="bi bi-briefcase text-primary"></i>
-                      Datos Laborales
-                    </span>
-                    <span
-                      className={`badge rounded-pill d-flex align-items-center gap-1 ${
-                        esDatosLaboralesValido
-                          ? "bg-success-subtle text-success border border-success"
-                          : "bg-warning-subtle text-warning-emphasis border border-warning"
-                      }`}
-                    >
-                      <i
-                        className={`bi ${
-                          esDatosLaboralesValido
-                            ? "bi-check-circle-fill"
-                            : "bi-exclamation-circle-fill"
-                        }`}
-                      ></i>
-                      {esDatosLaboralesValido ? "Completado" : "Requerido"}
-                    </span>
-                  </div>
-                </button>
-              </h2>
-              <div
-                id="collapseLaborales"
-                className="accordion-collapse collapse"
-                aria-labelledby="headingLaborales"
-                data-bs-parent="#accordionUsuario"
-              >
-                <div className="accordion-body">
-                  <DatosLaborales
-                    formData={formData}
-                    handleChange={handleChange}
-                    catalogos={catalogos}
-                    usuariosDisponibles={usuariosDisponibles}
-                    opcionesFijas={opcionesFijas}
-                    idUsuarioActual={usuarioOriginal?.idUsuario}
-                  />
-                </div>
+            {!modoAutogestion && (
+              <div className={seccionActiva === "bancarios" ? "" : "d-none"}>
+                <DatosBancarios
+                  cuentas={formData.datosBancarios}
+                  handleItemChange={handleItemChange}
+                  handleAddItem={handleAddItem}
+                  handleRemoveItem={handleRemoveItem}
+                  catalogos={catalogos}
+                />
               </div>
-            </div>
-          )}
+            )}
 
-          {/* 3. INFORMACIÓN BANCARIA (oculta en autogestión) */}
-          {!modoAutogestion && (
-            <div className="accordion-item shadow-sm mb-3">
-              <h2 className="accordion-header" id="headingBancarios">
-                <button
-                  className="accordion-button collapsed"
-                  type="button"
-                  data-bs-toggle="collapse"
-                  data-bs-target="#collapseBancarios"
-                  aria-expanded="false"
-                  aria-controls="collapseBancarios"
-                >
-                  <div className="d-flex align-items-center justify-content-between w-100 me-3">
-                    <span className="fw-bold d-flex align-items-center gap-2">
-                      <i className="bi bi-credit-card-2-front text-primary"></i>
-                      Información Bancaria
-                    </span>
-                    <span
-                      className={`badge rounded-pill d-flex align-items-center gap-1 ${
-                        esDatosBancariosValido
-                          ? "bg-success-subtle text-success border border-success"
-                          : "bg-light text-secondary border"
-                      }`}
-                    >
-                      <i
-                        className={`bi ${
-                          esDatosBancariosValido
-                            ? "bi-check-circle-fill"
-                            : "bi-dash-circle"
-                        }`}
-                      ></i>
-                      {esDatosBancariosValido
-                        ? `${formData.datosBancarios.length} Cuenta(s)`
-                        : "Opcional / Sin registros"}
-                    </span>
-                  </div>
-                </button>
-              </h2>
-              <div
-                id="collapseBancarios"
-                className="accordion-collapse collapse"
-                aria-labelledby="headingBancarios"
-                data-bs-parent="#accordionUsuario"
-              >
-                <div className="accordion-body">
-                  <DatosBancarios
-                    cuentas={formData.datosBancarios}
-                    handleItemChange={handleItemChange}
-                    handleAddItem={handleAddItem}
-                    handleRemoveItem={handleRemoveItem}
-                    catalogos={catalogos}
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* 4. TÍTULOS ACADÉMICOS (ocultos en autogestión) */}
-          {!modoAutogestion && (
-            <div className="accordion-item shadow-sm mb-3">
-              <h2 className="accordion-header" id="headingTitulos">
-                <button
-                  className="accordion-button collapsed"
-                  type="button"
-                  data-bs-toggle="collapse"
-                  data-bs-target="#collapseTitulos"
-                  aria-expanded="false"
-                  aria-controls="collapseTitulos"
-                >
-                  <div className="d-flex align-items-center justify-content-between w-100 me-3">
-                    <span className="fw-bold d-flex align-items-center gap-2">
-                      <i className="bi bi-mortarboard text-primary"></i>
-                      Títulos Académicos
-                    </span>
-                    <span
-                      className={`badge rounded-pill d-flex align-items-center gap-1 ${
-                        esTitulosValido
-                          ? "bg-success-subtle text-success border border-success"
-                          : "bg-light text-secondary border"
-                      }`}
-                    >
-                      <i
-                        className={`bi ${
-                          esTitulosValido
-                            ? "bi-check-circle-fill"
-                            : "bi-dash-circle"
-                        }`}
-                      ></i>
-                      {esTitulosValido
-                        ? `${formData.titulos.length} Título(s)`
-                        : "Opcional / Sin registros"}
-                    </span>
-                  </div>
-                </button>
-              </h2>
-              <div
-                id="collapseTitulos"
-                className="accordion-collapse collapse"
-                aria-labelledby="headingTitulos"
-                data-bs-parent="#accordionUsuario"
-              >
-                <div className="accordion-body">
-                  <Titulos
-                    titulos={formData.titulos}
-                    handleItemChange={handleItemChange}
-                    handleAddItem={handleAddItem}
-                    handleRemoveItem={handleRemoveItem}
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* 4b. HISTORIAL DE CONTRATOS (solo al editar; oculto en autogestión) */}
-          {esEdicion && !modoAutogestion && (
-            <div className="accordion-item shadow-sm mb-3">
-              <h2 className="accordion-header" id="headingPeriodos">
-                <button
-                  className="accordion-button collapsed"
-                  type="button"
-                  data-bs-toggle="collapse"
-                  data-bs-target="#collapsePeriodos"
-                  aria-expanded="false"
-                  aria-controls="collapsePeriodos"
-                >
-                  <div className="d-flex align-items-center justify-content-between w-100 me-3">
-                    <span className="fw-bold d-flex align-items-center gap-2">
-                      <i className="bi bi-clock-history text-primary"></i>
-                      Historial de Contratos
-                    </span>
-                    <span
-                      className={`badge rounded-pill d-flex align-items-center gap-1 ${
-                        formData.periodosIess.length > 0
-                          ? "bg-success-subtle text-success border border-success"
-                          : "bg-light text-secondary border"
-                      }`}
-                    >
-                      <i
-                        className={`bi ${
-                          formData.periodosIess.length > 0
-                            ? "bi-check-circle-fill"
-                            : "bi-dash-circle"
-                        }`}
-                      ></i>
-                      {formData.periodosIess.length > 0
-                        ? `${formData.periodosIess.length} Período(s)`
-                        : "Opcional / Sin registros"}
-                    </span>
-                  </div>
-                </button>
-              </h2>
-              <div
-                id="collapsePeriodos"
-                className="accordion-collapse collapse"
-                aria-labelledby="headingPeriodos"
-                data-bs-parent="#accordionUsuario"
-              >
-                <div className="accordion-body">
-                  <PeriodosContrato
-                    periodos={formData.periodosIess}
-                    handleItemChange={handleItemChange}
-                    handleAddItem={handleAddItem}
-                    handleRemoveItem={handleRemoveItem}
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* 5. CONTACTOS DE EMERGENCIA */}
-          <div className="accordion-item shadow-sm mb-3">
-            <h2 className="accordion-header" id="headingContactos">
-              <button
-                className="accordion-button collapsed"
-                type="button"
-                data-bs-toggle="collapse"
-                data-bs-target="#collapseContactos"
-                aria-expanded="false"
-                aria-controls="collapseContactos"
-              >
-                <div className="d-flex align-items-center justify-content-between w-100 me-3">
-                  <span className="fw-bold d-flex align-items-center gap-2">
-                    <i className="bi bi-telephone-plus text-primary"></i>
-                    Contactos de Emergencia
-                  </span>
-                  <span
-                    className={`badge rounded-pill d-flex align-items-center gap-1 ${
-                      esContactosValido
-                        ? "bg-success-subtle text-success border border-success"
-                        : "bg-light text-secondary border"
-                    }`}
-                  >
-                    <i
-                      className={`bi ${
-                        esContactosValido
-                          ? "bi-check-circle-fill"
-                          : "bi-dash-circle"
-                      }`}
-                    ></i>
-                    {esContactosValido
-                      ? `${formData.contactosEmergencia.length} Contacto(s)`
-                      : "Opcional / Sin registros"}
-                  </span>
-                </div>
-              </button>
-            </h2>
-            <div
-              id="collapseContactos"
-              className="accordion-collapse collapse"
-              aria-labelledby="headingContactos"
-              data-bs-parent="#accordionUsuario"
-            >
-              <div className="accordion-body">
-                <ContactosEmergencia
-                  contactos={formData.contactosEmergencia}
+            {!modoAutogestion && (
+              <div className={seccionActiva === "titulos" ? "" : "d-none"}>
+                <Titulos
+                  titulos={formData.titulos}
                   handleItemChange={handleItemChange}
                   handleAddItem={handleAddItem}
                   handleRemoveItem={handleRemoveItem}
                 />
               </div>
-            </div>
-          </div>
+            )}
 
-          {/* 6. FAMILIARES / HIJOS */}
-          <div className="accordion-item shadow-sm mb-3">
-            <h2 className="accordion-header" id="headingFamiliares">
-              <button
-                className="accordion-button collapsed"
-                type="button"
-                data-bs-toggle="collapse"
-                data-bs-target="#collapseFamiliares"
-                aria-expanded="false"
-                aria-controls="collapseFamiliares"
-              >
-                <div className="d-flex align-items-center justify-content-between w-100 me-3">
-                  <span className="fw-bold d-flex align-items-center gap-2">
-                    <i className="bi bi-people text-primary"></i>
-                    Familiares / Hijos
-                  </span>
-                  <span
-                    className={`badge rounded-pill d-flex align-items-center gap-1 ${
-                      esFamiliaresValido
-                        ? "bg-success-subtle text-success border border-success"
-                        : "bg-light text-secondary border"
-                    }`}
-                  >
-                    <i
-                      className={`bi ${
-                        esFamiliaresValido
-                          ? "bi-check-circle-fill"
-                          : "bi-dash-circle"
-                      }`}
-                    ></i>
-                    {esFamiliaresValido
-                      ? `${formData.familiares.length} Familiar(es)`
-                      : "Opcional / Sin registros"}
-                  </span>
-                </div>
-              </button>
-            </h2>
-            <div
-              id="collapseFamiliares"
-              className="accordion-collapse collapse"
-              aria-labelledby="headingFamiliares"
-              data-bs-parent="#accordionUsuario"
-            >
-              <div className="accordion-body">
-                <Familiares
-                  familiares={formData.familiares}
-                  parentescos={opcionesFijas.parentescosFamiliar}
+            {esEdicion && !modoAutogestion && (
+              <div className={seccionActiva === "periodos" ? "" : "d-none"}>
+                <PeriodosContrato
+                  periodos={formData.periodosIess}
                   handleItemChange={handleItemChange}
                   handleAddItem={handleAddItem}
                   handleRemoveItem={handleRemoveItem}
                 />
               </div>
+            )}
+
+            <div className={seccionActiva === "contactos" ? "" : "d-none"}>
+              <ContactosEmergencia
+                contactos={formData.contactosEmergencia}
+                handleItemChange={handleItemChange}
+                handleAddItem={handleAddItem}
+                handleRemoveItem={handleRemoveItem}
+              />
             </div>
+
+            <div className={seccionActiva === "familiares" ? "" : "d-none"}>
+              <Familiares
+                familiares={formData.familiares}
+                parentescos={opcionesFijas.parentescosFamiliar}
+                handleItemChange={handleItemChange}
+                handleAddItem={handleAddItem}
+                handleRemoveItem={handleRemoveItem}
+              />
+            </div>
+          </div>
+
+          {/* Anterior / Siguiente */}
+          <div className="card-footer bg-white d-flex justify-content-between p-2">
+            <button
+              type="button"
+              className="btn btn-outline-secondary btn-sm px-3"
+              onClick={() => mostrarSeccion(pestanas[indiceActivo - 1]?.id)}
+              disabled={indiceActivo === 0}
+            >
+              <i className="bi bi-arrow-left me-1"></i> Anterior
+            </button>
+            <button
+              type="button"
+              className="btn btn-outline-primary btn-sm px-3"
+              onClick={() => mostrarSeccion(pestanas[indiceActivo + 1]?.id)}
+              disabled={indiceActivo === pestanas.length - 1}
+            >
+              Siguiente <i className="bi bi-arrow-right ms-1"></i>
+            </button>
           </div>
         </div>
 

@@ -3,6 +3,40 @@ import React from "react";
 // Dominio corporativo: es el único permitido para el correo empresarial.
 const DOMINIO_EMPRESA = "@happypay.ec";
 
+// Fila de interruptor con título y una línea de ayuda
+const Interruptor = ({ id, name, titulo, ayuda, checked, onChange }) => (
+  <div className="d-flex align-items-start justify-content-between gap-3 py-2 border-bottom">
+    <label
+      htmlFor={id}
+      className="mb-0 flex-grow-1"
+      style={{ cursor: "pointer" }}
+    >
+      <span className="fw-semibold d-block">{titulo}</span>
+      {ayuda && <small className="text-muted fw-normal">{ayuda}</small>}
+    </label>
+    <div className="form-check form-switch m-0 flex-shrink-0">
+      <input
+        className="form-check-input"
+        type="checkbox"
+        role="switch"
+        id={id}
+        name={name}
+        checked={Boolean(checked)}
+        onChange={onChange}
+      />
+    </div>
+  </div>
+);
+
+const TituloCard = ({ icono, texto }) => (
+  <div className="card-header bg-white border-bottom py-2 px-3">
+    <span className="small fw-bold text-uppercase text-brand d-flex align-items-center gap-2">
+      <i className={`bi ${icono}`}></i>
+      {texto}
+    </span>
+  </div>
+);
+
 const DatosLaborales = ({
   formData,
   handleChange,
@@ -82,128 +116,50 @@ const DatosLaborales = ({
   };
 
   return (
-    <div>
-      <div className="row g-3">
-        <div className="col-md-6">
-          <label className="form-label">Área / Departamento</label>
-          <select
-            className="form-select"
-            name="idArea"
-            value={formData.idArea || ""}
-            onChange={handleAreaChange}
-          >
-            <option value="">Seleccione un área...</option>
-            {catalogos.areas?.map((a) => (
-              <option key={a.idArea || a.id} value={a.idArea || a.id}>
-                {a.nombre || a.descripcion}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="col-md-6">
-          <label className="form-label">Cargo *</label>
-          <select
-            className="form-select"
-            name="idCargo"
-            value={formData.idCargo || ""}
-            onChange={handleChange}
-            required
-          >
-            <option value="">
-              {formData.idArea
-                ? "Seleccione un cargo..."
-                : "Seleccione un área primero..."}
-            </option>
-            {cargosFiltrados.map((c) => (
-              <option key={c.idCargo || c.id} value={c.idCargo || c.id}>
-                {c.nombre || c.descripcion}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="col-md-6">
-          <label className="form-label">Ciudad</label>
-          <select
-            className="form-select"
-            name="idCiudad"
-            value={formData.idCiudad || ""}
-            onChange={handleChange}
-          >
-            <option value="">Seleccione una ciudad...</option>
-            {catalogos.ciudades?.map((ciudad) => (
-              <option
-                key={ciudad.idCiudad || ciudad.id}
-                value={ciudad.idCiudad || ciudad.id}
-              >
-                {ciudad.nombre || ciudad.descripcion}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="col-md-6">
-          <label className="form-label">Jefe Directo</label>
-          <select
-            className="form-select"
-            name="idJefeDirecto"
-            value={formData.idJefeDirecto || ""}
-            onChange={handleChange}
-          >
-            <option value="">Sin jefe directo asignado</option>
-            {posiblesJefes.map((u) => (
-              <option key={u.idUsuario} value={u.idUsuario}>
-                {u.nombre} {u.apellido}
-                {u.cargo ? ` — ${u.cargo}` : ""}
-              </option>
-            ))}
-          </select>
-          <small className="text-muted">
-            Se usa para el flujo de aprobación de vacaciones (jefe → RRHH).
-          </small>
-        </div>
-        <div className="col-md-6">
-          <label className="form-label">Correo Empresarial</label>
-          <div className="input-group">
-            <input
-              type="text"
-              className="form-control"
-              name="correoEmpresa"
-              value={parteLocalCorreo}
-              onChange={handleCorreoEmpresaChange}
-              placeholder="nombre.apellido"
-              autoComplete="off"
-              spellCheck={false}
-            />
-            <span className="input-group-text fw-semibold text-muted">
-              {DOMINIO_EMPRESA}
-            </span>
-          </div>
-        </div>
-        <div className="col-md-6">
-          <label className="form-label">Celular Empresarial</label>
-          <input
-            type="text"
-            className="form-control"
-            name="celularEmpresa"
-            value={formData.celularEmpresa || ""}
-            onChange={handleChange}
-            placeholder="0991234567"
-          />
-        </div>
-        <div className="col-md-6">
-          <label className="form-label">Fecha de Ingreso *</label>
-          <input
-            type="date"
-            className="form-control"
-            name="fechaIngreso"
-            value={formData.fechaIngreso || ""}
-            onChange={handleChange}
-            required
-          />
-        </div>
-        <div className="col-12 mt-3">
-          <div className="card bg-light border-0 p-3 shadow-sm">
-            <h6 className="text-secondary mb-3">Condición Laboral</h6>
+    <div className="row g-3 align-items-start">
+      {/* ───────── TARJETA 1: INFORMACIÓN CLAVE ───────── */}
+      <div className="col-lg-7">
+        <div className="card border shadow-sm h-100">
+          <TituloCard icono="bi-briefcase" texto="Información clave" />
+          <div className="card-body p-3">
             <div className="row g-3">
+              <div className="col-md-6">
+                <label className="form-label">Área / Departamento *</label>
+                <select
+                  className="form-select"
+                  name="idArea"
+                  value={formData.idArea || ""}
+                  onChange={handleAreaChange}
+                >
+                  <option value="">Seleccione un área...</option>
+                  {catalogos.areas?.map((a) => (
+                    <option key={a.idArea || a.id} value={a.idArea || a.id}>
+                      {a.nombre || a.descripcion}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="col-md-6">
+                <label className="form-label">Cargo *</label>
+                <select
+                  className="form-select"
+                  name="idCargo"
+                  value={formData.idCargo || ""}
+                  onChange={handleChange}
+                >
+                  <option value="">
+                    {formData.idArea
+                      ? "Seleccione un cargo..."
+                      : "Seleccione un área primero..."}
+                  </option>
+                  {cargosFiltrados.map((c) => (
+                    <option key={c.idCargo || c.id} value={c.idCargo || c.id}>
+                      {c.nombre || c.descripcion}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               <div className="col-md-6">
                 <label className="form-label">Tipo de Contrato</label>
                 <select
@@ -220,25 +176,6 @@ const DatosLaborales = ({
                   ))}
                 </select>
               </div>
-              {requiereFechaFin && (
-                <div className="col-md-6">
-                  <label className="form-label">
-                    Fecha de Fin de Contrato *
-                  </label>
-                  <input
-                    type="date"
-                    className="form-control"
-                    name="fechaFinContrato"
-                    value={formData.fechaFinContrato || ""}
-                    min={formData.fechaIngreso || undefined}
-                    onChange={handleChange}
-                    required
-                  />
-                  <small className="text-muted">
-                    Debe ser posterior a la fecha de ingreso.
-                  </small>
-                </div>
-              )}
               <div className="col-md-6">
                 <label className="form-label">Jornada</label>
                 <select
@@ -255,6 +192,33 @@ const DatosLaborales = ({
                   ))}
                 </select>
               </div>
+
+              <div className="col-md-6">
+                <label className="form-label">Fecha de Ingreso *</label>
+                <input
+                  type="date"
+                  className="form-control"
+                  name="fechaIngreso"
+                  value={formData.fechaIngreso || ""}
+                  onChange={handleChange}
+                />
+              </div>
+              {requiereFechaFin && (
+                <div className="col-md-6">
+                  <label className="form-label">
+                    Fecha de Fin de Contrato *
+                  </label>
+                  <input
+                    type="date"
+                    className="form-control"
+                    name="fechaFinContrato"
+                    value={formData.fechaFinContrato || ""}
+                    min={formData.fechaIngreso || undefined}
+                    onChange={handleChange}
+                  />
+                </div>
+              )}
+
               <div className="col-md-6">
                 <label className="form-label">Cargo IESS</label>
                 <input
@@ -278,103 +242,139 @@ const DatosLaborales = ({
                   placeholder="Ej. 1910000000012 o BAJO FACTURA"
                 />
               </div>
-              <div className="col-12 d-flex flex-wrap gap-4">
-                <div className="form-check form-switch">
-                  <input
-                    className="form-check-input"
-                    type="checkbox"
-                    id="recibeComisionesSwitch"
-                    name="recibeComisiones"
-                    checked={Boolean(formData.recibeComisiones)}
-                    onChange={handleSwitchChange}
-                  />
-                  <label
-                    className="form-check-label"
-                    htmlFor="recibeComisionesSwitch"
-                  >
-                    Recibe comisiones
-                  </label>
-                </div>
-                <div className="form-check form-switch">
-                  <input
-                    className="form-check-input"
-                    type="checkbox"
-                    id="acumulaDecimosSwitch"
-                    name="acumulaDecimos"
-                    checked={Boolean(formData.acumulaDecimos)}
-                    onChange={handleSwitchChange}
-                  />
-                  <label
-                    className="form-check-label"
-                    htmlFor="acumulaDecimosSwitch"
-                  >
-                    Acumula décimos
-                  </label>
-                </div>
-                <div className="form-check form-switch">
-                  <input
-                    className="form-check-input"
-                    type="checkbox"
-                    id="esJefeSwitch"
-                    name="esJefe"
-                    checked={Boolean(formData.esJefe)}
-                    onChange={handleSwitchChange}
-                  />
-                  <label
-                    className="form-check-label fw-bold"
-                    htmlFor="esJefeSwitch"
-                  >
-                    Es jefe (puede ser elegido como jefe directo y aprobar
-                    vacaciones)
-                  </label>
-                </div>
+
+              <div className="col-md-6">
+                <label className="form-label">Ciudad</label>
+                <select
+                  className="form-select"
+                  name="idCiudad"
+                  value={formData.idCiudad || ""}
+                  onChange={handleChange}
+                >
+                  <option value="">Seleccione una ciudad...</option>
+                  {catalogos.ciudades?.map((ciudad) => (
+                    <option
+                      key={ciudad.idCiudad || ciudad.id}
+                      value={ciudad.idCiudad || ciudad.id}
+                    >
+                      {ciudad.nombre || ciudad.descripcion}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="col-md-6">
+                <label className="form-label">Jefe Directo</label>
+                <select
+                  className="form-select"
+                  name="idJefeDirecto"
+                  value={formData.idJefeDirecto || ""}
+                  onChange={handleChange}
+                >
+                  <option value="">Sin jefe directo asignado</option>
+                  {posiblesJefes.map((u) => (
+                    <option key={u.idUsuario} value={u.idUsuario}>
+                      {u.nombre} {u.apellido}
+                      {u.cargo ? ` — ${u.cargo}` : ""}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
           </div>
         </div>
-        <div className="col-12 mt-3">
-          <div className="card bg-light border-0 p-3 shadow-sm">
-            <h6 className="text-secondary mb-3">Configuración de Vacaciones</h6>
-            <div className="form-check form-switch mb-3">
-              <input
-                className="form-check-input"
-                type="checkbox"
+      </div>
+
+      {/* ───────── COLUMNA DERECHA: ACCESO + OPCIONES ───────── */}
+      <div className="col-lg-5 d-flex flex-column gap-3">
+        {/* TARJETA 2: ACCESO Y CONTACTO */}
+        <div className="card border shadow-sm">
+          <TituloCard icono="bi-envelope-at" texto="Acceso y contacto" />
+          <div className="card-body p-3">
+            <div className="row g-3">
+              <div className="col-12">
+                <label className="form-label">Correo Empresarial</label>
+                <div className="input-group">
+                  <input
+                    type="text"
+                    className="form-control"
+                    name="correoEmpresa"
+                    value={parteLocalCorreo}
+                    onChange={handleCorreoEmpresaChange}
+                    placeholder="nombre.apellido"
+                    autoComplete="off"
+                    spellCheck={false}
+                  />
+                  <span className="input-group-text fw-semibold text-muted">
+                    {DOMINIO_EMPRESA}
+                  </span>
+                </div>
+              </div>
+              <div className="col-12">
+                <label className="form-label">Celular Empresarial</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  name="celularEmpresa"
+                  inputMode="numeric"
+                  maxLength={10}
+                  value={formData.celularEmpresa || ""}
+                  onChange={handleChange}
+                  placeholder="0991234567"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* TARJETA 3: OPCIONES (interruptores) */}
+        <div className="card border shadow-sm">
+          <TituloCard icono="bi-toggles" texto="Opciones del colaborador" />
+          <div className="card-body px-3 py-1">
+            <Interruptor
+              checked={formData.recibeComisiones}
+              onChange={handleSwitchChange}
+              id="recibeComisionesSwitch"
+              name="recibeComisiones"
+              titulo="Recibe comisiones"
+            />
+            <Interruptor
+              checked={formData.acumulaDecimos}
+              onChange={handleSwitchChange}
+              id="acumulaDecimosSwitch"
+              name="acumulaDecimos"
+              titulo="Acumula décimos"
+            />
+            <Interruptor
+              checked={formData.esJefe}
+              onChange={handleSwitchChange}
+              id="esJefeSwitch"
+              name="esJefe"
+              titulo="Jefe"
+            />
+            <div className={formData.tieneVacaciones ? "border-bottom" : ""}>
+              <Interruptor
+                checked={formData.tieneVacaciones}
+                onChange={handleSwitchChange}
                 id="tieneVacacionesSwitch"
                 name="tieneVacaciones"
-                checked={Boolean(formData.tieneVacaciones)}
-                onChange={handleSwitchChange}
+                titulo="Tiene vacaciones"
               />
-              <label
-                className="form-check-label fw-bold"
-                htmlFor="tieneVacacionesSwitch"
-              >
-                ¿El empleado acumula o tiene días de vacaciones asignados?
-              </label>
             </div>
             {formData.tieneVacaciones && (
-              <div className="row">
-                <div className="col-md-6">
-                  <label
-                    htmlFor="diasVacacionesAsignados"
-                    className="form-label"
-                  >
-                    Días de Vacaciones Asignados Iniciales
-                  </label>
-                  <input
-                    type="number"
-                    id="diasVacacionesAsignados"
-                    name="diasVacacionesAsignados"
-                    className="form-control"
-                    min="0"
-                    value={formData.diasVacacionesAsignados || ""}
-                    onChange={handleChange}
-                    placeholder="Ej. 15"
-                  />
-                  <small className="text-muted">
-                    Número de días base con los que ingresa o cuenta el
-                    colaborador.
-                  </small>
-                </div>
+              <div className="py-3">
+                <label htmlFor="diasVacacionesAsignados" className="form-label">
+                  Días de vacaciones iniciales
+                </label>
+                <input
+                  type="number"
+                  id="diasVacacionesAsignados"
+                  name="diasVacacionesAsignados"
+                  className="form-control"
+                  min="0"
+                  value={formData.diasVacacionesAsignados || ""}
+                  onChange={handleChange}
+                  placeholder="Ej. 15"
+                />
               </div>
             )}
           </div>
