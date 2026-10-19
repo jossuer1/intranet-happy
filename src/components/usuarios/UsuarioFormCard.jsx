@@ -690,26 +690,6 @@ const UsuarioFormCard = ({
               />
             </div>
           </div>
-
-          {/* Anterior / Siguiente */}
-          <div className="card-footer bg-white d-flex justify-content-between p-2">
-            <button
-              type="button"
-              className="btn btn-outline-secondary btn-sm px-3"
-              onClick={() => mostrarSeccion(pestanas[indiceActivo - 1]?.id)}
-              disabled={indiceActivo === 0}
-            >
-              <i className="bi bi-arrow-left me-1"></i> Anterior
-            </button>
-            <button
-              type="button"
-              className="btn btn-outline-primary btn-sm px-3"
-              onClick={() => mostrarSeccion(pestanas[indiceActivo + 1]?.id)}
-              disabled={indiceActivo === pestanas.length - 1}
-            >
-              Siguiente <i className="bi bi-arrow-right ms-1"></i>
-            </button>
-          </div>
         </div>
 
         {/* ÚNICO BOTÓN DE GUARDAR FIJO ABAJO */}
