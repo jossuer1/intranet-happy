@@ -1,6 +1,8 @@
 import React, { useState, useMemo, memo } from "react";
 import DataTable from "react-data-table-component";
 import { useNavigate } from "react-router-dom";
+import { estaActivo } from "../../utils/usuariosEstado";
+import { formatearFechaEC } from "../../utils/fechasEcuador";
 
 const customStyles = {
   headCells: {
@@ -26,17 +28,13 @@ const paginationComponentOptions = {
   selectAllRowsItem: true,
   selectAllRowsItemText: "Todos",
 };
-const estaActivo = (u) =>
-  u.estado === "Activo" ||
-  u.estado === 1 ||
-  u.estado === true ||
-  u.idEstado === 1;
-
 function TablaUsuarios({
   usuarios = [],
   onEditar,
   onCambiarEstado,
   onCambiarPermisoPerfil,
+  seleccionados = new Set(), // Set de idUsuario marcados (lo controla GestionUsuarios)
+  onSeleccionChange,
 }) {
   const [filterText, setFilterText] = useState("");
   // Usuario cuya información general se muestra en la tarjeta flotante.
@@ -85,9 +83,62 @@ function TablaUsuarios({
     });
   }, [usuarios, filterText, filtroEstado, filtroArea]);
 
+  // Selección: "marcar todos" solo toca a los ACTIVOS que se ven con el filtro actual.
+  const idsActivosFiltrados = useMemo(
+    () => filteredItems.filter(estaActivo).map((u) => u.idUsuario),
+    [filteredItems],
+  );
+  const todosMarcados =
+    idsActivosFiltrados.length > 0 &&
+    idsActivosFiltrados.every((id) => seleccionados.has(id));
+  const algunoMarcado = idsActivosFiltrados.some((id) => seleccionados.has(id));
+
+  const alternarTodos = () => {
+    const nuevo = new Set(seleccionados);
+    if (todosMarcados) idsActivosFiltrados.forEach((id) => nuevo.delete(id));
+    else idsActivosFiltrados.forEach((id) => nuevo.add(id));
+    onSeleccionChange?.(nuevo);
+  };
+
+  const alternarFila = (id) => {
+    const nuevo = new Set(seleccionados);
+    if (nuevo.has(id)) nuevo.delete(id);
+    else nuevo.add(id);
+    onSeleccionChange?.(nuevo);
+  };
+
   // Definición memoizada de columnas
   const columns = useMemo(
     () => [
+      {
+        name: (
+          <input
+            type="checkbox"
+            className="form-check-input"
+            title="Seleccionar todos los activos"
+            aria-label="Seleccionar todos los activos"
+            checked={todosMarcados}
+            ref={(el) => {
+              if (el) el.indeterminate = !todosMarcados && algunoMarcado;
+            }}
+            disabled={idsActivosFiltrados.length === 0}
+            onChange={alternarTodos}
+          />
+        ),
+        width: "50px",
+        ignoreRowClick: true,
+        cell: (row) => (
+          <input
+            type="checkbox"
+            className="form-check-input"
+            aria-label="Seleccionar usuario"
+            checked={seleccionados.has(row.idUsuario)}
+            disabled={!estaActivo(row)}
+            onClick={(e) => e.stopPropagation()}
+            onChange={() => alternarFila(row.idUsuario)}
+          />
+        ),
+      },
       {
         name: "#",
         selector: (row, index) => index + 1,
@@ -166,6 +217,29 @@ function TablaUsuarios({
         },
       },
       {
+        name: "Actualización",
+        width: "230px",
+        cell: (row) => {
+          const hasta = formatearFechaEC(row.puedeActualizarHasta);
+          if (!row.puedeActualizarPerfil && !row.tieneSolicitudPendiente)
+            return null;
+          return (
+            <div className="d-flex flex-column align-items-start gap-1 py-1">
+              {row.puedeActualizarPerfil && (
+                <span className="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle text-wrap text-start">
+                  Edición abierta{hasta ? ` hasta ${hasta}` : ""}
+                </span>
+              )}
+              {row.tieneSolicitudPendiente && (
+                <span className="badge bg-primary-subtle text-primary-emphasis border border-primary-subtle">
+                  Solicitud pendiente
+                </span>
+              )}
+            </div>
+          );
+        },
+      },
+      {
         name: "Acciones",
         width: "210px",
         cell: (row) => {
@@ -219,10 +293,11 @@ function TablaUsuarios({
                     ? "btn-warning"
                     : "btn-outline-primary"
                 }`}
+                disabled={!esActivo && !row.puedeActualizarPerfil}
                 title={
                   row.puedeActualizarPerfil
-                    ? "Revocar edición de perfil"
-                    : "Permitir que actualice su perfil"
+                    ? "Cerrar ventana de actualización"
+                    : "Habilitar actualización"
                 }
                 onClick={(e) => {
                   e.stopPropagation();
@@ -241,7 +316,18 @@ function TablaUsuarios({
         button: true,
       },
     ],
-    [onEditar, onCambiarEstado, navigate, onCambiarPermisoPerfil],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [
+      onEditar,
+      onCambiarEstado,
+      navigate,
+      onCambiarPermisoPerfil,
+      seleccionados,
+      idsActivosFiltrados,
+      todosMarcados,
+      algunoMarcado,
+      onSeleccionChange,
+    ],
   );
 
   return (
@@ -250,6 +336,21 @@ function TablaUsuarios({
         {/* BUSCADOR CON ICONO DE BOOTSTRAP */}
         {/* FILTROS + BUSCADOR */}
         <div className="d-flex flex-wrap justify-content-end align-items-center gap-2 mb-3">
+          {seleccionados.size > 0 && (
+            <div className="d-flex align-items-center gap-2 me-auto">
+              <span className="badge bg-brand-soft text-brand fs-6 fw-semibold">
+                {seleccionados.size}{" "}
+                {seleccionados.size === 1 ? "seleccionado" : "seleccionados"}
+              </span>
+              <button
+                type="button"
+                className="btn btn-sm btn-link text-decoration-none"
+                onClick={() => onSeleccionChange?.(new Set())}
+              >
+                Quitar selección
+              </button>
+            </div>
+          )}
           <select
             className="form-select form-select-sm"
             style={{ maxWidth: "170px" }}

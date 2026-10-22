@@ -362,6 +362,20 @@ function AppLayout({ children, usuarioRol = null }) {
                         <span>Crear Usuario</span>
                       </button>
                     </li>
+                    <li className="nav-item">
+                      <button
+                        type="button"
+                        className={`nav-link w-100 text-start border-0 py-2 px-3 rounded-2 small d-flex align-items-center gap-2 sidebar-item-btn ${
+                          location.pathname === "/gestion-usuarios/solicitudes"
+                            ? "is-active fw-semibold"
+                            : "sidebar-sub-btn"
+                        }`}
+                        onClick={() => irA("/gestion-usuarios/solicitudes")}
+                      >
+                        <i className="bi bi-person-check"></i>
+                        <span>Solicitudes de actualización</span>
+                      </button>
+                    </li>
                   </ul>
                 )}
               </li>

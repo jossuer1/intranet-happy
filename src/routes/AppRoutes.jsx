@@ -11,6 +11,7 @@ import GestionVacaciones from "../pages/GestionVacaciones";
 import SaldosPersonal from "../pages/SaldosPersonales";
 import GestionCatalogos from "../pages/GestionCatalogos";
 import Perfiles from "../pages/Perfiles";
+import SolicitudesPerfil from "../pages/SolicitudesPerfil";
 
 function AppRoutes() {
   return (
@@ -28,6 +29,16 @@ function AppRoutes() {
         <Route path="/gestion-usuarios" element={<GestionUsuarios />} />
         <Route path="/gestion-usuarios/crear" element={<GestionUsuarios />} />
         <Route path="/perfiles/:idUsuario" element={<Perfiles />} />
+
+        {/* RRHH - Solicitudes de actualización (dentro de Gestión de Usuarios) */}
+        <Route
+          path="/gestion-usuarios/solicitudes"
+          element={<SolicitudesPerfil />}
+        />
+        <Route
+          path="/solicitudes-perfil"
+          element={<Navigate to="/gestion-usuarios/solicitudes" replace />}
+        />
 
         {/* RRHH - Gestión de Novedades */}
         <Route path="/gestion-novedades" element={<GestionNovedades />} />
