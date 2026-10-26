@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Swal from "sweetalert2";
 import { crearSolicitudVacacion } from "../../services/vacacionesService";
+import { hoyEC } from "../../utils/fechasEcuador";
 
 // Mismo criterio de conteo que usa el backend y GestionVacaciones.jsx:
 // días calendario, inclusivo (lunes a viernes de la misma semana = 5 días).
@@ -48,7 +49,7 @@ function SolicitarVacacionesModal({ diasDisponibles, onClose, onCreada }) {
   const puedeEnviar =
     fechaInicio &&
     fechaFin &&
-    motivo.trim() &&
+    motivo.trim().length >= 3 && motivo.trim().length <= 200 && fechaInicio >= hoyEC() &&
     !rangoInvalido &&
     !excedeSaldo &&
     diasSolicitados > 0;
@@ -132,6 +133,7 @@ function SolicitarVacacionesModal({ diasDisponibles, onClose, onCreada }) {
                   value={fechaInicio}
                   onChange={(e) => setFechaInicio(e.target.value)}
                   required
+                  min={hoyEC()}
                 />
               </div>
               <div className="col-6">
@@ -140,7 +142,7 @@ function SolicitarVacacionesModal({ diasDisponibles, onClose, onCreada }) {
                   type="date"
                   className="form-control"
                   value={fechaFin}
-                  min={fechaInicio || undefined}
+                  min={fechaInicio || hoyEC()}
                   onChange={(e) => setFechaFin(e.target.value)}
                   required
                 />
@@ -154,6 +156,8 @@ function SolicitarVacacionesModal({ diasDisponibles, onClose, onCreada }) {
                   value={motivo}
                   onChange={(e) => setMotivo(e.target.value)}
                   required
+                  minLength={3}
+                  maxLength={200}
                 />
               </div>
             </div>

@@ -70,13 +70,18 @@ function AuthContainer() {
     e.preventDefault();
 
     const regexPassword =
-      /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,}$/;
+      /^(?=.*[A-ZÁÉÍÓÚÑ])(?=.*[a-záéíóúñ])(?=.*[0-9])(?=.*[^\p{L}\p{N}\s]).{8,}$/u;
 
-    if (!regexPassword.test(nuevaContrasena)) {
+    if (!regexPassword.test(nuevaContrasena) || new TextEncoder().encode(nuevaContrasena).length > 72) {
       Toast.fire({
         icon: "error",
-        title: "La contraseña no cumple con los requisitos de seguridad",
+        title: "Usa al menos 8 caracteres, mayúscula, minúscula, número y símbolo; máximo 72 bytes",
       });
+      return;
+    }
+
+    if (nuevaContrasena === contrasena) {
+      Toast.fire({ icon: "error", title: "La nueva contraseña debe ser diferente a la actual" });
       return;
     }
 

@@ -12,6 +12,8 @@ import SaldosPersonal from "../pages/SaldosPersonales";
 import GestionCatalogos from "../pages/GestionCatalogos";
 import Perfiles from "../pages/Perfiles";
 import SolicitudesPerfil from "../pages/SolicitudesPerfil";
+import GestionJefes from "../pages/GestionJefes";
+import AccesoEquipo from "../components/layout/AccesoEquipo";
 
 function AppRoutes() {
   return (
@@ -28,6 +30,8 @@ function AppRoutes() {
         {/* RRHH - Gestión de Usuarios */}
         <Route path="/gestion-usuarios" element={<GestionUsuarios />} />
         <Route path="/gestion-usuarios/crear" element={<GestionUsuarios />} />
+        <Route path="/gestion-usuarios/jefes" element={<AccesoEquipo rrhh><GestionJefes /></AccesoEquipo>} />
+        <Route path="/mis-empleados" element={<Navigate to="/aprobar-vacaciones" replace />} />
         <Route path="/perfiles/:idUsuario" element={<Perfiles />} />
 
         {/* RRHH - Solicitudes de actualización (dentro de Gestión de Usuarios) */}
@@ -62,7 +66,7 @@ function AppRoutes() {
         {/* Autogestión Empleado */}
         <Route path="/mi-perfil" element={<MiPerfil />} />
         <Route path="/mis-vacaciones" element={<MisVacaciones />} />
-        <Route path="/aprobar-vacaciones" element={<AprobarVacaciones />} />
+        <Route path="/aprobar-vacaciones" element={<AccesoEquipo><AprobarVacaciones /></AccesoEquipo>} />
 
         {/* Redirección por defecto */}
         <Route path="*" element={<Navigate to="/login" replace />} />

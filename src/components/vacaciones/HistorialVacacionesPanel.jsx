@@ -1,4 +1,3 @@
-import React from "react";
 import { useHistorialUsuario } from "../../hooks/useVacaciones.js";
 import DescargarDocumentos from "./DescargarDocumentos.jsx";
 import { slugify } from "../../utils/descargas.js";
@@ -6,11 +5,11 @@ import { slugify } from "../../utils/descargas.js";
 // Panel (modal centrado) con el saldo + historial de movimientos de un
 // usuario. Se usa igual desde GestionVacaciones y SaldosPersonales: solo
 // hay que pasarle el usuario seleccionado y un onClose.
-function HistorialVacacionesPanel({ usuario, onClose }) {
+function HistorialVacacionesPanel({ usuario, onClose, mostrarDocumentos = true }) {
   const idUsuario =
     usuario?.idUsuario || usuario?.idEmpleado || usuario?.id || null;
 
-  const { data, isLoading, error } = useHistorialUsuario(idUsuario);
+  const { data, isLoading, error } = useHistorialUsuario(idUsuario, usuario?.tieneVacaciones !== false);
 
   // useHistorialUsuario devuelve { saldo, historial }
   const { saldo, historial } = data || {};
@@ -260,7 +259,7 @@ function HistorialVacacionesPanel({ usuario, onClose }) {
                               <i className="bi bi-person-check me-1"></i>
                               Registrado por: {mov.registradoPorNombre}
                             </span>
-                            {mov.idSolicitud && (
+                            {mostrarDocumentos && mov.idSolicitud && (
                               <DescargarDocumentos
                                 idSolicitud={mov.idSolicitud}
                                 prefijo={prefijoArchivo(mov)}

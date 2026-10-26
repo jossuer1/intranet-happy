@@ -15,12 +15,12 @@ export const useResumenVacaciones = () => {
   });
 };
 
-export const useHistorialUsuario = (idUsuario) => {
+export const useHistorialUsuario = (idUsuario, tieneVacaciones = true) => {
   return useQuery({
-    queryKey: ["vacaciones", "historial", idUsuario],
+    queryKey: ["vacaciones", "historial", idUsuario, tieneVacaciones],
     queryFn: async () => {
       const [saldo, historial] = await Promise.all([
-        vacacionesService.getSaldo(idUsuario),
+        tieneVacaciones ? vacacionesService.getSaldo(idUsuario) : Promise.resolve(null),
         vacacionesService.getHistorial(idUsuario),
       ]);
       return { saldo, historial };

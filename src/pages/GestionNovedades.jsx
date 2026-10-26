@@ -52,6 +52,11 @@ function GestionNovedades() {
   const handleImagenChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      if (!["image/jpeg", "image/png", "image/webp"].includes(file.type) || file.size > 5 * 1024 * 1024) {
+        e.target.value = "";
+        Swal.fire("Imagen no válida", "Selecciona un archivo JPG, PNG o WEBP de hasta 5 MB.", "warning");
+        return;
+      }
       setArchivoImagen(file);
       setImagenPreview(URL.createObjectURL(file));
     }
@@ -60,7 +65,7 @@ function GestionNovedades() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!nuevoTitulo.trim() || !archivoImagen) {
+    if (nuevoTitulo.trim().length < 2 || nuevoTitulo.trim().length > 100 || !archivoImagen) {
       Swal.fire(
         "Atención",
         "Por favor completa el título y selecciona una imagen.",

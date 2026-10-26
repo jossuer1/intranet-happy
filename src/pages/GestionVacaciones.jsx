@@ -113,7 +113,7 @@ function GestionVacaciones() {
         ? calcularDiasRango()
         : Number(diasAcreditar);
 
-    if (diasAfectados <= 0) {
+    if (!Number.isInteger(diasAfectados) || diasAfectados <= 0 || (tipoOperacion !== "DESCUENTO" && diasAfectados > 365)) {
       Swal.fire(
         "Atención",
         "Por favor ingresa un rango o número de días válido.",
@@ -122,10 +122,10 @@ function GestionVacaciones() {
       return;
     }
 
-    if (!motivo.trim()) {
+    if (motivo.trim().length < 3 || motivo.trim().length > 200) {
       Swal.fire(
         "Atención",
-        "El motivo / observación es obligatorio.",
+        "El motivo debe contener entre 3 y 200 caracteres.",
         "warning",
       );
       return;
@@ -573,6 +573,9 @@ function GestionVacaciones() {
                         className="form-control"
                         placeholder="Ej. 15"
                         value={diasAcreditar}
+                        min="1"
+                        max="365"
+                        step="1"
                         onChange={(e) => setDiasAcreditar(e.target.value)}
                       />
                     </div>

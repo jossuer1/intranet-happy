@@ -3,12 +3,21 @@ import { useQuery } from "@tanstack/react-query";
 import Swal from "sweetalert2";
 import AppLayout from "../../components/layout/AppLayout";
 import SectionHeader from "../../components/layout/SectionHeader";
+import TablaEquipo from "../../components/usuarios/TablaEquipo";
+import { getMisEmpleados } from "../../services/usuariosService";
+import { formatearFecha } from "../../utils/dateUtils";
 import {
   getSolicitudesPendientesJefe,
   responderSolicitudComoJefe,
 } from "../../services/vacacionesService";
 
 function AprobarVacaciones() {
+  const [pestana, setPestana] = useState("empleados");
+  const equipo = useQuery({
+    queryKey: ["usuarios", "mis-empleados"],
+    queryFn: getMisEmpleados,
+    enabled: pestana === "empleados",
+  });
   const {
     data: solicitudes,
     isLoading,
@@ -20,6 +29,7 @@ function AprobarVacaciones() {
     queryFn: getSolicitudesPendientesJefe,
     staleTime: 1000 * 30,
     select: (data) => (Array.isArray(data) ? data : []),
+    enabled: pestana === "solicitudes",
   });
 
   const [procesandoId, setProcesandoId] = useState(null);
@@ -28,15 +38,15 @@ function AprobarVacaciones() {
     const confirmacion = await Swal.fire({
       icon: "question",
       title: aprobar ? "¿Aprobar esta solicitud?" : "¿Rechazar esta solicitud?",
-      html:
-        `<b>${solicitud.solicitanteNombre}</b><br/>${new Date(
-          solicitud.fechaInicio,
-        ).toLocaleDateString()} — ${new Date(solicitud.fechaFin).toLocaleDateString()}` +
+      text:
+        `${solicitud.solicitanteNombre}: ${formatearFecha(solicitud.fechaInicio)} — ${formatearFecha(solicitud.fechaFin)}` +
         (aprobar
-          ? "<br/><small>Se descontarán los días del saldo y se enviarán los 3 documentos por correo.</small>"
+          ? ". Se descontarán los días del saldo y se enviarán los documentos por correo."
           : ""),
       input: "text",
-      inputLabel: "Observación (opcional)",
+      inputLabel: aprobar ? "Observación (opcional)" : "Motivo del rechazo (obligatorio)",
+      inputAttributes: { maxLength: 200 },
+      inputValidator: valor => !aprobar && !valor.trim() ? "Escribe el motivo del rechazo." : undefined,
       inputPlaceholder: "Ej. Aprobado, coordinar entrega de pendientes",
       showCancelButton: true,
       confirmButtonText: aprobar ? "Sí, aprobar" : "Sí, rechazar",
@@ -79,6 +89,19 @@ function AprobarVacaciones() {
       <div className="container my-4 flex-grow-1">
         <div className="card shadow-sm border-0">
           <div className="card-body p-4">
+            <ul className="nav nav-tabs mb-3" aria-label="Equipo y vacaciones">
+              <li className="nav-item">
+                <button type="button" className={`nav-link ${pestana === "empleados" ? "active" : ""}`} aria-current={pestana === "empleados" ? "page" : undefined} onClick={() => setPestana("empleados")}>Mis empleados</button>
+              </li>
+              <li className="nav-item">
+                <button type="button" className={`nav-link ${pestana === "solicitudes" ? "active" : ""}`} aria-current={pestana === "solicitudes" ? "page" : undefined} onClick={() => setPestana("solicitudes")}>Solicitudes de tu equipo</button>
+              </li>
+            </ul>
+            {pestana === "empleados" ? <>
+              <h5 className="card-title fw-bold mb-1">Mis empleados</h5>
+              <p className="text-muted small mb-4">Consulta el saldo y el historial de vacaciones de tus empleados.</p>
+              {equipo.isPending ? <p role="status">Cargando empleados…</p> : equipo.isError ? <div className="alert alert-danger" role="alert">{equipo.error.message}<button className="btn btn-link" onClick={() => equipo.refetch()}>Reintentar</button></div> : <TablaEquipo empleados={equipo.data} mostrarHistorial />}
+            </> : <>
             <h5 className="card-title fw-bold mb-1">
               Solicitudes de tu equipo
             </h5>
@@ -120,8 +143,8 @@ function AprobarVacaciones() {
                     {solicitudes.map((s) => (
                       <tr key={s.idSolicitud}>
                         <td className="fw-semibold">{s.solicitanteNombre}</td>
-                        <td>{new Date(s.fechaInicio).toLocaleDateString()}</td>
-                        <td>{new Date(s.fechaFin).toLocaleDateString()}</td>
+                        <td>{formatearFecha(s.fechaInicio)}</td>
+                        <td>{formatearFecha(s.fechaFin)}</td>
                         <td>{s.diasSolicitados}</td>
                         <td className="small text-muted">{s.motivo}</td>
                         <td className="text-end">
@@ -148,6 +171,7 @@ function AprobarVacaciones() {
                 </table>
               </div>
             )}
+            </>}
           </div>
         </div>
       </div>

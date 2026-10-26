@@ -4,6 +4,10 @@ export const crearUsuario = (datosUsuario) =>
   apiClient.post("/usuarios", datosUsuario);
 
 export const getTodos = () => apiClient.get("/usuarios");
+export const getJefes = () => apiClient.get("/usuarios/jefes");
+export const getEquipoJefe = (id) => apiClient.get(`/usuarios/jefes/${id}/empleados`);
+export const getMisEmpleados = () => apiClient.get("/usuarios/mis-empleados");
+export const traspasarEquipo = (dto) => apiClient.post("/usuarios/traspasar-equipo", dto);
 
 // Alias para compatibilidad con GestionUsuarios.jsx
 export const getUsuarios = getTodos;

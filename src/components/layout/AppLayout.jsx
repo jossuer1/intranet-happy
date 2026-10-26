@@ -335,6 +335,11 @@ function AppLayout({ children, usuarioRol = null }) {
                 {openGestionUsuarios && (
                   <ul className="nav nav-pills flex-column ms-3 mt-1 ps-2 border-start gap-1">
                     <li className="nav-item">
+                      <button type="button" className={`nav-link w-100 text-start border-0 py-2 px-3 rounded-2 small sidebar-item-btn ${location.pathname === "/gestion-usuarios/jefes" ? "is-active fw-semibold" : "sidebar-sub-btn"}`} onClick={() => irA("/gestion-usuarios/jefes")}>
+                        <i className="bi bi-person-badge me-2"></i>Jefes
+                      </button>
+                    </li>
+                    <li className="nav-item">
                       <button
                         type="button"
                         className={`nav-link w-100 text-start border-0 py-2 px-3 rounded-2 small d-flex align-items-center gap-2 sidebar-item-btn ${

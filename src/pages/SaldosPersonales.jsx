@@ -38,7 +38,7 @@ function SaldosPersonal() {
   }, []);
 
   const procesarAcreditacion = async () => {
-    if (!diasAcreditar || Number(diasAcreditar) <= 0) {
+    if (!Number.isInteger(Number(diasAcreditar)) || Number(diasAcreditar) <= 0 || Number(diasAcreditar) > 365) {
       Swal.fire("Atención", "Ingresa un número válido de días.", "warning");
       return;
     }
@@ -254,6 +254,8 @@ function SaldosPersonal() {
                         onChange={(e) => setDiasAcreditar(e.target.value)}
                         disabled={procesando}
                         min="1"
+                        max="365"
+                        step="1"
                       />
                     </div>
                     <div className="mb-3">

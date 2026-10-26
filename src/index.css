@@ -86,3 +86,69 @@ body {
 .btn {
   padding: 10px;
 }
+/* ───── Modales SweetAlert (fecha límite / recordatorio) ───── */
+.swal2-popup.swal-hp-popup {
+  width: 540px;
+  max-width: 94vw;
+  border-radius: 18px;
+  padding: 2rem 2rem 1.75rem;
+}
+.swal2-popup .swal-hp-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--brand-darker);
+}
+.swal2-html-container.swal-hp-html {
+  font-size: 1rem;
+  color: #495057;
+  margin: 0.75rem 0 0;
+}
+.swal2-actions.swal-hp-actions {
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+.swal2-actions.swal-hp-actions .btn {
+  padding: 0.65rem 1.75rem;
+  font-weight: 600;
+  border-radius: 10px;
+}
+.swal2-popup .swal-hp-fecha {
+  background: #f6f8f9;
+  border: 1px solid #e3e8ea;
+  border-radius: 14px;
+  padding: 1.1rem 1.25rem 1rem;
+  margin-top: 1rem;
+}
+.swal2-popup .swal-hp-fecha .form-label {
+  font-size: 0.95rem;
+  color: var(--brand-darker);
+}
+.swal2-popup .swal-hp-date {
+  width: 100%;
+  font-size: 1.3rem;
+  font-weight: 600;
+  padding: 0.9rem 1.1rem;
+  min-height: 56px;
+  border-radius: 12px;
+  border: 2px solid #ced4da;
+  background-color: #fff;
+  box-shadow: none;
+}
+.swal2-popup .swal-hp-date:focus {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 0.25rem rgba(var(--brand-rgb), 0.18);
+}
+.swal2-popup .swal-hp-date::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  transform: scale(1.5);
+  margin-left: auto;
+}
+.swal2-popup .swal-hp-atajo {
+  padding: 0.35rem 1rem;
+  font-size: 0.9rem;
+}
+.swal2-popup .swal-hp-atajo.active {
+  background-color: var(--brand);
+  border-color: var(--brand);
+  color: #fff;
+}

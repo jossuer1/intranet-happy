@@ -9,15 +9,11 @@ import ComparativoSolicitud, {
   BadgeEstado,
 } from "../components/solicitudes/ComparativoSolicitud";
 import { solicitudesPerfilService } from "../services/solicitudesPerfilService";
-import {
-  getUsuarios,
-  permisoActualizacion,
-  enviarRecordatorioActualizacion,
-} from "../services/usuariosService";
-import { pedirRecordatorio } from "../components/usuarios/modalHabilitarActualizacion";
+import EnvioActualizacionTab from "../components/solicitudes/EnvioActualizacionTab";
+import { getUsuarios } from "../services/usuariosService";
 import { useAuthStore } from "../store/useAuthStore";
 import { Toast, toastError, toastExito } from "../utils/toast";
-import { formatearFechaHoraEC, formatearFechaEC } from "../utils/fechasEcuador";
+import { formatearFechaHoraEC } from "../utils/fechasEcuador";
 
 const customStyles = {
   headCells: {
@@ -68,13 +64,12 @@ function SolicitudesPerfil() {
   const user = useAuthStore((s) => s.user);
   const rol = String(user?.rol ?? "").trim().toUpperCase();
 
-  // SIN_ENVIAR = ventana abierta pero el empleado aún no envió nada
-  // (sale de la lista de usuarios). "" = todas las solicitudes.
+  // Pestaña principal: ENVIO (lista de usuarios) | SOLICITUDES (revisión)
+  const [pestana, setPestana] = useState("ENVIO");
+  // Filtro de la pestaña de solicitudes: PENDIENTE | APROBADA | RECHAZADA | SIN_CAMBIOS
   const [estado, setEstado] = useState("PENDIENTE");
   const [idAbierto, setIdAbierto] = useState(null);
   const [procesando, setProcesando] = useState(false);
-  // idUsuario marcados en "Sin enviar" para el recordatorio
-  const [seleccionados, setSeleccionados] = useState(() => new Set());
 
   const usuarios = useQuery({
     queryKey: ["usuarios"],
@@ -89,7 +84,7 @@ function SolicitudesPerfil() {
   const otras = useQuery({
     queryKey: ["solicitudesPerfil", estado],
     queryFn: () => solicitudesPerfilService.listar(estado),
-    enabled: estado !== "SIN_ENVIAR" && estado !== "PENDIENTE",
+    enabled: estado !== "PENDIENTE",
   });
 
   const lista = estado === "PENDIENTE" ? pendientes : otras;
@@ -109,69 +104,9 @@ function SolicitudesPerfil() {
     [lista.data],
   );
 
-  // Empleados con la ventana abierta que todavía no enviaron nada
-  const sinEnviar = useMemo(
-    () =>
-      (Array.isArray(usuarios.data) ? usuarios.data : [])
-        .filter((u) => u.puedeActualizarPerfil && !u.tieneSolicitudPendiente)
-        .sort(
-          (a, b) =>
-            new Date(a.puedeActualizarHasta) - new Date(b.puedeActualizarHasta),
-        ),
-    [usuarios.data],
-  );
-
-  const atrasados = sinEnviar.filter((u) => u.atrasado);
-  const idsSinEnviar = sinEnviar.map((u) => u.idUsuario);
-  const todosMarcados =
-    idsSinEnviar.length > 0 && idsSinEnviar.every((id) => seleccionados.has(id));
-  // Solo cuentan los que siguen en la lista (alguien pudo responder entre tanto)
-  const cantidadSeleccionados = idsSinEnviar.filter((id) => seleccionados.has(id)).length;
-
-  const alternarTodos = () =>
-    setSeleccionados(todosMarcados ? new Set() : new Set(idsSinEnviar));
-
-  const alternarFila = (id) =>
-    setSeleccionados((prev) => {
-      const nuevo = new Set(prev);
-      if (nuevo.has(id)) nuevo.delete(id);
-      else nuevo.add(id);
-      return nuevo;
-    });
-
-  const enviarRecordatorio = async () => {
-    const ids = idsSinEnviar.filter((id) => seleccionados.has(id));
-    if (ids.length === 0) return;
-
-    const opcion = await pedirRecordatorio({ cantidad: ids.length });
-    if (!opcion) return;
-
-    try {
-      setProcesando(true);
-      const r = await enviarRecordatorioActualizacion({
-        idsUsuarios: ids,
-        nuevaFechaLimite: opcion.nuevaFechaLimite,
-      });
-      setSeleccionados(new Set());
-
-      const enviados = r?.enviados ?? 0;
-      const omitidos = r?.omitidos ?? 0;
-      Toast.fire({
-        icon: omitidos > 0 ? "warning" : "success",
-        title:
-          `${enviados} ${enviados === 1 ? "recordatorio enviado" : "recordatorios enviados"}` +
-          (omitidos > 0
-            ? ` · ${omitidos} ${omitidos === 1 ? "omitido" : "omitidos"} (ya habían respondido)`
-            : "") +
-          (r?.fechaLimite ? " · fecha ampliada" : ""),
-        timer: 6000,
-      });
-    } catch (err) {
-      toastError(err.message || "No se pudo enviar el recordatorio");
-    } finally {
-      setProcesando(false);
-    }
-  };
+  // Para el contador de la pestaña 1: ventana abierta y sin responder
+  const cantidadSinResponder = (Array.isArray(usuarios.data) ? usuarios.data : [])
+    .filter((u) => u.puedeActualizarPerfil && !u.tieneSolicitudPendiente).length;
 
   // Solo RRHH (el backend igual lo protege). Si el usuario aún no cargó, no se redirige.
   if (user && rol !== "RRHH") return <Navigate to="/dashboard" replace />;
@@ -221,106 +156,6 @@ function SolicitudesPerfil() {
       ),
     },
   ];
-
-  const columnasSinEnviar = [
-    {
-      name: (
-        <input
-          type="checkbox"
-          className="form-check-input"
-          title="Seleccionar todos"
-          aria-label="Seleccionar todos"
-          checked={todosMarcados}
-          ref={(el) => {
-            if (el) el.indeterminate = !todosMarcados && cantidadSeleccionados > 0;
-          }}
-          disabled={idsSinEnviar.length === 0}
-          onChange={alternarTodos}
-        />
-      ),
-      width: "50px",
-      ignoreRowClick: true,
-      cell: (u) => (
-        <input
-          type="checkbox"
-          className="form-check-input"
-          aria-label="Seleccionar empleado"
-          checked={seleccionados.has(u.idUsuario)}
-          onChange={() => alternarFila(u.idUsuario)}
-        />
-      ),
-    },
-    {
-      name: "Empleado",
-      sortable: true,
-      selector: (u) => u.nombres || u.nombre || "",
-      cell: (u) => (
-        <div className="py-1">
-          <span className="fw-semibold d-block">
-            {u.nombres || u.nombre || "N/A"}
-          </span>
-          {u.cedula && <small className="text-muted">C.I: {u.cedula}</small>}
-        </div>
-      ),
-    },
-    { name: "Área", sortable: true, selector: (u) => u.area || "—" },
-    {
-      name: "Fecha de referencia",
-      sortable: true,
-      selector: (u) => u.puedeActualizarHasta,
-      cell: (u) => formatearFechaEC(u.puedeActualizarHasta) || "—",
-      width: "170px",
-    },
-    {
-      name: "Estado",
-      sortable: true,
-      selector: (u) => (u.atrasado ? 0 : 1),
-      cell: (u) =>
-        u.atrasado ? (
-          <span className="badge bg-danger-subtle text-danger-emphasis border border-danger-subtle">
-            Atrasado
-          </span>
-        ) : (
-          <span className="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">
-            En plazo
-          </span>
-        ),
-      width: "130px",
-    },
-    {
-      name: "",
-      width: "170px",
-      ignoreRowClick: true,
-      cell: (u) => (
-        <button
-          type="button"
-          className="btn btn-sm btn-outline-secondary"
-          onClick={() => cerrarVentana(u)}
-        >
-          <i className="bi bi-lock me-1"></i>Cerrar ventana
-        </button>
-      ),
-    },
-  ];
-
-  const cerrarVentana = async (u) => {
-    const nombre = u.nombres || u.nombre || "este usuario";
-    const r = await Swal.fire({
-      icon: "question",
-      title: "¿Cerrar la ventana de actualización?",
-      text: `${nombre} ya no podrá actualizar su información hasta que se la vuelvas a habilitar.`,
-      showCancelButton: true,
-      confirmButtonText: "Sí, cerrar",
-      cancelButtonText: "Cancelar",
-    });
-    if (!r.isConfirmed) return;
-    try {
-      await permisoActualizacion(u.idUsuario, false);
-      toastExito("Ventana de actualización cerrada");
-    } catch (err) {
-      toastError(err.message || "No se pudo cerrar la ventana");
-    }
-  };
 
   const aprobar = async () => {
     const r = await Swal.fire({
@@ -434,17 +269,28 @@ function SolicitudesPerfil() {
   }
 
   // ───────────── Listado ─────────────
-  const pestanas = [
-    { clave: "SIN_ENVIAR", texto: "Sin enviar", cantidad: sinEnviar.length },
-    {
-      clave: "PENDIENTE",
-      texto: "Pendientes",
-      cantidad: pendientes.data?.length,
-    },
+  const pestanasSolicitudes = [
+    { clave: "PENDIENTE", texto: "Pendientes", cantidad: pendientes.data?.length },
     { clave: "APROBADA", texto: "Aprobadas" },
     { clave: "RECHAZADA", texto: "Rechazadas" },
     { clave: "SIN_CAMBIOS", texto: "Sin cambios" },
-    { clave: "", texto: "Todas" },
+  ];
+
+  const pestanasPrincipales = [
+    {
+      clave: "ENVIO",
+      texto: "Usuarios",
+      icono: "bi-people",
+      cantidad: cantidadSinResponder,
+      ayuda: "sin responder",
+    },
+    {
+      clave: "SOLICITUDES",
+      texto: "Solicitudes recibidas",
+      icono: "bi-inbox",
+      cantidad: pendientes.data?.length,
+      ayuda: "pendientes",
+    },
   ];
 
   return (
@@ -454,123 +300,98 @@ function SolicitudesPerfil() {
         volverA="/gestion-usuarios"
       />
       <div className="container-fluid px-4 pb-4">
-        <div className="card border-0 shadow-sm">
-          <div className="card-body p-3">
-            <ul className="nav nav-pills gap-1 mb-2">
-              {pestanas.map((p) => (
-                <li className="nav-item" key={p.clave || "todas"}>
-                  <button
-                    type="button"
-                    className={`nav-link py-1 px-3 d-flex align-items-center gap-2 ${
-                      estado === p.clave ? "active bg-brand" : "text-dark"
-                    }`}
-                    onClick={() => setEstado(p.clave)}
+        {/* ───── Pestañas principales ───── */}
+        <ul className="nav nav-tabs mb-3">
+          {pestanasPrincipales.map((p) => (
+            <li className="nav-item" key={p.clave}>
+              <button
+                type="button"
+                className={`nav-link d-flex align-items-center gap-2 ${
+                  pestana === p.clave ? "active fw-semibold" : "text-secondary"
+                }`}
+                onClick={() => setPestana(p.clave)}
+              >
+                <i className={`bi ${p.icono}`}></i>
+                {p.texto}
+                {p.cantidad > 0 && (
+                  <span
+                    className="badge rounded-pill bg-warning-subtle text-warning-emphasis border border-warning-subtle"
+                    title={`${p.cantidad} ${p.ayuda}`}
                   >
-                    {p.texto}
-                    {p.cantidad > 0 && (
-                      <span
-                        className={`badge rounded-pill ${
-                          estado === p.clave
-                            ? "bg-light text-dark"
-                            : "bg-secondary-subtle text-secondary-emphasis"
-                        }`}
-                      >
-                        {p.cantidad}
-                      </span>
-                    )}
-                  </button>
-                </li>
-              ))}
-            </ul>
+                    {p.cantidad}
+                  </span>
+                )}
+              </button>
+            </li>
+          ))}
+        </ul>
 
-            <small className="text-muted d-block mb-3">
-              {estado === "SIN_ENVIAR"
-                ? "Empleados a los que habilitaste la actualización y todavía no responden. La fecha es solo una referencia: no se cierra sola."
-                : estado === "SIN_CAMBIOS"
+        {/* ───── Pestaña 1: usuarios (habilitar uno, varios o todos) ───── */}
+        {pestana === "ENVIO" && <EnvioActualizacionTab />}
+
+        {/* ───── Pestaña 2: solicitudes recibidas ───── */}
+        {pestana === "SOLICITUDES" && (
+          <div className="card border-0 shadow-sm">
+            <div className="card-body p-3">
+              <ul className="nav nav-pills gap-1 mb-2">
+                {pestanasSolicitudes.map((p) => (
+                  <li className="nav-item" key={p.clave}>
+                    <button
+                      type="button"
+                      className={`nav-link py-1 px-3 d-flex align-items-center gap-2 ${
+                        estado === p.clave ? "active bg-brand" : "text-dark"
+                      }`}
+                      onClick={() => setEstado(p.clave)}
+                    >
+                      {p.texto}
+                      {p.cantidad > 0 && (
+                        <span
+                          className={`badge rounded-pill ${
+                            estado === p.clave
+                              ? "bg-light text-dark"
+                              : "bg-secondary-subtle text-secondary-emphasis"
+                          }`}
+                        >
+                          {p.cantidad}
+                        </span>
+                      )}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+
+              <small className="text-muted d-block mb-3">
+                {estado === "SIN_CAMBIOS"
                   ? "Empleados que revisaron su información y confirmaron que está al día."
                   : "Revisa los cambios que los empleados proponen a su información."}
-            </small>
+              </small>
 
-            {estado === "SIN_ENVIAR" && sinEnviar.length > 0 && (
-              <div className="d-flex flex-wrap align-items-center gap-2 mb-3">
-                <span className="small text-muted me-auto">
-                  {sinEnviar.length} sin responder ·{" "}
-                  <b className={atrasados.length ? "text-danger" : ""}>
-                    {atrasados.length} atrasados
-                  </b>
-                </span>
-                {atrasados.length > 0 && (
-                  <button
-                    type="button"
-                    className="btn btn-sm btn-outline-secondary"
-                    onClick={() =>
-                      setSeleccionados(new Set(atrasados.map((u) => u.idUsuario)))
-                    }
-                  >
-                    Seleccionar atrasados ({atrasados.length})
-                  </button>
-                )}
-                {cantidadSeleccionados > 0 && (
-                  <button
-                    type="button"
-                    className="btn btn-sm btn-warning"
-                    disabled={procesando}
-                    onClick={enviarRecordatorio}
-                  >
-                    <i className="bi bi-bell me-1"></i>
-                    Enviar recordatorio ({cantidadSeleccionados})
-                  </button>
-                )}
-              </div>
-            )}
-
-            {estado === "SIN_ENVIAR" ? (
-              usuarios.isError ? (
+              {lista.isError ? (
                 <div className="alert alert-danger">
-                  {usuarios.error?.message || "No se pudo cargar la lista."}
+                  {lista.error?.message || "No se pudo cargar la lista."}
                 </div>
               ) : (
                 <DataTable
-                  columns={columnasSinEnviar}
-                  data={sinEnviar}
+                  columns={columnas}
+                  data={filas}
                   customStyles={customStyles}
-                  progressPending={usuarios.isLoading}
+                  progressPending={lista.isLoading}
                   pagination
                   paginationComponentOptions={paginationComponentOptions}
                   highlightOnHover
+                  pointerOnHover
                   responsive
+                  onRowClicked={(r) => setIdAbierto(r.idSolicitud)}
                   noDataComponent={
                     <div className="p-4 text-muted">
-                      Nadie tiene la ventana abierta sin enviar.
+                      No hay solicitudes para mostrar
                     </div>
                   }
                 />
-              )
-            ) : lista.isError ? (
-              <div className="alert alert-danger">
-                {lista.error?.message || "No se pudo cargar la lista."}
-              </div>
-            ) : (
-              <DataTable
-                columns={columnas}
-                data={filas}
-                customStyles={customStyles}
-                progressPending={lista.isLoading}
-                pagination
-                paginationComponentOptions={paginationComponentOptions}
-                highlightOnHover
-                pointerOnHover
-                responsive
-                onRowClicked={(r) => setIdAbierto(r.idSolicitud)}
-                noDataComponent={
-                  <div className="p-4 text-muted">
-                    No hay solicitudes para mostrar
-                  </div>
-                }
-              />
-            )}
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </AppLayout>
   );

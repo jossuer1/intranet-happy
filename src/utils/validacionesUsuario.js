@@ -3,6 +3,8 @@
 // `seccion` es el id del colapsable (accordion) donde está el problema, para
 // poder abrirlo automáticamente.
 
+import { hoyEC } from "./fechasEcuador.js";
+
 const SECCION = {
   personales: "personales",
   laborales: "laborales",
@@ -13,7 +15,7 @@ const SECCION = {
   familiares: "familiares",
 };
 
-const RE_NOMBRE = /^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+(?:[ '-][A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+)*$/;
+const RE_NOMBRE = /^[\p{L}\p{M}]+(?:[ '-][\p{L}\p{M}]+)*$/u;
 const RE_CEDULA = /^\d{10}$/;
 const RE_CELULAR = /^09\d{8}$/; // celular Ecuador: 10 dígitos que empiezan con 09
 const RE_TELEFONO = /^\d{7,10}$/; // contacto de emergencia: fijo o celular
@@ -22,12 +24,19 @@ const RE_SOLO_DIGITOS = /^\d+$/;
 
 const vacio = (v) => !String(v ?? "").trim();
 const err = (mensaje, seccion) => ({ mensaje, seccion: SECCION[seccion] });
+const fechaValida = valor => {
+  const texto = String(valor ?? "").slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(texto) || texto < "1900-01-01") return false;
+  const fecha = new Date(`${texto}T00:00:00Z`);
+  return !Number.isNaN(fecha.getTime()) && fecha.toISOString().slice(0, 10) === texto;
+};
 
 const validarNombre = (valor, etiqueta, seccion) => {
   const v = String(valor ?? "").trim();
   if (!v) return err(`${etiqueta} es obligatorio.`, seccion);
   if (v.length < 2)
     return err(`${etiqueta} debe tener al menos 2 letras.`, seccion);
+  if (v.length > 50) return err(`${etiqueta} no puede superar los 50 caracteres.`, seccion);
   if (!RE_NOMBRE.test(v))
     return err(`${etiqueta} solo puede contener letras.`, seccion);
   return null;
@@ -53,12 +62,14 @@ export const validarUsuario = (
       );
 
     if (formData.fechaNacimiento) {
-      if (new Date(formData.fechaNacimiento) > new Date())
+      if (!fechaValida(formData.fechaNacimiento) || formData.fechaNacimiento.slice(0, 10) > hoyEC())
         return err("La fecha de nacimiento no puede ser futura.", "personales");
     }
   }
 
   const correoPersonal = String(formData.correoPersonal ?? "").trim();
+  if (!correoPersonal) return err("El correo personal es obligatorio.", "personales");
+  if (correoPersonal.length > 100) return err("El correo personal no puede superar los 100 caracteres.", "personales");
   if (correoPersonal && !RE_CORREO.test(correoPersonal))
     return err("El correo personal no tiene un formato válido.", "personales");
 
@@ -75,10 +86,17 @@ export const validarUsuario = (
     if (!formData.idCargo) return err("Seleccione un cargo.", "laborales");
     if (!formData.fechaIngreso)
       return err("La fecha de ingreso es obligatoria.", "laborales");
+    if (!fechaValida(formData.fechaIngreso)) return err("Indica una fecha de ingreso válida a partir de 1900.", "laborales");
+    if (formData.fechaNacimiento && formData.fechaIngreso.slice(0, 10) <= formData.fechaNacimiento.slice(0, 10))
+      return err("La fecha de ingreso debe ser posterior al nacimiento.", "laborales");
     if (requiereFechaFin && !formData.fechaFinContrato)
       return err("Este tipo de contrato requiere fecha de fin.", "laborales");
+    if (requiereFechaFin && (!fechaValida(formData.fechaFinContrato) || formData.fechaFinContrato.slice(0, 10) <= formData.fechaIngreso.slice(0, 10)))
+      return err("La fecha de fin de contrato debe ser válida y posterior al ingreso.", "laborales");
 
     const correoEmpresa = String(formData.correoEmpresa ?? "").trim();
+    if (!correoEmpresa) return err("El correo empresarial es obligatorio.", "laborales");
+    if (correoEmpresa.length > 100) return err("El correo empresarial no puede superar los 100 caracteres.", "laborales");
     if (correoEmpresa && !RE_CORREO.test(correoEmpresa))
       return err(
         "El correo de la empresa no tiene un formato válido.",
@@ -94,7 +112,7 @@ export const validarUsuario = (
 
     if (
       formData.tieneVacaciones &&
-      (Number(formData.diasVacacionesAsignados) < 0 ||
+      (!Number.isInteger(Number(formData.diasVacacionesAsignados)) || Number(formData.diasVacacionesAsignados) > 365 || Number(formData.diasVacacionesAsignados) < 0 ||
         Number.isNaN(Number(formData.diasVacacionesAsignados)))
     )
       return err("Los días de vacaciones no son válidos.", "laborales");
@@ -113,6 +131,8 @@ export const validarUsuario = (
           `Cuenta bancaria ${n}: seleccione el tipo de cuenta.`,
           "bancarios",
         );
+      if (!["AHORROS", "CORRIENTE"].includes(String(b.tipoCuenta).trim().toUpperCase()))
+        return err(`Cuenta bancaria ${n}: el tipo debe ser Ahorros o Corriente.`, "bancarios");
       const num = String(b.numeroCuenta ?? "").trim();
       if (!num)
         return err(
@@ -124,9 +144,14 @@ export const validarUsuario = (
           `Cuenta bancaria ${n}: el número de cuenta solo puede contener dígitos.`,
           "bancarios",
         );
+      if (num.length < 3 || num.length > 30) return err(`Cuenta bancaria ${n}: ingrese entre 3 y 30 dígitos.`, "bancarios");
     }
 
     // ── TÍTULOS ─────────────────────────────────────────────────────
+    const cuentasUnicas = formData.datosBancarios.map(b => `${b.idBanco}:${String(b.numeroCuenta).trim()}`);
+    if (new Set(cuentasUnicas).size !== cuentasUnicas.length)
+      return err("No puedes registrar dos veces la misma cuenta del mismo banco.", "bancarios");
+
     for (const [i, t] of formData.titulos.entries()) {
       if (vacio(t.nombreTitulo))
         return err(`Título ${i + 1}: ingrese el nombre del título.`, "titulos");
@@ -136,8 +161,11 @@ export const validarUsuario = (
   // ── PERÍODOS DE CONTRATO (solo edición por RRHH) ──────────────────
   // Mismas reglas que el backend: inicio obligatorio, fin >= inicio,
   // sin traslapes y solo el último puede quedar abierto.
-  if (esEdicion && !modoAutogestion) {
+  if ((esEdicion || formData.periodosIess?.length) && !modoAutogestion) {
     const periodos = formData.periodosIess;
+    if (periodos.some(per => !fechaValida(per.fechaIngreso) || per.fechaSalida && !fechaValida(per.fechaSalida) ||
+      formData.fechaNacimiento && per.fechaIngreso.slice(0, 10) <= formData.fechaNacimiento.slice(0, 10)))
+      return err("Las fechas de los períodos deben ser válidas y posteriores al nacimiento.", "periodos");
     if (periodos.some((per) => !per.fechaIngreso))
       return err(
         "Cada período de contrato necesita su fecha de inicio.",
@@ -241,6 +269,20 @@ export const validarUsuario = (
   }
 
   // Cédulas de familiares: sin repetirse entre sí ni con la del empleado
+  for (const [i, f] of formData.familiares.entries()) {
+    const conyuge = ["CONYUGE", "CÓNYUGE"].includes(String(f.parentesco).trim().toUpperCase());
+    const fecha = conyuge ? f.fechaUnion : f.fechaNacimiento;
+    if (!fechaValida(fecha) || fecha.slice(0, 10) > hoyEC())
+      return err(`Familiar ${i + 1}: indique una fecha válida que no sea futura.`, "familiares");
+    if (conyuge && formData.fechaNacimiento && fecha.slice(0, 10) <= formData.fechaNacimiento.slice(0, 10))
+      return err(`Familiar ${i + 1}: la fecha de unión debe ser posterior al nacimiento del colaborador.`, "familiares");
+  }
+  for (const [i, t] of formData.titulos.entries()) {
+    if (t.culminado !== false && t.fechaObtencion && (!fechaValida(t.fechaObtencion) || t.fechaObtencion.slice(0, 10) > hoyEC() ||
+      formData.fechaNacimiento && t.fechaObtencion.slice(0, 10) <= formData.fechaNacimiento.slice(0, 10)))
+      return err(`Título ${i + 1}: la fecha debe ser válida, posterior al nacimiento y no futura.`, "titulos");
+  }
+
   // (el backend también lo valida; aquí se avisa antes de enviar).
   const cedulasFam = formData.familiares
     .map((f) => f.cedula?.trim())

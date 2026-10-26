@@ -12,14 +12,9 @@ import {
   actualizarUsuario,
   actualizarVacacionesUsuario,
   actualizarEstadoUsuario,
-  permisoActualizacion,
-  habilitarActualizacion,
   subirFotoPerfil,
 } from "../services/usuariosService.js";
 import { useAuthStore } from "../store/useAuthStore";
-import { Toast, toastError, toastExito } from "../utils/toast";
-import { estaActivo } from "../utils/usuariosEstado";
-import { pedirFechaLimite } from "../components/usuarios/modalHabilitarActualizacion";
 
 function GestionUsuarios() {
   const location = useLocation();
@@ -33,11 +28,6 @@ function GestionUsuarios() {
   const [usuarios, setUsuarios] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  // idUsuario marcados en la tabla para habilitar la actualización en bloque
-  const [seleccionados, setSeleccionados] = useState(() => new Set());
-
-  const cantidadActivos = usuarios.filter(estaActivo).length;
-
   // Carga de usuarios desde el servidor. Con { silencioso: true } no muestra el
   // spinner (así la tabla conserva filtros y selección al refrescar).
   const cargarUsuarios = async ({ silencioso = false } = {}) => {
@@ -132,92 +122,6 @@ function GestionUsuarios() {
         title: "No se pudo cambiar el estado",
         text: err.message || "Inténtalo de nuevo en unos segundos.",
       });
-    }
-  };
-
-  // Acción por fila: abre la ventana de actualización (pide fecha límite) o la
-  // cierra si ya está abierta.
-  const cambiarPermisoPerfilUsuario = async (usuario) => {
-    if (!usuario?.idUsuario) return;
-
-    const nombre = usuario.nombres || usuario.nombre || "este usuario";
-
-    try {
-      if (usuario.puedeActualizarPerfil) {
-        const confirmacion = await Swal.fire({
-          icon: "question",
-          title: "¿Cerrar la ventana de actualización?",
-          text: `${nombre} ya no podrá actualizar su información hasta que se la vuelvas a habilitar.`,
-          showCancelButton: true,
-          confirmButtonText: "Sí, cerrar",
-          cancelButtonText: "Cancelar",
-        });
-        if (!confirmacion.isConfirmed) return;
-
-        await permisoActualizacion(usuario.idUsuario, false);
-        await cargarUsuarios({ silencioso: true });
-        toastExito("Ventana de actualización cerrada");
-        return;
-      }
-
-      const fecha = await pedirFechaLimite({
-        titulo: "Habilitar actualización",
-        texto: `Se habilitará la actualización de información para <b>${nombre}</b> y recibirá un correo.`,
-      });
-      if (!fecha) return;
-
-      await permisoActualizacion(usuario.idUsuario, true, fecha);
-      await cargarUsuarios({ silencioso: true });
-      toastExito("Actualización habilitada");
-    } catch (err) {
-      toastError(err.message || "No se pudo cambiar el permiso");
-    }
-  };
-
-  // Habilitación masiva: a los seleccionados o a todos los activos.
-  const habilitarEnBloque = async ({ todosActivos }) => {
-    const ids = [...seleccionados];
-    const cantidad = todosActivos ? cantidadActivos : ids.length;
-    if (cantidad === 0) return;
-
-    const fecha = await pedirFechaLimite({
-      titulo: todosActivos
-        ? "Habilitar a todos los activos"
-        : "Habilitar actualización",
-      texto: `Se habilitará la actualización de información para <b>${cantidad}</b> ${
-        cantidad === 1 ? "persona" : "personas"
-      }. Cada una recibirá un correo.${
-        todosActivos
-          ? "<br><small class='text-muted'>Incluye a quienes ya respondieron. Para insistirle a quienes faltan, usa Solicitudes de actualización → Sin enviar → Enviar recordatorio.</small>"
-          : ""
-      }`,
-    });
-    if (!fecha) return;
-
-    try {
-      const r = await habilitarActualizacion({
-        todosActivos,
-        idsUsuarios: ids,
-        fechaLimite: fecha,
-      });
-      await cargarUsuarios({ silencioso: true });
-      setSeleccionados(new Set());
-
-      const habilitados = r?.habilitados ?? 0;
-      const omitidos = r?.omitidosPorSolicitudPendiente ?? 0;
-      Toast.fire({
-        icon: omitidos > 0 ? "warning" : "success",
-        title:
-          `${habilitados} ${habilitados === 1 ? "habilitado" : "habilitados"}` +
-          (omitidos > 0
-            ? ` · ${omitidos} ${
-                omitidos === 1 ? "omitido" : "omitidos"
-              } por tener solicitud pendiente`
-            : ""),
-        timer: 6000,
-      });
-    } catch (err) {
-      toastError(err.message || "No se pudo habilitar la actualización");
     }
   };
 
@@ -328,25 +232,6 @@ function GestionUsuarios() {
                     </small>
                   </div>
                   <div className="d-flex flex-wrap justify-content-end gap-2">
-                    {seleccionados.size > 0 && (
-                      <button
-                        type="button"
-                        className="btn btn-sm btn-warning d-flex align-items-center gap-2 px-3 py-2 rounded-3"
-                        onClick={() => habilitarEnBloque({ todosActivos: false })}
-                      >
-                        <i className="bi bi-unlock"></i>
-                        <span>Habilitar actualización ({seleccionados.size})</span>
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      className="btn btn-sm btn-outline-secondary d-flex align-items-center gap-2 px-3 py-2 rounded-3"
-                      disabled={cantidadActivos === 0}
-                      onClick={() => habilitarEnBloque({ todosActivos: true })}
-                    >
-                      <i className="bi bi-people"></i>
-                      <span>Habilitar a todos los activos</span>
-                    </button>
                     <button
                       className="btn btn-sm text-white bg-brand border-0 d-flex align-items-center gap-2 px-3 py-2 rounded-3"
                       onClick={() => navigate("/gestion-usuarios/crear")}
@@ -372,9 +257,6 @@ function GestionUsuarios() {
                     usuarios={usuarios}
                     onEditar={abrirEdicion}
                     onCambiarEstado={cambiarEstadoUsuario}
-                    onCambiarPermisoPerfil={cambiarPermisoPerfilUsuario}
-                    seleccionados={seleccionados}
-                    onSeleccionChange={setSeleccionados}
                   />
                 )}
               </div>

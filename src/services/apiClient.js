@@ -35,7 +35,7 @@ async function handleResponse(respuesta, isAuthRequest = false, esCambio = false
 
   const isJson = respuesta.headers
     .get("content-type")
-    ?.includes("application/json");
+    ?.match(/application\/(?:json|[\w.+-]+\+json)/i);
   const data = isJson ? await respuesta.json() : null;
 
   if (!respuesta.ok) {
