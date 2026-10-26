@@ -9,7 +9,12 @@ import ComparativoSolicitud, {
   BadgeEstado,
 } from "../components/solicitudes/ComparativoSolicitud";
 import { solicitudesPerfilService } from "../services/solicitudesPerfilService";
-import { getUsuarios, permisoActualizacion } from "../services/usuariosService";
+import {
+  getUsuarios,
+  permisoActualizacion,
+  enviarRecordatorioActualizacion,
+} from "../services/usuariosService";
+import { pedirRecordatorio } from "../components/usuarios/modalHabilitarActualizacion";
 import { useAuthStore } from "../store/useAuthStore";
 import { Toast, toastError, toastExito } from "../utils/toast";
 import { formatearFechaHoraEC, formatearFechaEC } from "../utils/fechasEcuador";
@@ -68,6 +73,8 @@ function SolicitudesPerfil() {
   const [estado, setEstado] = useState("PENDIENTE");
   const [idAbierto, setIdAbierto] = useState(null);
   const [procesando, setProcesando] = useState(false);
+  // idUsuario marcados en "Sin enviar" para el recordatorio
+  const [seleccionados, setSeleccionados] = useState(() => new Set());
 
   const usuarios = useQuery({
     queryKey: ["usuarios"],
@@ -113,6 +120,58 @@ function SolicitudesPerfil() {
         ),
     [usuarios.data],
   );
+
+  const atrasados = sinEnviar.filter((u) => u.atrasado);
+  const idsSinEnviar = sinEnviar.map((u) => u.idUsuario);
+  const todosMarcados =
+    idsSinEnviar.length > 0 && idsSinEnviar.every((id) => seleccionados.has(id));
+  // Solo cuentan los que siguen en la lista (alguien pudo responder entre tanto)
+  const cantidadSeleccionados = idsSinEnviar.filter((id) => seleccionados.has(id)).length;
+
+  const alternarTodos = () =>
+    setSeleccionados(todosMarcados ? new Set() : new Set(idsSinEnviar));
+
+  const alternarFila = (id) =>
+    setSeleccionados((prev) => {
+      const nuevo = new Set(prev);
+      if (nuevo.has(id)) nuevo.delete(id);
+      else nuevo.add(id);
+      return nuevo;
+    });
+
+  const enviarRecordatorio = async () => {
+    const ids = idsSinEnviar.filter((id) => seleccionados.has(id));
+    if (ids.length === 0) return;
+
+    const opcion = await pedirRecordatorio({ cantidad: ids.length });
+    if (!opcion) return;
+
+    try {
+      setProcesando(true);
+      const r = await enviarRecordatorioActualizacion({
+        idsUsuarios: ids,
+        nuevaFechaLimite: opcion.nuevaFechaLimite,
+      });
+      setSeleccionados(new Set());
+
+      const enviados = r?.enviados ?? 0;
+      const omitidos = r?.omitidos ?? 0;
+      Toast.fire({
+        icon: omitidos > 0 ? "warning" : "success",
+        title:
+          `${enviados} ${enviados === 1 ? "recordatorio enviado" : "recordatorios enviados"}` +
+          (omitidos > 0
+            ? ` · ${omitidos} ${omitidos === 1 ? "omitido" : "omitidos"} (ya habían respondido)`
+            : "") +
+          (r?.fechaLimite ? " · fecha ampliada" : ""),
+        timer: 6000,
+      });
+    } catch (err) {
+      toastError(err.message || "No se pudo enviar el recordatorio");
+    } finally {
+      setProcesando(false);
+    }
+  };
 
   // Solo RRHH (el backend igual lo protege). Si el usuario aún no cargó, no se redirige.
   if (user && rol !== "RRHH") return <Navigate to="/dashboard" replace />;
@@ -165,6 +224,33 @@ function SolicitudesPerfil() {
 
   const columnasSinEnviar = [
     {
+      name: (
+        <input
+          type="checkbox"
+          className="form-check-input"
+          title="Seleccionar todos"
+          aria-label="Seleccionar todos"
+          checked={todosMarcados}
+          ref={(el) => {
+            if (el) el.indeterminate = !todosMarcados && cantidadSeleccionados > 0;
+          }}
+          disabled={idsSinEnviar.length === 0}
+          onChange={alternarTodos}
+        />
+      ),
+      width: "50px",
+      ignoreRowClick: true,
+      cell: (u) => (
+        <input
+          type="checkbox"
+          className="form-check-input"
+          aria-label="Seleccionar empleado"
+          checked={seleccionados.has(u.idUsuario)}
+          onChange={() => alternarFila(u.idUsuario)}
+        />
+      ),
+    },
+    {
       name: "Empleado",
       sortable: true,
       selector: (u) => u.nombres || u.nombre || "",
@@ -179,15 +265,27 @@ function SolicitudesPerfil() {
     },
     { name: "Área", sortable: true, selector: (u) => u.area || "—" },
     {
-      name: "Plazo hasta",
+      name: "Fecha de referencia",
       sortable: true,
       selector: (u) => u.puedeActualizarHasta,
-      cell: (u) => (
-        <span className="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">
-          {formatearFechaEC(u.puedeActualizarHasta) || "—"}
-        </span>
-      ),
-      width: "160px",
+      cell: (u) => formatearFechaEC(u.puedeActualizarHasta) || "—",
+      width: "170px",
+    },
+    {
+      name: "Estado",
+      sortable: true,
+      selector: (u) => (u.atrasado ? 0 : 1),
+      cell: (u) =>
+        u.atrasado ? (
+          <span className="badge bg-danger-subtle text-danger-emphasis border border-danger-subtle">
+            Atrasado
+          </span>
+        ) : (
+          <span className="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">
+            En plazo
+          </span>
+        ),
+      width: "130px",
     },
     {
       name: "",
@@ -345,6 +443,7 @@ function SolicitudesPerfil() {
     },
     { clave: "APROBADA", texto: "Aprobadas" },
     { clave: "RECHAZADA", texto: "Rechazadas" },
+    { clave: "SIN_CAMBIOS", texto: "Sin cambios" },
     { clave: "", texto: "Todas" },
   ];
 
@@ -386,9 +485,44 @@ function SolicitudesPerfil() {
 
             <small className="text-muted d-block mb-3">
               {estado === "SIN_ENVIAR"
-                ? "Empleados a los que habilitaste la actualización y todavía no envían sus cambios."
-                : "Revisa los cambios que los empleados proponen a su información."}
+                ? "Empleados a los que habilitaste la actualización y todavía no responden. La fecha es solo una referencia: no se cierra sola."
+                : estado === "SIN_CAMBIOS"
+                  ? "Empleados que revisaron su información y confirmaron que está al día."
+                  : "Revisa los cambios que los empleados proponen a su información."}
             </small>
+
+            {estado === "SIN_ENVIAR" && sinEnviar.length > 0 && (
+              <div className="d-flex flex-wrap align-items-center gap-2 mb-3">
+                <span className="small text-muted me-auto">
+                  {sinEnviar.length} sin responder ·{" "}
+                  <b className={atrasados.length ? "text-danger" : ""}>
+                    {atrasados.length} atrasados
+                  </b>
+                </span>
+                {atrasados.length > 0 && (
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-outline-secondary"
+                    onClick={() =>
+                      setSeleccionados(new Set(atrasados.map((u) => u.idUsuario)))
+                    }
+                  >
+                    Seleccionar atrasados ({atrasados.length})
+                  </button>
+                )}
+                {cantidadSeleccionados > 0 && (
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-warning"
+                    disabled={procesando}
+                    onClick={enviarRecordatorio}
+                  >
+                    <i className="bi bi-bell me-1"></i>
+                    Enviar recordatorio ({cantidadSeleccionados})
+                  </button>
+                )}
+              </div>
+            )}
 
             {estado === "SIN_ENVIAR" ? (
               usuarios.isError ? (

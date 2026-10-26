@@ -2,8 +2,11 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import PerfilPestanas from "../../components/usuarios/PerfilPestanas";
 import AppLayout from "../../components/layout/AppLayout";
 import SectionHeader from "../../components/layout/SectionHeader";
-import UsuarioFormCard from "../../components/usuarios/UsuarioFormCard";
-import { usuariosService } from "../../services/usuariosService";
+import ActualizarMiInfoForm from "../../components/usuarios/ActualizarMiInfoForm";
+import MisSolicitudes, {
+  BannersActualizacion,
+} from "../../components/usuarios/MisSolicitudes";
+import { solicitudesPerfilService } from "../../services/solicitudesPerfilService";
 import { formatearFecha } from "../../utils/dateUtils";
 import { useAuthStore } from "../../store/useAuthStore";
 
@@ -19,13 +22,19 @@ function MiPerfil() {
   // Incluir el idUsuario actual garantiza una clave única por sesión
   const currentUserId = userStore?.idUsuario;
 
-  const handleGuardarPerfil = async (_idUsuario, payload, fotoArchivo) => {
-    if (fotoArchivo) {
-      await usuariosService.subirFotoPerfil(userStore.idUsuario, fotoArchivo);
-    }
-    await usuariosService.actualizarMiPerfil(payload);
+  // Tras enviar la solicitud el backend cierra la ventana: se refresca el perfil
+  // (el bloqueo se levanta solo) y el historial de solicitudes.
+  const handleEnviado = async () => {
+    await fetchPerfil();
     await queryClient.invalidateQueries({ queryKey: ["perfilUsuario"] });
+    await queryClient.invalidateQueries({ queryKey: ["misSolicitudes"] });
   };
+
+  const { data: solicitudes = [], isLoading: cargandoSolicitudes } = useQuery({
+    queryKey: ["misSolicitudes", currentUserId],
+    queryFn: solicitudesPerfilService.mias,
+    enabled: !!currentUserId,
+  });
 
   const {
     data: user,
@@ -42,24 +51,33 @@ function MiPerfil() {
     staleTime: 1000 * 60 * 5,
   });
 
+  // Ventana abierta (habilitada por RRHH o devuelta tras un rechazo): se mantiene
+  // el bloqueo y se muestra el formulario de actualización.
   if (debeActualizarPerfil) {
     return (
       <AppLayout>
-        <SectionHeader titulo="Actualiza tu Perfil" />
+        <SectionHeader titulo="Actualiza tu información" />
         <div className="container my-4 flex-grow-1">
           <div className="row justify-content-center">
             <div className="col-12 col-lg-10">
-              <div className="alert alert-warning shadow-sm">
-                <i className="bi bi-person-vcard me-2"></i>
-                RRHH habilitó la actualización de tu información de contacto,
-                familiares y contactos de emergencia. Debes revisarla y guardar
-                para poder seguir usando el sistema.
-              </div>
-              <UsuarioFormCard
-                usuarioOriginal={userStore}
-                modoAutogestion
-                onGuardar={handleGuardarPerfil}
+              <BannersActualizacion
+                puedeActualizarPerfil
+                puedeActualizarHasta={userStore?.puedeActualizarHasta}
+                tieneSolicitudPendiente={false}
+                solicitudes={solicitudes}
               />
+              {isLoading || cargandoSolicitudes ? (
+                <div className="text-center my-5">
+                  <div className="spinner-border text-primary" role="status">
+                    <span className="visually-hidden">Cargando...</span>
+                  </div>
+                </div>
+              ) : (
+                <ActualizarMiInfoForm
+                  usuario={user || userStore}
+                  onEnviado={handleEnviado}
+                />
+              )}
             </div>
           </div>
         </div>
@@ -138,6 +156,14 @@ function MiPerfil() {
       <SectionHeader titulo="Mi Perfil" volverA="/dashboard" />
 
       <div className="container-fluid px-4 pb-4">
+        <BannersActualizacion
+          puedeActualizarPerfil={false}
+          tieneSolicitudPendiente={Boolean(
+            user.tieneSolicitudPendiente ?? userStore?.tieneSolicitudPendiente,
+          )}
+          solicitudes={solicitudes}
+        />
+
         {/* =========================================================
             1. ENCABEZADO DEL COLABORADOR
             ========================================================= */}
@@ -316,6 +342,14 @@ function MiPerfil() {
             3. INFORMACIÓN POR SECCIONES (pestañas)
             ========================================================= */}
         <PerfilPestanas info={user} esRRHH={false} />
+
+        {/* =========================================================
+            4. HISTORIAL DE SOLICITUDES DE ACTUALIZACIÓN
+            ========================================================= */}
+        <MisSolicitudes
+          solicitudes={solicitudes}
+          cargando={cargandoSolicitudes}
+        />
       </div>
     </AppLayout>
   );

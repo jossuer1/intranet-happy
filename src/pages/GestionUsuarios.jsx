@@ -186,7 +186,11 @@ function GestionUsuarios() {
         : "Habilitar actualización",
       texto: `Se habilitará la actualización de información para <b>${cantidad}</b> ${
         cantidad === 1 ? "persona" : "personas"
-      }. Cada una recibirá un correo.`,
+      }. Cada una recibirá un correo.${
+        todosActivos
+          ? "<br><small class='text-muted'>Incluye a quienes ya respondieron. Para insistirle a quienes faltan, usa Solicitudes de actualización → Sin enviar → Enviar recordatorio.</small>"
+          : ""
+      }`,
     });
     if (!fecha) return;
 

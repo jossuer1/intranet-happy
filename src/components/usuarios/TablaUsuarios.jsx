@@ -230,6 +230,11 @@ function TablaUsuarios({
                   Edición abierta{hasta ? ` hasta ${hasta}` : ""}
                 </span>
               )}
+              {row.atrasado && (
+                <span className="badge bg-danger-subtle text-danger-emphasis border border-danger-subtle">
+                  Atrasado
+                </span>
+              )}
               {row.tieneSolicitudPendiente && (
                 <span className="badge bg-primary-subtle text-primary-emphasis border border-primary-subtle">
                   Solicitud pendiente

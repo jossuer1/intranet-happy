@@ -62,6 +62,25 @@ export const actualizarVacacionesUsuario = actualizarVacaciones;
 export const actualizarEstadoUsuario = (idUsuario, activar) =>
   apiClient.patch(`/usuarios/${idUsuario}/estado`, { activar });
 
+// RRHH: recordatorio por correo a quienes tienen la ventana abierta y aún no
+// respondieron. Opcionalmente amplía la fecha de referencia (nuevaFechaLimite).
+// Devuelve { enviados, omitidos, fechaLimite }.
+export const enviarRecordatorioActualizacion = ({
+  todosSinEnviar = false,
+  idsUsuarios = [],
+  nuevaFechaLimite = null,
+}) =>
+  apiClient.post("/usuarios/recordatorio-actualizacion", {
+    todosSinEnviar,
+    idsUsuarios: todosSinEnviar ? [] : idsUsuarios,
+    nuevaFechaLimite,
+  });
+
+// Empleado: confirma que revisó su información y no tiene cambios.
+// Cierra su ventana y queda registrado como SIN_CAMBIOS.
+export const confirmarSinCambios = () =>
+  apiClient.post("/usuarios/mi-perfil/confirmar-sin-cambios", {});
+
 // Sube/reemplaza la foto de perfil (multipart). Devuelve { urlImagenPerfil }.
 export const subirFotoPerfil = (idUsuario, archivo) => {
   const formData = new FormData();
@@ -86,5 +105,7 @@ export const usuariosService = {
   actualizarPermisoPerfil,
   permisoActualizacion,
   habilitarActualizacion,
+  enviarRecordatorioActualizacion,
+  confirmarSinCambios,
   subirFotoPerfil,
 };
