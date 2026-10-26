@@ -1,11 +1,5 @@
 /* Variables con la paleta de colores oficial HappyPay */
-:root {
-  --brand-color: #1E5A63;
-  --brand-color-hover: #16434a;
-  --brand-light: #eef6f7;
-  --text-dark: #2c3e50;
-  --text-muted: #6c757d;
-}
+
 
 .auth-page {
   background: linear-gradient(135deg, #e9ecef 0%, #f8f9fa 100%);
@@ -23,7 +17,7 @@
 .auth-container {
   background-color: #ffffff;
   border-radius: 20px;
-  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 16px 48px rgba(0, 40, 30, 0.08);
   position: relative;
   overflow: hidden;
   
@@ -85,7 +79,7 @@
   z-index: 5;
 }
 
-form {
+.auth-page form {
   background: #ffffff;
   display: flex;
   align-items: center;
@@ -96,7 +90,7 @@ form {
   text-align: center;
 }
 
-form h1 {
+.auth-page form h1 {
   font-size: 1.6rem;
   font-weight: 700;
   margin-bottom: 6px;
@@ -141,7 +135,7 @@ form h1 {
 .input-field-group input:focus {
   background: #ffffff;
   border-color: var(--brand-color);
-  box-shadow: 0 0 0 3px rgba(30, 90, 99, 0.15);
+  box-shadow: 0 0 0 3px rgba(0, 77, 64, 0.15);
 }
 
 .input-field-group input::placeholder {
@@ -170,7 +164,7 @@ form h1 {
 .password-input-wrapper input:focus {
   background: #ffffff;
   border-color: var(--brand-color);
-  box-shadow: 0 0 0 3px rgba(30, 90, 99, 0.15);
+  box-shadow: 0 0 0 3px rgba(0, 77, 64, 0.15);
 }
 
 .password-toggle-btn {
@@ -209,7 +203,7 @@ form h1 {
   transition: all 0.2s ease;
   margin-top: 10px;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(30, 90, 99, 0.25);
+  box-shadow: 0 4px 12px rgba(0, 77, 64, 0.25);
 }
 
 .btn-submit:hover {
@@ -252,7 +246,7 @@ form h1 {
 }
 
 .auth-overlay {
-  background: linear-gradient(135deg, #1E5A63 0%, #0d2c31 100%);
+  background: linear-gradient(135deg, #004d40 0%, #002c25 100%);
   color: #ffffff;
   position: relative;
   left: -100%;
@@ -312,7 +306,7 @@ form h1 {
   opacity: 0.9;
 }
 
-button.ghost {
+.auth-page button.ghost {
   background: transparent;
   border: 1.5px solid #ffffff;
   color: #ffffff;
@@ -325,7 +319,7 @@ button.ghost {
   transition: all 0.2s ease;
 }
 
-button.ghost:hover {
+.auth-page button.ghost:hover {
   background: #ffffff;
   color: var(--brand-color);
 }
@@ -359,7 +353,7 @@ button.ghost:hover {
   height: 400px;
   top: -100px;
   left: -100px;
-  background: rgba(30, 90, 99, 0.15);
+  background: rgba(0, 77, 64, 0.15);
   border-radius: 50%;
   filter: blur(80px);
 }
@@ -372,88 +366,22 @@ button.ghost:hover {
   height: 500px;
   bottom: -150px;
   right: -150px;
-  background: rgba(30, 90, 99, 0.2);
+  background: rgba(0, 77, 64, 0.2);
   border-radius: 50%;
   filter: blur(100px);
 }
 
-@media screen and (max-width: 768px) {
-  .auth-container {
-    width: 100%;
-    min-height: 500px;
-  }
-  .auth-overlay-container {
-    display: none;
-  }
-  .login-container, .recuperar-container {
-    width: 100%;
-  }
 
-  /* ---------- Escalado para Monitor/Pantalla Grande (Desktop / 1080p+) ---------- */
-@media screen and (min-width: 1400px) {
-  .auth-container {
-    width: 1200px;
-    min-height: 680px;
-  }
-
-  /* Escalado de la tipografía y botones */
-  form h1 {
-    font-size: 2rem !important;
-  }
-
-  .auth-brand-logo {
-    height: 48px !important;
-  }
-
-  .auth-brand-name {
-    font-size: 1.7rem !important;
-  }
-
-  .auth-subtext {
-    font-size: 1rem !important;
-    margin-bottom: 28px !important;
-  }
-
-  .input-field-group input,
-  .password-input-wrapper input {
-    padding-top: 15px !important;
-    padding-bottom: 15px !important;
-    font-size: 1.05rem !important;
-  }
-
-  .btn-submit {
-    padding: 15px 30px !important;
-    font-size: 1rem !important;
-  }
-
-  .overlay-panel h1 {
-    font-size: 2.3rem !important;
-  }
-
-  .overlay-panel p {
-    font-size: 1.1rem !important;
-  }
-
-  button.ghost {
-    padding: 12px 40px !important;
-    font-size: 0.95rem !important;
-  }
+@media (max-width: 768px) {
+  .auth-page { padding: 1rem; }
+  .auth-container { width: 100%; min-height: 590px; max-width: 100%; }
+  .auth-overlay-container { display: none; }
+  .auth-page .login-container, .auth-page .recuperar-container { width: 100%; }
+  .auth-container.panel-active .login-container { transform: translateX(-100%); }
+  .auth-container.panel-active .recuperar-container { transform: translateX(0); }
+  .auth-page form { padding-inline: 1.5rem; }
+  .auth-page .change-password-overlay { padding: 1.5rem; }
 }
-
-/* ---------- Escalado para Monitores Ultra-Wide (4K / 1800px+) ---------- */
-@media screen and (min-width: 1800px) {
-  .auth-container {
-    width: 1350px;
-    min-height: 740px;
-  }
-
-  form h1 {
-    font-size: 2.3rem !important;
-  }
-
-  form {
-    padding: 0 60px !important;
-  }
-}
-
+@media (min-width: 1400px) {
+  .auth-container { width: 1120px; min-height: 620px; }
 }

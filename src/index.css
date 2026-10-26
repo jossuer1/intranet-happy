@@ -1,36 +1,10 @@
-:root {
-  --brand: #1e5a63;
-  --brand-rgb: 30, 90, 99;
-  --brand-dark: #17454c;
-  --brand-darker: #123239;
-  --brand-soft: rgba(30, 90, 99, 0.1);
-
-  /* Pisamos la paleta "primary" de Bootstrap para que todo (btn-primary,
-     nav-pills activo, badges, etc.) use el mismo teal sin tocar cada
-     componente uno por uno */
-  --bs-primary: var(--brand);
-  --bs-primary-rgb: var(--brand-rgb);
-  --bs-primary-text-emphasis: var(--brand-darker);
-  --bs-primary-bg-subtle: #d9e6e8;
-  --bs-primary-border-subtle: #a9c3c7;
-}
-
 body {
   margin: 0;
-  font-family: Arial, sans-serif;
+  font-family: var(--bs-body-font-family);
 }
 
 /* Refuerzo explícito por si el bundle de Bootstrap no propaga
    --bs-primary a estos componentes */
-.btn-primary {
-  --bs-btn-bg: var(--brand);
-  --bs-btn-border-color: var(--brand);
-  --bs-btn-hover-bg: var(--brand-dark);
-  --bs-btn-hover-border-color: var(--brand-dark);
-  --bs-btn-active-bg: var(--brand-darker);
-  --bs-btn-active-border-color: var(--brand-darker);
-}
-
 .nav-pills .nav-link.active {
   background-color: var(--brand);
 }
@@ -79,13 +53,6 @@ body {
   font-weight: 600;
 }
 
-.form-control {
-  padding: 10px 12px;
-}
-
-.btn {
-  padding: 10px;
-}
 /* ───── Modales SweetAlert (fecha límite / recordatorio) ───── */
 .swal2-popup.swal-hp-popup {
   width: 540px;

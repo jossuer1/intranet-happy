@@ -48,7 +48,7 @@ export const pedirFechaLimite = async ({ titulo, texto }) => {
   const { isConfirmed, value } = await Swal.fire({
     ...estiloModal,
     icon: "question",
-    iconColor: "#1e5a63",
+    iconColor: "#004d40",
     title: titulo,
     html: `
       <p class="mb-3">${texto}</p>
@@ -119,7 +119,7 @@ export const pedirRecordatorio = async ({ cantidad }) => {
   const { isConfirmed, value } = await Swal.fire({
     ...estiloModal,
     icon: "question",
-    iconColor: "#1e5a63",
+    iconColor: "#004d40",
     title: "Enviar recordatorio",
     html: `
       <p class="mb-3">Se enviará un recordatorio por correo a <b>${cantidad}</b> ${

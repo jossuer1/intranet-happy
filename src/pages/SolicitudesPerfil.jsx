@@ -1,3 +1,6 @@
+import ModalDialog from "../components/ui/ModalDialog";
+import { estilosTabla as customStyles } from "../components/catalogos/tablaEstilos";
+import PersonaCelda from "../components/ui/PersonaCelda";
 import { useMemo, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -15,18 +18,6 @@ import { useAuthStore } from "../store/useAuthStore";
 import { Toast, toastError, toastExito } from "../utils/toast";
 import { formatearFechaHoraEC } from "../utils/fechasEcuador";
 
-const customStyles = {
-  headCells: {
-    style: {
-      textTransform: "uppercase",
-      fontSize: "12px",
-      fontWeight: 700,
-      color: "var(--bs-secondary-color, #6c757d)",
-      backgroundColor: "#f8f9fa",
-    },
-  },
-  rows: { style: { minHeight: "56px", cursor: "pointer" } },
-};
 
 const paginationComponentOptions = {
   rowsPerPageText: "Filas por página:",
@@ -117,10 +108,7 @@ function SolicitudesPerfil() {
       sortable: true,
       selector: (r) => r.empleado,
       cell: (r) => (
-        <div className="py-1">
-          <span className="fw-semibold d-block">{r.empleado}</span>
-          {r.cedula && <small className="text-muted">C.I: {r.cedula}</small>}
-        </div>
+        <PersonaCelda nombre={r.empleado} detalle={r.cedula ? `C.I. ${r.cedula}` : undefined} />
       ),
     },
     {
@@ -199,23 +187,9 @@ function SolicitudesPerfil() {
   };
 
   // ───────────── Vista de detalle ─────────────
-  if (idAbierto !== null) {
-    const s = detalle.data;
-    return (
-      <AppLayout>
-        <SectionHeader
-          titulo="Solicitud de actualización"
-          volverA="/gestion-usuarios"
-        />
-        <div className="container-fluid px-4 pb-4">
-          <button
-            type="button"
-            className="btn btn-sm btn-light border mb-3"
-            onClick={() => setIdAbierto(null)}
-          >
-            <i className="bi bi-arrow-left me-1"></i>Volver al listado
-          </button>
-
+  const s = detalle.data;
+  const modalDetalle = idAbierto !== null ? (
+    <ModalDialog titulo="Solicitud de actualización" onClose={() => setIdAbierto(null)} size="xl" ocupado={procesando}>
           {detalle.isLoading ? (
             <div className="text-center my-5">
               <div className="spinner-border text-primary" role="status"></div>
@@ -263,10 +237,9 @@ function SolicitudesPerfil() {
               )}
             </>
           )}
-        </div>
-      </AppLayout>
-    );
-  }
+
+    </ModalDialog>
+  ) : null;
 
   // ───────────── Listado ─────────────
   const pestanasSolicitudes = [
@@ -299,7 +272,7 @@ function SolicitudesPerfil() {
         titulo="Solicitudes de actualización"
         volverA="/gestion-usuarios"
       />
-      <div className="container-fluid px-4 pb-4">
+      <div className="container-fluid px-4 pb-4"><div className="card border-0 shadow-sm"><div className="card-body p-4">
         {/* ───── Pestañas principales ───── */}
         <ul className="nav nav-tabs mb-3">
           {pestanasPrincipales.map((p) => (
@@ -331,8 +304,8 @@ function SolicitudesPerfil() {
 
         {/* ───── Pestaña 2: solicitudes recibidas ───── */}
         {pestana === "SOLICITUDES" && (
-          <div className="card border-0 shadow-sm">
-            <div className="card-body p-3">
+          <div>
+            <div>
               <ul className="nav nav-pills gap-1 mb-2">
                 {pestanasSolicitudes.map((p) => (
                   <li className="nav-item" key={p.clave}>
@@ -392,7 +365,8 @@ function SolicitudesPerfil() {
             </div>
           </div>
         )}
-      </div>
+      </div></div></div>
+      {modalDetalle}
     </AppLayout>
   );
 }

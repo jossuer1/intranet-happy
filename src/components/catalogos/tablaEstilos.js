@@ -5,18 +5,27 @@ export const estilosTabla = {
   headCells: {
     style: {
       textTransform: "uppercase",
-      fontSize: "12px",
-      fontWeight: 700,
-      color: "var(--bs-secondary-color, #6c757d)",
-      backgroundColor: "#f8f9fa",
+      fontSize: "11px",
+      fontWeight: 600,
+      letterSpacing: ".055em",
+      color: "#728178",
+      backgroundColor: "#f7faf8",
+      paddingLeft: "18px",
+      paddingRight: "18px",
     },
   },
   rows: {
     style: {
-      minHeight: "52px",
-      cursor: "pointer",
+      minHeight: "76px",
+      fontSize: "13px",
+      color: "#35483e",
+      borderBottomColor: "#edf1ee",
     },
+    highlightOnHoverStyle: { backgroundColor: "#f3f8f5", outline: "none" },
   },
+  cells: { style: { paddingLeft: "18px", paddingRight: "18px", paddingTop: "12px", paddingBottom: "12px" } },
+  headRow: { style: { minHeight: "48px", borderBottomColor: "#e8eee9" } },
+  pagination: { style: { borderTopColor: "#edf1ee", color: "#687970", minHeight: "62px" } },
 };
 
 export const opcionesPaginacion = {

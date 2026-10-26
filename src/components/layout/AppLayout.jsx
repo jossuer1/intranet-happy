@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import Navbar from "./Navbar";
+import Notificaciones from "./Notificaciones";
 import { TopBarContext } from "./TopBarContext";
 import {
   SECCIONES_CATALOGO,
@@ -9,7 +10,6 @@ import {
   seccionDesdeUrl,
 } from "../catalogos/seccionesAdmin";
 import { useAuthStore } from "../../store/useAuthStore";
-import logoHappyPay from "../../assets/images/logo_happy.jpg";
 import logoHappyPayBlanco from "../../assets/images/logo_happy_blanco.png";
 
 const MODULOS_EMPLEADO_BASE = [
@@ -65,14 +65,13 @@ function AppLayout({ children, usuarioRol = null }) {
   // Grupo "Catálogos y roles" del ADMIN: abierto por defecto (es su única pantalla)
   const [openCatalogos, setOpenCatalogos] = useState(true);
 
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [rutaMenuAbierto, setRutaMenuAbierto] = useState(null);
+  const rutaActual = location.pathname + location.search;
+  const sidebarOpen = rutaMenuAbierto === rutaActual;
+  const setSidebarOpen = abrir => setRutaMenuAbierto(abrir ? rutaActual : null);
   // Zona izquierda de la fila superior: cada página mete aquí su título
   const [zonaTitulo, setZonaTitulo] = useState(null);
 
-  // Cerrar sidebar al cambiar de ruta (o de sección: ?seccion=...)
-  useEffect(() => {
-    setSidebarOpen(false);
-  }, [location.pathname, location.search]);
 
   const rolUsuario = String(
     usuarioRol ??
@@ -125,7 +124,7 @@ function AppLayout({ children, usuarioRol = null }) {
   );
 
   return (
-    <div className="bg-light min-vh-100 d-flex flex-column flex-md-row">
+    <div className="hp-app bg-light min-vh-100 d-flex flex-column flex-md-row">
       <style>{`
         .app-sidebar {
           width: 270px;
@@ -137,7 +136,7 @@ function AppLayout({ children, usuarioRol = null }) {
         }
 
         .app-sidebar {
-          background-color: #055158;
+          background-color: #004d40;
           color: #fff;
         }
 
@@ -185,23 +184,6 @@ function AppLayout({ children, usuarioRol = null }) {
           border-color: rgba(255, 255, 255, 0.3) !important;
         }
 
-        /* Fila superior: título de la vista (izq.) + tarjeta del usuario (der.).
-           El padding lateral coincide con el de los contenedores de las páginas
-           (main + container-fluid px-4) para que todo quede alineado. */
-        .topbar {
-          padding: 1rem 2.5rem 0;
-        }
-        .topbar-titulo {
-          flex: 1 1 auto;
-          min-width: 0;
-          min-height: 56px; /* misma altura que la tarjeta del usuario */
-          display: flex;
-          align-items: center;
-        }
-        @media (min-width: 768px) {
-          .topbar { padding-inline: 3rem; }
-        }
-
         @media (max-width: 767.98px) {
           .app-sidebar {
             position: fixed;
@@ -219,35 +201,9 @@ function AppLayout({ children, usuarioRol = null }) {
         }
       `}</style>
 
-      {/* BARRA MÓVIL SUPERIOR (Visible solo en pantallas pequeñas) */}
-      <div className="d-md-none bg-white border-bottom px-3 py-2 d-flex align-items-center justify-content-between sticky-top z-3">
-        <div
-          className="d-flex align-items-center gap-2 cursor-pointer"
-          onClick={() => irA("/dashboard")}
-        >
-          <img
-            src={logoHappyPay}
-            alt="HappyPay Logo"
-            style={{ height: "32px", objectFit: "contain" }}
-          />
-          <span className="fw-bold fs-6 text-dark tracking-tight">
-            HappyPay
-          </span>
-        </div>
-
-        {/* Botón de tres puntos o hamburguesa para abrir menú */}
-        <button
-          type="button"
-          className="btn btn-light border-0 px-2 py-1"
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-          aria-label="Abrir menú"
-        >
-          <i className="bi bi-three-dots-vertical fs-4 text-dark"></i>
-        </button>
-      </div>
-
       {/* Sidebar completo */}
       <aside
+        id="hp-sidebar"
         className={`app-sidebar px-3 py-3 flex-shrink-0 ${
           sidebarOpen ? "open" : ""
         }`}
@@ -568,12 +524,13 @@ function AppLayout({ children, usuarioRol = null }) {
       )}
 
       {/* Contenedor Principal */}
-      <div className="flex-grow-1 d-flex flex-column min-vh-100 overflow-hidden">
+      <div className="hp-workspace flex-grow-1 d-flex flex-column min-vh-100 overflow-hidden">
         {/* Una sola fila arriba: título a la izquierda, tarjeta a la derecha */}
-        <div className="topbar d-flex align-items-center justify-content-between gap-3">
+        <header className="topbar d-flex align-items-center justify-content-between gap-3" aria-label="Barra superior">
+          <button type="button" className="btn btn-light d-md-none hp-menu-toggle" aria-label="Abrir menú" aria-controls="hp-sidebar" aria-expanded={sidebarOpen} onClick={() => setSidebarOpen(!sidebarOpen)}><i className="bi bi-list fs-4" /></button>
           <div ref={setZonaTitulo} className="topbar-titulo"></div>
-          <Navbar />
-        </div>
+          <div className="hp-topbar-actions"><Notificaciones /><Navbar /></div>
+        </header>
 
         {/* Sin padding superior: el contenido sube hasta pegarse a la fila de arriba */}
         <main className="flex-grow-1 px-3 px-md-4 pt-0 pb-3 pb-md-4 overflow-auto">

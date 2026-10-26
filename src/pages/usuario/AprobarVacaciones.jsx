@@ -1,3 +1,4 @@
+import PersonaCelda from "../../components/ui/PersonaCelda";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Swal from "sweetalert2";
@@ -142,7 +143,7 @@ function AprobarVacaciones() {
                   <tbody>
                     {solicitudes.map((s) => (
                       <tr key={s.idSolicitud}>
-                        <td className="fw-semibold">{s.solicitanteNombre}</td>
+                        <td><PersonaCelda nombre={s.solicitanteNombre} /></td>
                         <td>{formatearFecha(s.fechaInicio)}</td>
                         <td>{formatearFecha(s.fechaFin)}</td>
                         <td>{s.diasSolicitados}</td>

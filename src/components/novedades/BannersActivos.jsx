@@ -1,132 +1,31 @@
-function BannersActivos({
-  novedades,
-  onNuevoBannerClick,
-  onToggleEstado,
-  onEliminar,
-}) {
-  return (
-    <div className="card border-0 shadow-sm rounded-4 bg-white p-4">
-      {/* Encabezado con Botón Principal */}
-      <div className="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
-        <div>
-          <h5 className="fw-bold text-dark m-0 d-flex align-items-center gap-2">
-            <i className="bi bi-images text-primary"></i>
-            Banners Registrados
-          </h5>
-          <small className="text-muted">
-            Total de publicaciones: {novedades.length}
-          </small>
-        </div>
-        <button
-          className="btn btn-success px-3 py-2 rounded-3 fw-semibold shadow-sm"
-          onClick={onNuevoBannerClick}
-        >
-          <i className="bi bi-plus-lg me-1"></i> Nuevo Banner
-        </button>
-      </div>
+import { useState } from "react";
+import TablaInteractiva from "../ui/TablaInteractiva";
+import ModalDialog from "../ui/ModalDialog";
+import { formatearFechaHoraEC } from "../../utils/fechasEcuador";
 
-      {novedades.length === 0 ? (
-        <div className="text-center py-5 text-muted bg-light rounded-4 border border-dashed">
-          <i className="bi bi-image-alt fs-1 d-block mb-2 text-secondary opacity-50"></i>
-          <p className="fw-medium mb-1">
-            No hay banners registrados en el sistema
-          </p>
-          <small>
-            Haz clic en "Nuevo Banner" para crear la primera publicación.
-          </small>
-        </div>
-      ) : (
-        <div className="table-responsive">
-          <table className="table table-hover align-middle border-top">
-            <thead className="table-light">
-              <tr className="text-uppercase fs-7 text-muted tracking-wide">
-                <th style={{ width: "110px" }}>Vista Previa</th>
-                <th>Título / Descripción</th>
-                <th>Fecha</th>
-                <th>Estado</th>
-                <th className="text-end" style={{ width: "130px" }}>
-                  Acciones
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {novedades.map((item) => (
-                <tr key={item.idImagen}>
-                  <td>
-                    <img
-                      src={item.rutaImagen}
-                      alt={item.titulo}
-                      style={{
-                        width: "80px",
-                        height: "45px",
-                        objectFit: "cover",
-                      }}
-                      className="rounded-3 border shadow-sm"
-                    />
-                  </td>
-                  <td className="fw-semibold text-dark">{item.titulo}</td>
-                  <td>
-                    <span className="badge bg-light text-secondary border px-2 py-1 fw-normal">
-                      <i className="bi bi-calendar3 me-1"></i>
-                      {item.fechaCreacion
-                        ? new Date(item.fechaCreacion).toLocaleDateString()
-                        : "-"}
-                    </span>
-                  </td>
-                  <td>
-                    {item.estado ? (
-                      <span className="badge bg-success text-white rounded-pill px-3 py-1 fw-semibold">
-                        <i className="bi bi-check-circle-fill me-1"></i>
-                        Activo
-                      </span>
-                    ) : (
-                      <span className="badge bg-secondary text-white rounded-pill px-3 py-1 fw-semibold">
-                        <i className="bi bi-dash-circle-fill me-1"></i>
-                        Inactivo
-                      </span>
-                    )}
-                  </td>
-                  <td className="text-end">
-                    <div className="d-flex gap-2 justify-content-end">
-                      {/* Botón Activar / Desactivar con color sólido */}
-                      <button
-                        type="button"
-                        className={`btn btn-sm px-3 py-1.5 rounded-3 shadow-sm border-0 ${
-                          item.estado
-                            ? "btn-warning text-dark"
-                            : "btn-success text-white"
-                        }`}
-                        onClick={() => onToggleEstado(item.idImagen)}
-                        title={
-                          item.estado ? "Ocultar Banner" : "Mostrar Banner"
-                        }
-                      >
-                        <i
-                          className={`bi ${
-                            item.estado ? "bi-eye-slash-fill" : "bi-eye-fill"
-                          } fs-6`}
-                        ></i>
-                      </button>
-
-                      {/* Botón Eliminar con color rojo sólido */}
-                      <button
-                        type="button"
-                        className="btn btn-sm btn-danger text-white px-3 py-1.5 rounded-3 shadow-sm border-0"
-                        onClick={() => onEliminar(item.idImagen)}
-                        title="Eliminar Permanentemente"
-                      >
-                        <i className="bi bi-trash3-fill fs-6"></i>
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
-  );
+export default function BannersActivos({ novedades = [], onNuevoBannerClick, onToggleEstado, onEliminar }) {
+  const [vista, setVista] = useState(null);
+  const [estado, setEstado] = useState("todos");
+  const datos = novedades.filter(n => estado === "todos" || (estado === "activos" ? n.estado : !n.estado));
+  const columnas = [
+    { name: "Banner", selector: n => n.titulo, sortable: true, minWidth: "280px", grow: 2,
+      cell: n => <div className="d-flex align-items-center gap-3"><button type="button" className="hp-banner-miniatura" aria-label={`Ver banner: ${n.titulo}`} onClick={() => setVista(n)}>
+        <img src={n.rutaImagen} alt="" loading="lazy" /></button><div><strong className="d-block">{n.titulo}</strong><small className="text-muted text-break">{n.descripcion || "Sin descripción"}</small></div></div> },
+    { name: "Fecha de publicación", selector: n => n.fechaCreacion || "", sortable: true, minWidth: "190px", cell: n => formatearFechaHoraEC(n.fechaCreacion) || "Sin fecha" },
+    { name: "Orden", selector: n => n.orden ?? 0, sortable: true, width: "100px" },
+    { name: "Estado", selector: n => n.estado ? "Activo" : "Inactivo", sortable: true, width: "120px", cell: n => <span className={`badge ${n.estado ? "bg-success" : "bg-secondary"}`}>{n.estado ? "Activo" : "Inactivo"}</span> },
+    { name: "Acciones", width: "160px", cell: n => <div className="d-flex gap-2">
+      <button type="button" className="btn btn-sm btn-outline-primary" onClick={() => setVista(n)} title="Ver banner"><i className="bi bi-eye" /></button>
+      <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => onToggleEstado(n.idImagen)} title={n.estado ? "Ocultar banner" : "Mostrar banner"}><i className={`bi ${n.estado ? "bi-eye-slash" : "bi-check-circle"}`} /></button>
+      <button type="button" className="btn btn-sm btn-outline-danger" onClick={() => onEliminar(n.idImagen)} title="Eliminar banner"><i className="bi bi-trash3" /></button>
+    </div>, ignoreRowClick: true },
+  ];
+  return <div className="card border-0 shadow-sm rounded-3"><div className="card-body p-4">
+    <div className="hp-card-header"><div><h5 className="fw-bold mb-1">Banners activos y registrados</h5><p className="text-muted small mb-0">Administra las publicaciones de la intranet.</p></div>
+      <button type="button" className="btn btn-primary btn-sm" onClick={onNuevoBannerClick}><i className="bi bi-plus-lg me-2" />Nuevo banner</button></div>
+    <TablaInteractiva key={estado} datos={datos} columnas={columnas} keyField="idImagen" etiqueta="Buscar por título, descripción o estado…"
+      filtros={<select aria-label="Estado de publicación" className="form-select form-select-sm hp-filtro-tabla" value={estado} onChange={e => setEstado(e.target.value)}><option value="todos">Todos los estados</option><option value="activos">Activos</option><option value="inactivos">Inactivos</option></select>}
+      buscarEn={n => `${n.titulo} ${n.descripcion || ""} ${n.estado ? "Activo" : "Inactivo"} ${formatearFechaHoraEC(n.fechaCreacion) || ""}`} />
+    {vista && <ModalDialog titulo={vista.titulo} subtitulo={vista.descripcion} onClose={() => setVista(null)} size="xl"><img src={vista.rutaImagen} alt={vista.titulo} className="img-fluid rounded-3 w-100" /></ModalDialog>}
+  </div></div>;
 }
-
-export default BannersActivos;

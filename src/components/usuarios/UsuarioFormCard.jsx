@@ -564,7 +564,7 @@ const UsuarioFormCard = ({
         {/* PESTAÑAS (mismo estilo que el perfil del colaborador) */}
         <div className="card border-0 shadow-sm mb-5" id="tabsUsuario">
           <div className="card-header tabs-usuario-header bg-white border-bottom p-2">
-            <ul className="nav nav-pills tabs-usuario" role="tablist">
+            <ul className="nav nav-pills tabs-usuario" role="tablist" aria-label="Secciones del expediente">
               {pestanas.map((p) => {
                 const seleccionada = p.id === pestanas[indiceActivo].id;
                 const faltante = p.requerido && !p.completo;

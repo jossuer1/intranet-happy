@@ -1,4 +1,5 @@
 import { useState } from "react";
+import ExpedienteColaborador from "./ExpedienteColaborador";
 import {
   calcularEdad,
   obtenerGeneracion,
@@ -401,6 +402,7 @@ function PanelBancarios({ info }) {
  */
 function PerfilPestanas({ info, esRRHH = false }) {
   const [activa, setActiva] = useState("personal");
+  if (esRRHH) return <ExpedienteColaborador info={info} />;
 
   const pestanas = [
     {

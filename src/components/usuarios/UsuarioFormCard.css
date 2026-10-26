@@ -1,13 +1,4 @@
 /* Paleta y Variables */
-:root {
-  --hp-primary: #1e5a63;
-  --hp-primary-hover: #143e45;
-  --hp-bg-light: #f8fafc;
-  --hp-border-color: #e2e8f0;
-  --hp-text-dark: #1e293b;
-  --hp-text-muted: #64748b;
-}
-
 .form-usuario-wrapper {
   width: 100%;
   min-width: 0; /* evita que el contenido ensanche el contenedor flex */
@@ -44,11 +35,11 @@
 
 .form-section-card:focus-within {
   border-color: var(--hp-primary);
-  box-shadow: 0 4px 16px rgba(30, 90, 99, 0.08);
+  box-shadow: 0 4px 16px rgba(0, 77, 64, 0.08);
 }
 
 /* Títulos de Sección */
-.section-header {
+.form-usuario-wrapper .section-header {
   border-bottom: 2px solid #f1f5f9;
   padding-bottom: 12px;
   margin-bottom: 24px;
@@ -57,7 +48,7 @@
   justify-content: space-between;
 }
 
-.section-title {
+.form-usuario-wrapper .section-title {
   color: var(--hp-primary);
   font-size: 1.15rem;
   font-weight: 700;
@@ -91,7 +82,7 @@
 .form-usuario-wrapper .form-select:focus {
   background-color: #ffffff;
   border-color: var(--hp-primary);
-  box-shadow: 0 0 0 3px rgba(30, 90, 99, 0.15);
+  box-shadow: 0 0 0 3px rgba(0, 77, 64, 0.15);
 }
 
 /* Avatar / Foto de Perfil */
@@ -139,8 +130,8 @@
   background-color: #e2e8f0 !important;
 }
 :root {
-  --hp-primary: #1e5a63;
-  --hp-primary-hover: #143e45;
+  --hp-primary: #004d40;
+  --hp-primary-hover: #003d33;
   --hp-border-color: #e2e8f0;
 }
 
@@ -207,7 +198,6 @@
   color: #ffffff !important;
   border: none !important;
   border-radius: 8px !important;
-  padding: 10px 24px !important;
   font-weight: 600 !important;
 }
 
@@ -280,7 +270,7 @@
   --bs-gutter-x: 1rem;
 }
 
-.form-usuario-wrapper .btn {
+.form-usuario-wrapper .btn:not(.btn-sm):not(.btn-lg) {
   padding: 6px 12px;
 }
 

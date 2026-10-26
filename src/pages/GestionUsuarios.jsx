@@ -1,4 +1,6 @@
-import { useEffect, useState } from "react";
+import ModalDialog from "../components/ui/ModalDialog";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useLocation, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import UsuarioFormCard from "../components/usuarios/UsuarioFormCard.jsx";
@@ -21,31 +23,18 @@ function GestionUsuarios() {
   const navigate = useNavigate();
   const usuarioLogueado = useAuthStore((state) => state.user);
 
+  const [guardando, setGuardando] = useState(false);
   const esCrear = location.pathname === "/gestion-usuarios/crear";
 
   const [usuarioSeleccionado, setUsuarioSeleccionado] = useState(null);
   const [cargandoUsuario, setCargandoUsuario] = useState(false);
-  const [usuarios, setUsuarios] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  // Carga de usuarios desde el servidor. Con { silencioso: true } no muestra el
-  // spinner (así la tabla conserva filtros y selección al refrescar).
-  const cargarUsuarios = async ({ silencioso = false } = {}) => {
-    try {
-      if (!silencioso) setLoading(true);
-      setError(null);
-      const data = await getUsuarios();
-      setUsuarios(Array.isArray(data) ? data : []);
-    } catch (err) {
-      setError(err.message || "No se pudo cargar la lista de usuarios.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    cargarUsuarios();
-  }, [location.pathname]);
+  const consulta = useQuery({ queryKey: ["usuarios"], queryFn: getUsuarios,
+    select: data => Array.isArray(data) ? data : [] });
+  const usuarios = consulta.data || [];
+  const loading = consulta.isPending;
+  const error = consulta.error?.message;
+  // El listado permanece montado: conserva filtros al refrescar tras un cambio.
+  const cargarUsuarios = () => consulta.refetch();
 
   // La fila de la tabla (usuario) solo trae los campos resumidos de
   // GET /usuarios. Para editar necesitamos la ficha completa, así que
@@ -69,7 +58,9 @@ function GestionUsuarios() {
   };
 
   const cancelarEdicion = () => {
+    if (guardando) return;
     setUsuarioSeleccionado(null);
+    if (location.pathname.endsWith("/crear")) navigate("/gestion-usuarios", { replace: true });
   };
 
   // Activa o desactiva la cuenta de un usuario. No se permite que RRHH se
@@ -130,6 +121,7 @@ function GestionUsuarios() {
   // archivoFoto es el File real (o null si no se cambió la foto); se sube
   // aparte, a Cloudinary, una vez que ya sabemos el idUsuario definitivo.
   const guardarUsuario = async (targetId, formData, archivoFoto) => {
+    setGuardando(true);
     const esEdicion = Boolean(targetId);
 
     try {
@@ -172,9 +164,9 @@ function GestionUsuarios() {
         }
       }
 
-      await cargarUsuarios();
+      await cargarUsuarios({ silencioso: true });
       setUsuarioSeleccionado(null);
-      navigate("/gestion-usuarios");
+      if (location.pathname.endsWith("/crear")) navigate("/gestion-usuarios", { replace: true });
 
       if (fotoFallo) return;
 
@@ -196,74 +188,48 @@ function GestionUsuarios() {
         text:
           err.message || "No se pudieron guardar los cambios en el servidor.",
       });
+    } finally {
+      setGuardando(false);
     }
   };
+  if (esCrear) return <AppLayout>
+    <SectionHeader titulo="Nuevo colaborador" volverA="/gestion-usuarios" />
+    <div className="container-fluid mb-4"><div className="card border-0 shadow-sm hp-crear-usuario"><div className="card-body p-4">
+      <UsuarioFormCard usuariosDisponibles={usuarios} onGuardar={guardarUsuario} onCancelar={() => { if (!guardando) navigate("/gestion-usuarios"); }} />
+    </div></div></div>
+  </AppLayout>;
+
   return (
     <AppLayout>
-      <SectionHeader titulo="Gestión de Usuarios" volverA="/dashboard" />
-
-      <div className="container-fluid flex-grow-1 mt-2 mb-4 px-4">
-        <div className="w-100">
-          {/* MODO CREACIÓN Y EDICIÓN: mismo formulario, mismo flujo de guardado */}
-          {esCrear ? (
-            <UsuarioFormCard
-              usuariosDisponibles={usuarios}
-              onGuardar={guardarUsuario}
-              onCancelar={() => navigate("/gestion-usuarios")}
-            />
-          ) : usuarioSeleccionado ? (
-            <UsuarioFormCard
-              usuarioOriginal={usuarioSeleccionado}
-              usuariosDisponibles={usuarios}
-              onGuardar={guardarUsuario}
-              onCancelar={cancelarEdicion}
-            />
-          ) : (
-            /* MODO TABLA / LISTA GENERAL */
-            <div className="card shadow-sm border-0 rounded-3">
-              <div className="card-body p-4">
-                <div className="d-flex justify-content-between align-items-center mb-4">
-                  <div>
-                    <h5 className="card-title fw-bold m-0">
-                      Lista de Usuarios
-                    </h5>
-                    <small className="text-muted">
-                      Administra y revisa los accesos de los empleados
-                    </small>
-                  </div>
-                  <div className="d-flex flex-wrap justify-content-end gap-2">
-                    <button
-                      className="btn btn-sm text-white bg-brand border-0 d-flex align-items-center gap-2 px-3 py-2 rounded-3"
-                      onClick={() => navigate("/gestion-usuarios/crear")}
-                    >
-                      <i className="bi bi-person-plus"></i>
-                      <span>Nuevo usuario</span>
-                    </button>
-                  </div>
-                </div>
-
-                {loading || cargandoUsuario ? (
-                  <div className="text-center my-5">
-                    <div className="spinner-border text-primary" role="status">
-                      <span className="visually-hidden">Cargando...</span>
-                    </div>
-                  </div>
-                ) : error ? (
-                  <div className="alert alert-danger my-3" role="alert">
-                    {error}
-                  </div>
-                ) : (
-                  <TablaUsuarios
-                    usuarios={usuarios}
-                    onEditar={abrirEdicion}
-                    onCambiarEstado={cambiarEstadoUsuario}
-                  />
-                )}
-              </div>
+      <SectionHeader titulo="Gestión de usuarios" volverA="/dashboard" />
+      <div className="container-fluid flex-grow-1 mb-4 px-4">
+        <div className="card border-0 shadow-sm rounded-3">
+          <div className="card-body p-4">
+            <div className="hp-card-header">
+              <div><h5 className="fw-bold mb-1">Colaboradores</h5>
+                <p className="text-muted small mb-0">Consulta expedientes y administra la información de tu equipo.</p></div>
+              <button type="button" className="btn btn-primary btn-sm" onClick={() => navigate("/gestion-usuarios/crear")}>
+                <i className="bi bi-person-plus me-2" aria-hidden="true" />Nuevo colaborador
+              </button>
             </div>
-          )}
+            {loading ? <div className="text-center py-5" role="status"><span className="spinner-border text-primary" /><p className="text-muted mt-2">Cargando colaboradores…</p></div>
+              : error ? <div className="alert alert-danger" role="alert">{error}</div>
+              : <TablaUsuarios usuarios={usuarios} onEditar={abrirEdicion} onCambiarEstado={cambiarEstadoUsuario} />}
+          </div>
         </div>
       </div>
+      {(usuarioSeleccionado || cargandoUsuario) && <ModalDialog
+        titulo="Editar expediente"
+        subtitulo="Los cambios se guardan sin salir del listado."
+        onClose={cancelarEdicion} size="xl" ocupado={guardando || cargandoUsuario}>
+        {cargandoUsuario ? <p role="status" className="text-muted py-4">Cargando expediente…</p> : <UsuarioFormCard
+          key={usuarioSeleccionado?.idUsuario || "nuevo"}
+          usuarioOriginal={usuarioSeleccionado || undefined}
+          usuariosDisponibles={usuarios}
+          onGuardar={guardarUsuario}
+          onCancelar={cancelarEdicion}
+        />}
+      </ModalDialog>}
     </AppLayout>
   );
 }

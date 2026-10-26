@@ -30,7 +30,7 @@ function PublicarBanner({
   };
 
   return (
-    <div className="card border-0 shadow-sm rounded-4 overflow-hidden bg-white">
+    <div className="card border-0 shadow-sm rounded-3 overflow-hidden bg-white">
       {/* Header Superior */}
       <div className="card-header bg-white border-bottom p-4 d-flex justify-content-between align-items-center">
         <div>

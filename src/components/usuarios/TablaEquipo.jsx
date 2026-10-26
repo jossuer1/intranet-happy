@@ -1,3 +1,4 @@
+import PersonaCelda from "../ui/PersonaCelda";
 import { useState } from "react";
 import HistorialVacacionesPanel from "../vacaciones/HistorialVacacionesPanel";
 
@@ -11,7 +12,7 @@ export default function TablaEquipo({ empleados = [], mostrarHistorial = false }
     <div className="table-responsive"><table className="table table-hover align-middle">
       <thead><tr><th>Empleado</th><th>Cargo / Área</th><th>Estado</th>{mostrarHistorial && <th>Vacaciones</th>}</tr></thead>
       <tbody>{filtrados.map(e => <tr key={e.idUsuario}>
-        <td className="fw-semibold">{e.nombre} {e.apellido}</td>
+        <td><PersonaCelda nombre={e.nombre} apellido={e.apellido} /></td>
         <td>{e.cargo || "—"}<small className="d-block text-muted">{e.area}</small></td>
         <td><span className={`badge ${e.estado ? "bg-success-subtle text-success" : "bg-secondary-subtle text-secondary"}`}>{e.estado ? "Activo" : "Inactivo"}</span></td>
         {mostrarHistorial && <td><button className="btn btn-sm btn-outline-primary" onClick={() => setSeleccionado({ ...e, nombre: `${e.nombre} ${e.apellido}` })}>Ver historial</button></td>}

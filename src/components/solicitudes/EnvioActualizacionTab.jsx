@@ -1,3 +1,5 @@
+import { estilosTabla as customStyles } from "../catalogos/tablaEstilos";
+import PersonaCelda from "../ui/PersonaCelda";
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import DataTable from "react-data-table-component";
@@ -16,18 +18,6 @@ import { estaActivo } from "../../utils/usuariosEstado";
 import { formatearFechaEC } from "../../utils/fechasEcuador";
 import { Toast, toastError, toastExito } from "../../utils/toast";
 
-const customStyles = {
-  headCells: {
-    style: {
-      textTransform: "uppercase",
-      fontSize: "12px",
-      fontWeight: 700,
-      color: "var(--bs-secondary-color, #6c757d)",
-      backgroundColor: "#f8f9fa",
-    },
-  },
-  rows: { style: { minHeight: "56px" } },
-};
 
 const paginationComponentOptions = {
   rowsPerPageText: "Filas por página:",
@@ -321,10 +311,7 @@ export default function EnvioActualizacionTab() {
       sortable: true,
       selector: (u) => u.nombres || u.nombre || "",
       cell: (u) => (
-        <div className="py-1">
-          <span className="fw-semibold d-block">{u.nombres || u.nombre || "N/A"}</span>
-          {u.cedula && <small className="text-muted d-block">C.I: {u.cedula}</small>}
-        </div>
+        <PersonaCelda nombre={u.nombres || u.nombre} apellido={u.apellidos || u.apellido} detalle={u.cedula ? `C.I. ${u.cedula}` : undefined} />
       ),
     },
     { name: "Área", sortable: true, selector: (u) => u.area || "—" },
@@ -379,8 +366,8 @@ export default function EnvioActualizacionTab() {
   const hayFiltros = filtro !== "todos" || filtroArea || busqueda;
 
   return (
-    <div className="card border-0 shadow-sm">
-      <div className="card-body p-3">
+    <div>
+      <div>
         {/* Encabezado + acción global */}
         <div className="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
           <div>

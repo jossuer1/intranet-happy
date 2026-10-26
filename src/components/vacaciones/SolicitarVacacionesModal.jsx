@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import ModalDialog from "../ui/ModalDialog";
+import { useMemo, useState } from "react";
 import Swal from "sweetalert2";
 import { crearSolicitudVacacion } from "../../services/vacacionesService";
 import { hoyEC } from "../../utils/fechasEcuador";
@@ -26,7 +27,18 @@ function SolicitarVacacionesModal({ diasDisponibles, onClose, onCreada }) {
   const [fechaInicio, setFechaInicio] = useState("");
   const [fechaFin, setFechaFin] = useState("");
   const [motivo, setMotivo] = useState("");
+  const [cobertura, setCobertura] = useState("persona");
+  const [nombreEncargado, setNombreEncargado] = useState("");
+  const [areaEncargado, setAreaEncargado] = useState("");
+  const [actividades, setActividades] = useState("");
   const [enviando, setEnviando] = useState(false);
+
+  const mensaje = cobertura === "persona"
+    ? `Durante mis vacaciones, ${nombreEncargado.trim()} (${areaEncargado.trim()}) quedará a cargo de: ${actividades.trim()}.`
+    : motivo.trim();
+  const coberturaCompleta = cobertura === "otra" || (
+    nombreEncargado.trim().length >= 3 && areaEncargado.trim().length >= 2 && actividades.trim().length >= 3
+  );
 
   const diasSolicitados = useMemo(
     () => calcularDiasRango(fechaInicio, fechaFin),
@@ -49,30 +61,21 @@ function SolicitarVacacionesModal({ diasDisponibles, onClose, onCreada }) {
   const puedeEnviar =
     fechaInicio &&
     fechaFin &&
-    motivo.trim().length >= 3 && motivo.trim().length <= 200 && fechaInicio >= hoyEC() &&
+    coberturaCompleta && mensaje.length >= 3 && mensaje.length <= 200 && fechaInicio >= hoyEC() &&
     !rangoInvalido &&
     !excedeSaldo &&
     diasSolicitados > 0;
 
-  // Cerrar con Escape, igual que UsuarioInfoModal
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [onClose]);
-
   const enviarSolicitud = async (e) => {
     e.preventDefault();
-    if (!puedeEnviar) return;
+    if (!puedeEnviar || enviando) return;
 
     try {
       setEnviando(true);
       await crearSolicitudVacacion({
         fechaInicio,
         fechaFin,
-        motivo: motivo.trim(),
+        motivo: mensaje,
       });
       Swal.fire({
         toast: true,
@@ -95,39 +98,14 @@ function SolicitarVacacionesModal({ diasDisponibles, onClose, onCreada }) {
   };
 
   return (
-    <div
-      className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center p-3"
-      style={{ backgroundColor: "rgba(0,0,0,0.5)", zIndex: 1050 }}
-      onClick={onClose}
-    >
-      <div
-        className="card shadow-lg border-0"
-        style={{ width: "min(480px, 100%)" }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="card-body p-4">
-          <div className="d-flex justify-content-between align-items-start mb-1">
-            <h5 className="fw-bold mb-0">
-              <i className="bi bi-calendar-plus text-brand me-2"></i>
-              Solicitar vacaciones
-            </h5>
-            <button
-              type="button"
-              className="btn-close"
-              aria-label="Cerrar"
-              onClick={onClose}
-            ></button>
-          </div>
-          <p className="text-muted small mb-4">
-            Tu jefe directo revisará esta solicitud primero; si la aprueba,
-            pasa a RRHH para el visto bueno final.
-          </p>
-
+    <ModalDialog titulo="Solicitar vacaciones" onClose={onClose} ocupado={enviando}
+      subtitulo="Tu jefe directo revisará la solicitud. Si la aprueba, se generarán los documentos y se notificará a RRHH.">
           <form onSubmit={enviarSolicitud}>
             <div className="row g-3">
               <div className="col-6">
-                <label className="form-label small fw-semibold">Desde</label>
+                <label htmlFor="vacaciones-desde" className="form-label small fw-semibold">Desde</label>
                 <input
+                  id="vacaciones-desde"
                   type="date"
                   className="form-control"
                   value={fechaInicio}
@@ -137,8 +115,9 @@ function SolicitarVacacionesModal({ diasDisponibles, onClose, onCreada }) {
                 />
               </div>
               <div className="col-6">
-                <label className="form-label small fw-semibold">Hasta</label>
+                <label htmlFor="vacaciones-hasta" className="form-label small fw-semibold">Hasta</label>
                 <input
+                  id="vacaciones-hasta"
                   type="date"
                   className="form-control"
                   value={fechaFin}
@@ -148,18 +127,46 @@ function SolicitarVacacionesModal({ diasDisponibles, onClose, onCreada }) {
                 />
               </div>
               <div className="col-12">
-                <label className="form-label small fw-semibold">Motivo</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder="Ej. Viaje familiar"
-                  value={motivo}
-                  onChange={(e) => setMotivo(e.target.value)}
-                  required
-                  minLength={3}
-                  maxLength={200}
-                />
+                <fieldset disabled={enviando}>
+                  <legend className="form-label small fw-semibold">Cobertura durante tu ausencia</legend>
+                  <div className="d-flex flex-wrap gap-3">
+                    <div className="form-check">
+                      <input id="cobertura-persona" className="form-check-input" type="radio" name="cobertura" checked={cobertura === "persona"} onChange={() => setCobertura("persona")} />
+                      <label className="form-check-label small" htmlFor="cobertura-persona">Una persona quedará encargada</label>
+                    </div>
+                    <div className="form-check">
+                      <input id="cobertura-otra" className="form-check-input" type="radio" name="cobertura" checked={cobertura === "otra"} onChange={() => setCobertura("otra")} />
+                      <label className="form-check-label small" htmlFor="cobertura-otra">Otra situación</label>
+                    </div>
+                  </div>
+                </fieldset>
               </div>
+              {cobertura === "persona" ? <>
+                <div className="col-12 col-md-6">
+                  <label htmlFor="cobertura-nombre" className="form-label small fw-semibold">Nombre de la persona encargada</label>
+                  <input id="cobertura-nombre" className="form-control" placeholder="Ej. Ariana Jácome" value={nombreEncargado} onChange={e => setNombreEncargado(e.target.value)} minLength={3} maxLength={80} required disabled={enviando} />
+                </div>
+                <div className="col-12 col-md-6">
+                  <label htmlFor="cobertura-area" className="form-label small fw-semibold">Área de la persona encargada</label>
+                  <input id="cobertura-area" className="form-control" placeholder="Ej. Finanzas" value={areaEncargado} onChange={e => setAreaEncargado(e.target.value)} minLength={2} maxLength={60} required disabled={enviando} />
+                </div>
+                <div className="col-12">
+                  <label htmlFor="cobertura-actividades" className="form-label small fw-semibold">Actividades que atenderá</label>
+                  <textarea id="cobertura-actividades" className="form-control" rows={3} placeholder="Ej. Seguimiento de pagos y atención de consultas pendientes" value={actividades} onChange={e => setActividades(e.target.value)} minLength={3} maxLength={150} required disabled={enviando} />
+                  <p className="text-muted small mt-2 mb-0">La cobertura propuesta será revisada por tu jefe directo.</p>
+                </div>
+              </> : <div className="col-12">
+                <label htmlFor="vacaciones-motivo" className="form-label small fw-semibold">Motivo u organización de actividades</label>
+                <textarea id="vacaciones-motivo" className="form-control" rows={3} placeholder="Explica el motivo o cómo se organizarán tus actividades durante tu ausencia." value={motivo} onChange={e => setMotivo(e.target.value)} required minLength={3} maxLength={200} disabled={enviando} />
+                <small className="text-muted d-block mt-1" aria-live="polite">{mensaje.length}/200 caracteres</small>
+              </div>}
+              {cobertura === "persona" && <div className="col-12">
+                <div className="bg-light border rounded-3 p-3">
+                  <h3 className="small fw-semibold mb-2">Vista previa del mensaje</h3>
+                  <p className="small mb-2" style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{coberturaCompleta && mensaje ? mensaje : "Completa la información para ver el mensaje que recibirá tu jefe."}</p>
+                  <small className={mensaje.length > 200 ? "text-danger" : "text-muted"} aria-live="polite">{mensaje.length}/200 caracteres{mensaje.length > 200 ? ". Resume la información para poder enviar la solicitud." : ""}</small>
+                </div>
+              </div>}
             </div>
 
             {/* Resumen en vivo: cuántos días le va a quitar y cuántos le quedan */}
@@ -208,9 +215,7 @@ function SolicitarVacacionesModal({ diasDisponibles, onClose, onCreada }) {
               </button>
             </div>
           </form>
-        </div>
-      </div>
-    </div>
+    </ModalDialog>
   );
 }
 

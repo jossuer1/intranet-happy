@@ -1,4 +1,6 @@
-import React from "react";
+import { formatearFecha } from "../../utils/dateUtils";
+import TablaInteractiva from "../ui/TablaInteractiva";
+import { useState } from "react";
 import DescargarDocumentos from "./DescargarDocumentos";
 
 const ESTADOS_SOLICITUD = {
@@ -20,66 +22,29 @@ export function BadgeEstadoSolicitud({ estado }) {
 }
 
 export function TablaSolicitudes({ solicitudes, loadingSolicitudes }) {
-  return (
-    <div className="table-responsive">
-      <table className="table table-hover align-middle mb-0">
-        <thead className="table-light">
-          <tr>
-            <th>Desde</th>
-            <th>Hasta</th>
-            <th>Días</th>
-            <th>Motivo</th>
-            <th>Estado</th>
-            <th>Jefe</th>
-            <th className="text-end">Documentos</th>
-          </tr>
-        </thead>
-        <tbody>
-          {loadingSolicitudes ? (
-            <tr>
-              <td colSpan={7} className="text-center text-muted py-4">
-                <div
-                  className="spinner-border spinner-border-sm text-primary me-2"
-                  role="status"
-                ></div>
-                Cargando solicitudes...
-              </td>
-            </tr>
-          ) : !solicitudes || solicitudes.length === 0 ? (
-            <tr>
-              <td colSpan={7} className="text-center text-muted py-4">
-                No has enviado solicitudes de vacaciones todavía.
-              </td>
-            </tr>
-          ) : (
-            solicitudes.map((s) => (
-              <tr key={s.idSolicitud}>
-                <td>{new Date(s.fechaInicio).toLocaleDateString()}</td>
-                <td>{new Date(s.fechaFin).toLocaleDateString()}</td>
-                <td>
-                  <span className="fw-semibold">{s.diasSolicitados}</span>
-                </td>
-                <td className="small text-muted">{s.motivo}</td>
-                <td>
-                  <BadgeEstadoSolicitud estado={s.estado} />
-                </td>
-                <td className="small text-muted">
-                  {s.jefeAprobadorNombre || "—"}
-                </td>
-                <td className="text-end">
-                  {s.estado === "APROBADA" ? (
-                    <DescargarDocumentos idSolicitud={s.idSolicitud} />
-                  ) : (
-                    <span className="text-muted small">—</span>
-                  )}
-                </td>
-              </tr>
-            ))
-          )}
-        </tbody>
-      </table>
-    </div>
-  );
+  const [estado, setEstado] = useState("");
+  const filtradas = (solicitudes || []).filter(s => !estado || s.estado === estado);
+  const columnas = [
+    { name: "Desde", selector: s => s.fechaInicio || "", sortable: true, cell: s => formatearFecha(s.fechaInicio) },
+    { name: "Hasta", selector: s => s.fechaFin || "", sortable: true, cell: s => formatearFecha(s.fechaFin) },
+    { name: "Días", selector: s => s.diasSolicitados, sortable: true, width: "85px" },
+    { name: "Motivo", selector: s => s.motivo || "", sortable: true, wrap: true, grow: 2 },
+    { name: "Estado", selector: s => ESTADOS_SOLICITUD[s.estado]?.texto || s.estado || "", sortable: true,
+      minWidth: "190px", cell: s => <BadgeEstadoSolicitud estado={s.estado} /> },
+    { name: "Jefe", selector: s => s.jefeAprobadorNombre || "—", sortable: true, wrap: true },
+    { name: "Documentos", button: true, minWidth: "150px", cell: s => s.estado === "APROBADA"
+      ? <DescargarDocumentos idSolicitud={s.idSolicitud} /> : <span className="text-muted small">—</span> },
+  ];
+  return <TablaInteractiva key={estado} datos={filtradas} columnas={columnas} keyField="idSolicitud" cargando={loadingSolicitudes}
+    filtros={<select className="form-select form-select-sm hp-filtro-tabla" aria-label="Filtrar solicitudes por estado" value={estado} onChange={e => setEstado(e.target.value)}>
+      <option value="">Todos los estados</option>
+      <option value="PENDIENTE_JEFE">Pendientes</option>
+      <option value="RECHAZADA_JEFE">Rechazadas</option>
+      <option value="APROBADA">Aprobadas</option>
+      <option value="ANULADA">Anuladas</option>
+    </select>}
+    etiqueta="Buscar solicitud por fecha, motivo, estado o jefe…"
+    buscarEn={s => `${formatearFecha(s.fechaInicio)} ${formatearFecha(s.fechaFin)} ${s.diasSolicitados} ${s.motivo || ""} ${ESTADOS_SOLICITUD[s.estado]?.texto || s.estado || ""} ${s.jefeAprobadorNombre || ""}`} />;
 }
 
 export default TablaSolicitudes;

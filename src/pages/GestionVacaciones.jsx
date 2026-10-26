@@ -1,5 +1,10 @@
-import React, { useState, useEffect } from "react";
-import DataTable from "react-data-table-component";
+import SectionHeader from "../components/layout/SectionHeader";
+import { formatearFecha } from "../utils/dateUtils";
+import ModalDialog from "../components/ui/ModalDialog";
+import TablaInteractiva from "../components/ui/TablaInteractiva";
+import PersonaCelda from "../components/ui/PersonaCelda";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import Swal from "sweetalert2";
 import AppLayout from "../components/layout/AppLayout";
 import HistorialVacacionesPanel from "../components/vacaciones/HistorialVacacionesPanel";
@@ -14,12 +19,15 @@ import {
 
 function GestionVacaciones() {
   const [tab, setTab] = useState("saldos");
-  const [personal, setPersonal] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  const [solicitudes, setSolicitudes] = useState([]);
-  const [loadingSolicitudes, setLoadingSolicitudes] = useState(true);
+  const resumen = useQuery({ queryKey: ["vacaciones", "resumen"], queryFn: getResumenVacaciones,
+    select: datos => Array.isArray(datos) ? datos : [] });
+  const personal = (resumen.data || []).filter(persona => persona.tieneVacaciones === true);
+  const loading = resumen.isPending;
+  const error = resumen.error?.message;
+  const consultaSolicitudes = useQuery({ queryKey: ["vacaciones", "todas-solicitudes"], queryFn: getTodasSolicitudes,
+    enabled: tab === "solicitudes", select: datos => Array.isArray(datos) ? datos : [] });
+  const solicitudes = consultaSolicitudes.data || [];
+  const loadingSolicitudes = consultaSolicitudes.isPending;
 
   const [usuarioSeleccionado, setUsuarioSeleccionado] = useState(null);
   const [usuarioHistorial, setUsuarioHistorial] = useState(null);
@@ -31,51 +39,9 @@ function GestionVacaciones() {
   const [procesando, setProcesando] = useState(false);
 
   // Estado para la búsqueda global
-  const [filterText, setFilterText] = useState("");
   const [filterArea, setFilterArea] = useState("");
-  // "" = todos | "con" = con vacaciones | "sin" = sin vacaciones
-  const [filterVacaciones, setFilterVacaciones] = useState("");
 
-  const cargarDatos = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await getResumenVacaciones();
-      setPersonal(Array.isArray(data) ? data : []);
-    } catch (err) {
-      setError(err.message || "Error al cargar la información de vacaciones.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    cargarDatos();
-  }, []);
-
-  // RRHH ya no aprueba solicitudes (solo el jefe directo): aquí solo las consulta
-  // y descarga los documentos de las aprobadas.
-  const cargarSolicitudes = async () => {
-    try {
-      setLoadingSolicitudes(true);
-      const data = await getTodasSolicitudes();
-      setSolicitudes(Array.isArray(data) ? data : []);
-    } catch (err) {
-      Swal.fire({
-        icon: "error",
-        title: "No se pudieron cargar las solicitudes",
-        text: err.message || "Inténtalo de nuevo en unos segundos.",
-      });
-    } finally {
-      setLoadingSolicitudes(false);
-    }
-  };
-
-  useEffect(() => {
-    if (tab === "solicitudes") {
-      cargarSolicitudes();
-    }
-  }, [tab]);
+  const cargarDatos = () => resumen.refetch();
 
   const calcularDiasRango = () => {
     if (!fechaInicio || !fechaFin) return 0;
@@ -180,24 +146,11 @@ function GestionVacaciones() {
     ...new Set(personal.map((p) => p.departamento).filter(Boolean)),
   ].sort((a, b) => a.localeCompare(b));
 
-  // Filtros combinables: nombre, área y si tiene/no tiene vacaciones
-  const filteredItems = personal.filter((item) => {
-    const nombre = item.nombre ? item.nombre.toLowerCase() : "";
-    const coincideNombre = nombre.includes(filterText.toLowerCase().trim());
-    const coincideArea = !filterArea || item.departamento === filterArea;
-    const sinBeneficio = item.tieneVacaciones === false;
-    const coincideVacaciones =
-      !filterVacaciones ||
-      (filterVacaciones === "con" && !sinBeneficio) ||
-      (filterVacaciones === "sin" && sinBeneficio);
-    return coincideNombre && coincideArea && coincideVacaciones;
-  });
+  const filteredItems = personal.filter(item => !filterArea || item.departamento === filterArea);
 
-  const hayFiltros = filterText || filterArea || filterVacaciones;
+  const hayFiltros = !!filterArea;
   const limpiarFiltros = () => {
-    setFilterText("");
     setFilterArea("");
-    setFilterVacaciones("");
   };
 
   // Configuración de columnas para React Data Table Component
@@ -207,7 +160,7 @@ function GestionVacaciones() {
       selector: (row) => row.nombre,
       sortable: true,
       cell: (row) => (
-        <span className="fw-semibold text-dark">{row.nombre}</span>
+        <PersonaCelda nombre={row.nombre} />
       ),
     },
     {
@@ -279,7 +232,7 @@ function GestionVacaciones() {
           <div className="d-flex justify-content-end gap-2">
             <button
               type="button"
-              className="btn btn-sm btn-outline-info rounded-3 px-3"
+              className="btn btn-sm btn-outline-primary rounded-3 px-3"
               onClick={() => setUsuarioHistorial(row)}
             >
               <i className="bi bi-clock-history me-1"></i>
@@ -299,78 +252,21 @@ function GestionVacaciones() {
   ];
 
   // Opciones de localización en español para la tabla
-  const paginationComponentOptions = {
-    rowsPerPageText: "Filas por página:",
-    rangeSeparatorText: "de",
-    selectAllRowsItem: true,
-    selectAllRowsItemText: "Todos",
-  };
+
+  const columnasSolicitudes = [
+    { name: "Colaborador", selector: s => s.solicitanteNombre, sortable: true, minWidth: "240px", cell: s => <PersonaCelda nombre={s.solicitanteNombre} /> },
+    { name: "Período", selector: s => s.fechaInicio, sortable: true, minWidth: "160px", cell: s => <div>{formatearFecha(s.fechaInicio)}<small className="text-muted d-block">hasta {formatearFecha(s.fechaFin)}</small></div> },
+    { name: "Días", selector: s => s.diasSolicitados, sortable: true, width: "90px" },
+    { name: "Motivo", selector: s => s.motivo, sortable: true, minWidth: "190px", wrap: true },
+    { name: "Estado", selector: s => s.estado, sortable: true, minWidth: "175px", cell: s => <BadgeEstadoSolicitud estado={s.estado} /> },
+    { name: "Jefe", selector: s => s.jefeAprobadorNombre || "Sin asignar", sortable: true, minWidth: "170px", wrap: true },
+    { name: "Documentos", width: "150px", cell: s => s.estado === "APROBADA" ? <DescargarDocumentos idSolicitud={s.idSolicitud} /> : <span className="text-muted">—</span>, ignoreRowClick: true },
+  ];
 
   return (
     <AppLayout usuarioRol="RRHH">
-      <div className="card border-0 shadow-sm rounded-4 p-4">
-        <div className="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom flex-wrap gap-2">
-          <div>
-            <h6 className="fw-bold text-dark m-0 d-flex align-items-center gap-2">
-              <i className="bi bi-calendar2-range text-primary"></i>
-              Gestión de Vacaciones
-            </h6>
-            <small className="text-muted">
-              Asignación de períodos vacacionales y acreditación de saldo por
-              antigüedad
-            </small>
-          </div>
-        </div>
-
-        {!loading && !error && tab === "saldos" && (
-          <div className="row g-2 mb-3 align-items-center">
-            <div className="col-12 col-md-4">
-              <input
-                type="search"
-                className="form-control form-control-sm rounded-3"
-                placeholder="Buscar por nombre..."
-                value={filterText}
-                onChange={(e) => setFilterText(e.target.value)}
-              />
-            </div>
-            <div className="col-6 col-md-3">
-              <select
-                className="form-select form-select-sm rounded-3"
-                value={filterArea}
-                onChange={(e) => setFilterArea(e.target.value)}
-              >
-                <option value="">Todas las áreas</option>
-                {areas.map((a) => (
-                  <option key={a} value={a}>
-                    {a}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="col-6 col-md-3">
-              <select
-                className="form-select form-select-sm rounded-3"
-                value={filterVacaciones}
-                onChange={(e) => setFilterVacaciones(e.target.value)}
-              >
-                <option value="">Con y sin vacaciones</option>
-                <option value="con">Con vacaciones</option>
-                <option value="sin">Sin vacaciones</option>
-              </select>
-            </div>
-            <div className="col-12 col-md-2">
-              {hayFiltros && (
-                <button
-                  type="button"
-                  className="btn btn-sm btn-outline-secondary rounded-3 w-100"
-                  onClick={limpiarFiltros}
-                >
-                  <i className="bi bi-x-circle me-1"></i>Limpiar
-                </button>
-              )}
-            </div>
-          </div>
-        )}
+      <SectionHeader titulo="Gestión de Vacaciones" subtitulo="Saldos y solicitudes" />
+      <div className="container-fluid mb-4 px-4"><div className="card border-0 shadow-sm rounded-3"><div className="card-body p-4">
 
         <ul className="nav nav-pills mb-4 gap-2">
           <li className="nav-item">
@@ -393,60 +289,11 @@ function GestionVacaciones() {
           </li>
         </ul>
 
+        {tab === "solicitudes" && consultaSolicitudes.isError && <div className="alert alert-danger" role="alert">{consultaSolicitudes.error.message}</div>}
         {tab === "solicitudes" ? (
-          loadingSolicitudes ? (
-            <div className="text-center my-5 py-4">
-              <div className="spinner-border text-primary" role="status">
-                <span className="visually-hidden">Cargando solicitudes...</span>
-              </div>
-            </div>
-          ) : solicitudes.length === 0 ? (
-            <div className="text-center text-muted py-5">
-              <i className="bi bi-check2-circle fs-1 d-block mb-3"></i>
-              Todavía no hay solicitudes de vacaciones.
-            </div>
-          ) : (
-            <div className="table-responsive">
-              <table className="table table-hover align-middle">
-                <thead className="table-light">
-                  <tr>
-                    <th>Empleado</th>
-                    <th>Desde</th>
-                    <th>Hasta</th>
-                    <th>Días</th>
-                    <th>Motivo</th>
-                    <th>Estado</th>
-                    <th>Jefe</th>
-                    <th className="text-end">Documentos</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {solicitudes.map((s) => (
-                    <tr key={s.idSolicitud}>
-                      <td className="fw-semibold">{s.solicitanteNombre}</td>
-                      <td>{new Date(s.fechaInicio).toLocaleDateString()}</td>
-                      <td>{new Date(s.fechaFin).toLocaleDateString()}</td>
-                      <td>{s.diasSolicitados}</td>
-                      <td className="small text-muted">{s.motivo}</td>
-                      <td>
-                        <BadgeEstadoSolicitud estado={s.estado} />
-                      </td>
-                      <td className="small text-muted">
-                        {s.jefeAprobadorNombre || "—"}
-                      </td>
-                      <td className="text-end">
-                        {s.estado === "APROBADA" ? (
-                          <DescargarDocumentos idSolicitud={s.idSolicitud} />
-                        ) : (
-                          <span className="text-muted small">—</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )
+          <TablaInteractiva datos={solicitudes} columnas={columnasSolicitudes} keyField="idSolicitud" cargando={loadingSolicitudes}
+            etiqueta="Buscar empleado, motivo, estado o jefe…"
+            buscarEn={s => `${s.solicitanteNombre} ${s.motivo} ${s.estado.replaceAll("_", " ")} ${s.jefeAprobadorNombre || ""} ${formatearFecha(s.fechaInicio)} ${formatearFecha(s.fechaFin)}`} />
         ) : loading ? (
           <div className="text-center my-5 py-4">
             <div className="spinner-border text-primary" role="status">
@@ -458,28 +305,14 @@ function GestionVacaciones() {
             {error}
           </div>
         ) : (
-          <DataTable
-            columns={columns}
-            data={filteredItems}
-            pagination
-            paginationPerPage={10}
-            paginationComponentOptions={paginationComponentOptions}
-            noDataComponent={
-              <div className="text-center text-muted py-4">
-                No se encontraron colaboradores.
-              </div>
-            }
-            conditionalRowStyles={[
-              {
-                when: (row) => row.tieneVacaciones === false,
-                style: {
-                  opacity: 0.5,
-                },
-              },
-            ]}
-            highlightOnHover
-            responsive
-          />
+          <TablaInteractiva key={filterArea} datos={filteredItems} columnas={columns} keyField="idUsuario"
+            filtros={<>
+              <select aria-label="Filtrar por área" className="form-select form-select-sm hp-filtro-tabla" value={filterArea} onChange={e => setFilterArea(e.target.value)}>
+                <option value="">Todas las áreas</option>{areas.map(a => <option key={a} value={a}>{a}</option>)}
+              </select>
+            </>}
+            accionesFiltros={hayFiltros && <button type="button" className="btn btn-sm btn-outline-secondary" onClick={limpiarFiltros}>Limpiar</button>}
+            etiqueta="Buscar colaborador, área o fecha…" buscarEn={p => `${p.nombre} ${p.departamento || ""} ${formatearFecha(p.fechaIngreso) || ""}`} />
         )}
 
         {usuarioHistorial && (
@@ -490,25 +323,8 @@ function GestionVacaciones() {
         )}
 
         {usuarioSeleccionado && (
-          <div
-            className="modal fade show d-block"
-            tabIndex="-1"
-            style={{ backgroundColor: "rgba(0,0,0,0.4)" }}
-          >
-            <div className="modal-dialog modal-dialog-centered">
-              <div className="modal-content border-0 shadow rounded-4">
-                <div className="modal-header border-bottom">
-                  <h6 className="modal-title fw-bold">
-                    Gestionar Vacaciones: {usuarioSeleccionado.nombre}
-                  </h6>
-                  <button
-                    type="button"
-                    className="btn-close"
-                    disabled={procesando}
-                    onClick={() => setUsuarioSeleccionado(null)}
-                  ></button>
-                </div>
-                <div className="modal-body p-4">
+          <ModalDialog titulo={`Gestionar vacaciones: ${usuarioSeleccionado.nombre}`} onClose={() => setUsuarioSeleccionado(null)} ocupado={procesando} bodyClassName="p-0">
+<div className="modal-body p-4">
                   <div className="mb-3">
                     <label className="form-label text-muted small fw-bold">
                       ¿Qué acción deseas realizar?
@@ -625,11 +441,9 @@ function GestionVacaciones() {
                         : "Acreditar Días"}
                   </button>
                 </div>
-              </div>
-            </div>
-          </div>
+          </ModalDialog>
         )}
-      </div>
+      </div></div></div>
     </AppLayout>
   );
 }

@@ -1,3 +1,4 @@
+import PersonaCelda from "../ui/PersonaCelda";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import DataTable from "react-data-table-component";
@@ -153,12 +154,7 @@ function AsignarRoles() {
       sortable: true,
       grow: 2,
       cell: (u) => (
-        <div className="py-1">
-          <span className="fw-semibold d-block">{nombreCompleto(u)}</span>
-          {u.cedula && (
-            <small className="text-muted d-block">C.I: {u.cedula}</small>
-          )}
-        </div>
+        <PersonaCelda nombre={nombreCompleto(u)} detalle={u.cedula ? `C.I. ${u.cedula}` : undefined} />
       ),
     },
     {

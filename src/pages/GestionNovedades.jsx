@@ -1,3 +1,4 @@
+import SectionHeader from "../components/layout/SectionHeader";
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
@@ -190,14 +191,8 @@ function GestionNovedades() {
 
   return (
     <AppLayout>
-      <div className="container-fluid px-4 my-4">
-        <div className="d-flex align-items-center mb-4">
-          <i className="bi bi-megaphone-fill fs-3 text-primary me-2"></i>
-          <h4 className="m-0 text-secondary fw-bold">
-            Gestión de Novedades e Intranet
-          </h4>
-        </div>
-
+      <SectionHeader titulo="Gestión de Novedades" subtitulo={esPublicar ? "Publicar banner" : "Banners"} />
+      <div className="container-fluid px-4 mb-4">
         <div className="w-100">
           {esPublicar ? (
             <PublicarBanner

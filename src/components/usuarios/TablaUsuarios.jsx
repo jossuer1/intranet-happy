@@ -1,25 +1,10 @@
-import React, { useState, useMemo, memo } from "react";
+import { estilosTabla as customStyles } from "../catalogos/tablaEstilos";
+import PersonaCelda from "../ui/PersonaCelda";
+import UsuarioInfoModal from "./UsuarioInfoModal";
+import { useState, useMemo, memo } from "react";
 import DataTable from "react-data-table-component";
-import { useNavigate } from "react-router-dom";
 import { estaActivo } from "../../utils/usuariosEstado";
 
-const customStyles = {
-  headCells: {
-    style: {
-      textTransform: "uppercase",
-      fontSize: "12px",
-      fontWeight: 700,
-      color: "var(--bs-secondary-color, #6c757d)",
-      backgroundColor: "#f8f9fa",
-    },
-  },
-  rows: {
-    style: {
-      minHeight: "56px",
-      cursor: "pointer",
-    },
-  },
-};
 
 const paginationComponentOptions = {
   rowsPerPageText: "Filas por página:",
@@ -47,7 +32,7 @@ function TablaUsuarios({ usuarios = [], onEditar, onCambiarEstado }) {
     setFiltroArea("");
     setFilterText("");
   };
-  const navigate = useNavigate();
+  const [usuarioInfo, setUsuarioInfo] = useState(null);
 
   // Filtrado memoizado para evitar recalcular en cada re-render del padre
   const filteredItems = useMemo(() => {
@@ -60,7 +45,7 @@ function TablaUsuarios({ usuarios = [], onEditar, onCambiarEstado }) {
 
       if (!search) return true;
 
-      const nombre = (item.nombres || item.nombre || "").toLowerCase();
+      const nombre = `${item.nombres || item.nombre || ""} ${item.apellidos || item.apellido || ""}`.toLowerCase();
       const correo = (item.correoEmpresa || item.correo || "").toLowerCase();
       const cedula = (item.cedula || "").toLowerCase();
 
@@ -76,46 +61,27 @@ function TablaUsuarios({ usuarios = [], onEditar, onCambiarEstado }) {
   const columns = useMemo(
     () => [
       {
-        name: "#",
-        selector: (row, index) => index + 1,
-        width: "60px",
-      },
-      {
-        name: "Usuario",
-        selector: (row) => row.nombres || row.nombre || "Sin nombre",
+        name: "Colaborador",
+        selector: (row) => `${row.nombres || row.nombre || ""} ${row.apellidos || row.apellido || ""}`.trim(),
+        minWidth: "240px",
         sortable: true,
         cell: (row) => (
-          <div className="py-1">
-            <span className="fw-semibold d-block">
-              {row.nombres || row.nombre || "N/A"}
-            </span>
-            {row.cedula && (
-              <small className="text-muted d-block">C.I: {row.cedula}</small>
-            )}
-          </div>
+          <PersonaCelda nombre={row.nombres || row.nombre} apellido={row.apellidos || row.apellido} detalle={<>{row.correoEmpresa || row.correo}{row.cedula && <span className="d-block">C.I. {row.cedula}</span>}</>} />
         ),
       },
       {
-        name: "Correo",
-        selector: (row) => row.correoEmpresa || row.correo || "N/A",
-        sortable: true,
-      },
-      {
-        name: "Área",
+        name: "Área y cargo",
         selector: (row) => row.area || "N/A",
         sortable: true,
-      },
-      {
-        name: "Cargo",
-        selector: (row) => row.cargo || row.nombreCargo || "N/A",
-        sortable: true,
+        minWidth: "210px",
+        cell: row => <div><span className="d-block fw-medium">{row.area || "Sin área"}</span><small className="text-muted">{row.cargo || row.nombreCargo || "Sin cargo"}</small></div>,
       },
 
       {
         name: "Vacaciones",
         selector: (row) => (row.tieneVacaciones === false ? "No" : "Sí"),
         sortable: true,
-        width: "130px",
+        width: "135px",
         cell: (row) => {
           const tiene = row.tieneVacaciones !== false;
           return (
@@ -135,7 +101,7 @@ function TablaUsuarios({ usuarios = [], onEditar, onCambiarEstado }) {
         name: "Estado",
         selector: (row) => row.estado,
         sortable: true,
-        width: "120px",
+        width: "100px",
         cell: (row) => {
           const esActivo = estaActivo(row);
 
@@ -150,7 +116,7 @@ function TablaUsuarios({ usuarios = [], onEditar, onCambiarEstado }) {
       },
       {
         name: "Acciones",
-        width: "170px",
+        width: "155px",
         cell: (row) => {
           const esActivo = estaActivo(row);
           return (
@@ -161,7 +127,7 @@ function TablaUsuarios({ usuarios = [], onEditar, onCambiarEstado }) {
                 title="Ver información"
                 onClick={(e) => {
                   e.stopPropagation();
-                  navigate(`/perfiles/${row.idUsuario}`);
+                  setUsuarioInfo(row);
                 }}
               >
                 <i className="bi bi-eye"></i>
@@ -200,17 +166,17 @@ function TablaUsuarios({ usuarios = [], onEditar, onCambiarEstado }) {
         button: true,
       },
     ],
-    [onEditar, onCambiarEstado, navigate],
+    [onEditar, onCambiarEstado],
   );
 
   return (
-    <div className="card shadow-sm border-0">
-      <div className="card-body p-3">
+    <>
+      <div>
         {/* BUSCADOR CON ICONO DE BOOTSTRAP */}
         {/* FILTROS + BUSCADOR */}
-        <div className="d-flex flex-wrap justify-content-end align-items-center gap-2 mb-3">
+        <div className="hp-filtros">
           <select
-            className="form-select form-select-sm"
+            className="form-select form-select-sm" aria-label="Filtrar colaboradores"
             style={{ maxWidth: "170px" }}
             value={filtroEstado}
             onChange={(e) => setFiltroEstado(e.target.value)}
@@ -221,7 +187,7 @@ function TablaUsuarios({ usuarios = [], onEditar, onCambiarEstado }) {
           </select>
 
           <select
-            className="form-select form-select-sm"
+            className="form-select form-select-sm" aria-label="Filtrar colaboradores"
             style={{ maxWidth: "200px" }}
             value={filtroArea}
             onChange={(e) => setFiltroArea(e.target.value)}
@@ -244,7 +210,7 @@ function TablaUsuarios({ usuarios = [], onEditar, onCambiarEstado }) {
             <input
               type="text"
               className="form-control border-start-0 ps-0"
-              placeholder="Buscar por nombre, correo o cédula..."
+              aria-label="Buscar colaboradores" placeholder="Buscar nombre, correo o cédula..."
               value={filterText}
               onChange={(e) => setFilterText(e.target.value)}
             />
@@ -270,13 +236,14 @@ function TablaUsuarios({ usuarios = [], onEditar, onCambiarEstado }) {
           highlightOnHover
           pointerOnHover
           responsive
-          onRowClicked={(row) => onEditar?.(row)}
+          onRowClicked={(row) => setUsuarioInfo(row)}
           noDataComponent={
             <div className="p-4 text-muted">No hay usuarios para mostrar</div>
           }
         />
       </div>
-    </div>
+      {usuarioInfo && <UsuarioInfoModal usuario={usuarioInfo} onClose={() => setUsuarioInfo(null)} />}
+    </>
   );
 }
 

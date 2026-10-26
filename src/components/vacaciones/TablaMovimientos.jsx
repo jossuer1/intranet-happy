@@ -1,4 +1,7 @@
-import React, { useState } from "react";
+import { formatearFecha } from "../../utils/dateUtils";
+import ModalDialog from "../ui/ModalDialog";
+import { useState } from "react";
+import TablaInteractiva from "../ui/TablaInteractiva";
 
 function badgeTipoMovimiento(tipo) {
   return tipo === "Descuento" ? "bg-danger" : "bg-success";
@@ -6,104 +9,35 @@ function badgeTipoMovimiento(tipo) {
 
 export function TablaMovimientos({ movimientos, loadingHistorial }) {
   const [movimientoSeleccionado, setMovimientoSeleccionado] = useState(null);
+  const [tipo, setTipo] = useState("");
+  const filtrados = (movimientos || []).filter(m => !tipo || m.tipoMovimiento === tipo);
 
+  const columnas = [
+    { name: "Tipo", selector: m => m.tipoMovimiento || "", sortable: true,
+      cell: m => <span className={`badge ${badgeTipoMovimiento(m.tipoMovimiento)}`}>{m.tipoMovimiento}</span> },
+    { name: "Desde", selector: m => m.fechaInicio || "", sortable: true, cell: m => m.fechaInicio ? formatearFecha(m.fechaInicio) : "—" },
+    { name: "Hasta", selector: m => m.fechaFin || "", sortable: true, cell: m => m.fechaFin ? formatearFecha(m.fechaFin) : "—" },
+    { name: "Días", selector: m => m.diasTomados, sortable: true, width: "85px" },
+    { name: "Observación", selector: m => m.observacion || "—", sortable: true, wrap: true, grow: 2 },
+    { name: "Registrado por", selector: m => m.registradoPorNombre || "Sistema", sortable: true, wrap: true },
+    { name: "Detalle", button: true, cell: m => <button type="button" className="btn btn-sm btn-outline-secondary rounded-circle"
+      onClick={() => setMovimientoSeleccionado(m)} title="Ver detalle del movimiento" aria-label="Ver detalle del movimiento"><i className="bi bi-eye" /></button> },
+  ];
   return (
     <>
-      <div className="table-responsive">
-        <table className="table table-hover align-middle mb-0">
-          <thead className="table-light">
-            <tr>
-              <th>Tipo</th>
-              <th>Desde</th>
-              <th>Hasta</th>
-              <th>Días</th>
-              <th>Observación</th>
-              <th>Registrado por</th>
-              <th className="text-center">Detalle</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loadingHistorial ? (
-              <tr>
-                <td colSpan="7" className="text-center text-muted py-4">
-                  <div
-                    className="spinner-border spinner-border-sm text-primary me-2"
-                    role="status"
-                  ></div>
-                  Cargando historial de movimientos...
-                </td>
-              </tr>
-            ) : !movimientos || movimientos.length === 0 ? (
-              <tr>
-                <td colSpan="7" className="text-center text-muted py-4">
-                  No tienes movimientos de vacaciones registrados.
-                </td>
-              </tr>
-            ) : (
-              movimientos.map((m) => (
-                <tr key={m.idVacacion}>
-                  <td>
-                    <span
-                      className={`badge ${badgeTipoMovimiento(m.tipoMovimiento)}`}
-                    >
-                      {m.tipoMovimiento}
-                    </span>
-                  </td>
-                  <td>
-                    {m.fechaInicio
-                      ? new Date(m.fechaInicio).toLocaleDateString()
-                      : "—"}
-                  </td>
-                  <td>
-                    {m.fechaFin
-                      ? new Date(m.fechaFin).toLocaleDateString()
-                      : "—"}
-                  </td>
-                  <td>
-                    <span className="fw-semibold">{m.diasTomados}</span>
-                  </td>
-                  <td
-                    className="text-muted small text-truncate"
-                    style={{ maxWidth: "220px" }}
-                  >
-                    {m.observacion || "—"}
-                  </td>
-                  <td className="text-muted small">{m.registradoPorNombre}</td>
-                  <td className="text-center">
-                    <button
-                      type="button"
-                      className="btn btn-sm btn-outline-secondary rounded-circle"
-                      onClick={() => setMovimientoSeleccionado(m)}
-                      title="Ver detalle del movimiento"
-                    >
-                      <i className="bi bi-eye"></i>
-                    </button>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+      <TablaInteractiva key={tipo} datos={filtrados} columnas={columnas} keyField="idVacacion" cargando={loadingHistorial}
+        filtros={<select className="form-select form-select-sm hp-filtro-tabla" aria-label="Filtrar movimientos por tipo" value={tipo} onChange={e => setTipo(e.target.value)}>
+          <option value="">Todos los tipos</option>
+          <option value="Ajuste">Ajustes</option>
+          <option value="Descuento">Descuentos</option>
+        </select>}
+        etiqueta="Buscar movimiento por tipo, fecha, observación o responsable…"
+        buscarEn={m => `${m.tipoMovimiento || ""} ${m.fechaInicio ? formatearFecha(m.fechaInicio) : ""} ${m.fechaFin ? formatearFecha(m.fechaFin) : ""} ${m.diasTomados} ${m.observacion || ""} ${m.registradoPorNombre || "Sistema"}`} />
 
       {/* MODAL DETALLE DE MOVIMIENTO (OJITO) */}
       {movimientoSeleccionado && (
-        <div
-          className="modal fade show d-block"
-          tabIndex="-1"
-          style={{ backgroundColor: "rgba(0,0,0,0.5)", zIndex: 1060 }}
-        >
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content border-0 shadow">
-              <div className="modal-header border-bottom-0 pb-0">
-                <h5 className="modal-title fw-bold">Detalle del Movimiento</h5>
-                <button
-                  type="button"
-                  className="btn-close"
-                  onClick={() => setMovimientoSeleccionado(null)}
-                ></button>
-              </div>
-              <div className="modal-body py-3">
+          <ModalDialog titulo={"Detalle del movimiento"} onClose={() => setMovimientoSeleccionado(null)} bodyClassName="p-0">
+<div className="modal-body py-3">
                 <div className="mb-3 d-flex align-items-center gap-2">
                   <span className="fw-semibold">Tipo de Movimiento:</span>
                   <span
@@ -118,9 +52,7 @@ export function TablaMovimientos({ movimientos, loadingHistorial }) {
                     <small className="text-muted d-block">Fecha Inicio</small>
                     <span className="fw-semibold">
                       {movimientoSeleccionado.fechaInicio
-                        ? new Date(
-                            movimientoSeleccionado.fechaInicio,
-                          ).toLocaleDateString()
+                        ? formatearFecha(movimientoSeleccionado.fechaInicio)
                         : "—"}
                     </span>
                   </div>
@@ -128,9 +60,7 @@ export function TablaMovimientos({ movimientos, loadingHistorial }) {
                     <small className="text-muted d-block">Fecha Fin</small>
                     <span className="fw-semibold">
                       {movimientoSeleccionado.fechaFin
-                        ? new Date(
-                            movimientoSeleccionado.fechaFin,
-                          ).toLocaleDateString()
+                        ? formatearFecha(movimientoSeleccionado.fechaFin)
                         : "—"}
                     </span>
                   </div>
@@ -169,10 +99,8 @@ export function TablaMovimientos({ movimientos, loadingHistorial }) {
                   Cerrar
                 </button>
               </div>
-            </div>
-          </div>
-        </div>
-      )}
+          </ModalDialog>
+        )}
     </>
   );
 }

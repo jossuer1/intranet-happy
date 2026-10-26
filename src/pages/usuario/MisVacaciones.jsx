@@ -15,8 +15,8 @@ import { useAuthStore } from "../../store/useAuthStore";
 function TarjetaResumen({ etiqueta, valor }) {
   return (
     <div className="col-12 col-sm-4">
-      <div className="card shadow-sm border-0 h-100 text-center">
-        <div className="card-body p-4">
+      <div className="h-100 text-center">
+        <div className="p-3">
           <p className="text-uppercase text-muted fw-bold small mb-2">
             {etiqueta}
           </p>
@@ -128,9 +128,9 @@ function MisVacaciones() {
               "No se pudo cargar la información de tus vacaciones."}
           </div>
         ) : (
-          <>
-            {/* CARDS DE RESUMEN SUPERIOR */}
-            <div className="row g-3 mb-4">
+          <div className="card border-0 shadow-sm mb-4">
+            {/* Resumen integrado */}
+            <div className="row g-0 mx-0 border-bottom">
               <TarjetaResumen
                 etiqueta="Días asignados"
                 valor={saldo?.diasAsignados ?? 0}
@@ -146,7 +146,7 @@ function MisVacaciones() {
             </div>
 
             {/* CONTENEDOR CON PESTAÑAS Y TABLA DINÁMICA */}
-            <div className="card shadow-sm border-0 mb-4">
+            <div>
               <div className="card-header bg-white border-bottom pt-3 pb-0 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
                 {/* PESTAÑAS DE NAVEGACIÓN */}
                 <ul className="nav nav-tabs card-header-tabs border-bottom-0">
@@ -204,7 +204,7 @@ function MisVacaciones() {
                 )}
               </div>
             </div>
-          </>
+          </div>
         )}
       </div>
 

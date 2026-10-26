@@ -1,3 +1,6 @@
+import SectionHeader from "../components/layout/SectionHeader";
+import ModalDialog from "../components/ui/ModalDialog";
+import PersonaCelda from "../components/ui/PersonaCelda";
 import React, { useEffect, useState } from "react";
 import Swal from "sweetalert2";
 import AppLayout from "../components/layout/AppLayout";
@@ -88,8 +91,9 @@ function SaldosPersonal() {
 
   return (
     <AppLayout usuarioRol="RRHH">
-      <div className="container-fluid py-3">
-        <div className="card border-0 shadow-sm rounded-4 p-4">
+      <SectionHeader titulo="Saldos de vacaciones" volverA="/gestion-vacaciones" />
+      <div className="container-fluid px-4 mb-4">
+        <div className="card border-0 shadow-sm rounded-3 p-4">
           <div className="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
             <div>
               <h6 className="fw-bold text-dark m-0 d-flex align-items-center gap-2">
@@ -163,7 +167,7 @@ function SaldosPersonal() {
                           key={idItem}
                           className={sinBeneficio ? "opacity-50" : ""}
                         >
-                          <td className="fw-semibold text-dark">{nombre}</td>
+                          <td><PersonaCelda nombre={nombre} /></td>
                           <td>
                             <span className="badge bg-light text-dark border fw-normal">
                               {depto}
@@ -188,7 +192,7 @@ function SaldosPersonal() {
                           <td className="text-end">
                             <button
                               type="button"
-                              className="btn btn-sm btn-outline-info rounded-3 px-3 me-2"
+                              className="btn btn-sm btn-outline-primary rounded-3 px-3 me-2"
                               onClick={() => setUsuarioHistorial(item)}
                             >
                               <i className="bi bi-clock-history me-1"></i>
@@ -223,25 +227,8 @@ function SaldosPersonal() {
 
           {/* Modal para Sumar/Acreditar Días */}
           {usuarioAcreditar && (
-            <div
-              className="modal fade show d-block"
-              style={{ backgroundColor: "rgba(0,0,0,0.4)" }}
-            >
-              <div className="modal-dialog modal-dialog-centered">
-                <div className="modal-content border-0 shadow rounded-4">
-                  <div className="modal-header border-bottom">
-                    <h6 className="modal-title fw-bold">
-                      Acreditar Días -{" "}
-                      {usuarioAcreditar.nombre || usuarioAcreditar.nombres}
-                    </h6>
-                    <button
-                      type="button"
-                      className="btn-close"
-                      disabled={procesando}
-                      onClick={() => setUsuarioAcreditar(null)}
-                    ></button>
-                  </div>
-                  <div className="modal-body p-4">
+          <ModalDialog titulo={`Acreditar días: ${usuarioAcreditar.nombre || usuarioAcreditar.nombres}`} onClose={() => setUsuarioAcreditar(null)} ocupado={procesando} bodyClassName="p-0">
+<div className="modal-body p-4">
                     <div className="mb-3">
                       <label className="form-label text-muted small fw-semibold">
                         Días Adicionales a Sumar
@@ -290,10 +277,8 @@ function SaldosPersonal() {
                       {procesando ? "Acreditando..." : "Guardar Acreditación"}
                     </button>
                   </div>
-                </div>
-              </div>
-            </div>
-          )}
+          </ModalDialog>
+        )}
         </div>
       </div>
     </AppLayout>

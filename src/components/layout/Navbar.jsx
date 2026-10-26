@@ -26,7 +26,7 @@ function Navbar() {
       text: "¿Estás seguro de que deseas salir del sistema?",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: "#055158",
+      confirmButtonColor: "#004d40",
       cancelButtonColor: "#d33",
       confirmButtonText: "Sí, salir",
       cancelButtonText: "Cancelar",
@@ -39,44 +39,15 @@ function Navbar() {
   };
 
   return (
-    <div className="flex-shrink-0" style={{ maxWidth: "min(380px, 60%)" }}>
-      <style>{`
-        .user-card {
-          background-color: #055158;
-          color: #fff;
-          border: 0;
-          border-radius: 10px;
-          height: 56px;
-          padding: 0 22px;
-          max-width: 100%;
-          box-shadow: 0 4px 14px rgba(5, 81, 88, 0.25);
-          transition: background-color 0.15s ease-in-out;
-        }
-        .user-card:hover,
-        .user-card:focus-visible,
-        .user-card.show {
-          background-color: #04444a;
-          color: #fff;
-        }
-        .user-card::after { display: none; } /* quita la flechita de Bootstrap */
-        .user-card .user-card-nombre {
-          font-size: 0.82rem;
-          font-weight: 700;
-          text-transform: uppercase;
-          line-height: 1.2;
-        }
-        .user-card .user-card-cargo {
-          font-size: 0.75rem;
-          color: rgba(255, 255, 255, 0.85);
-          line-height: 1.2;
-        }
-      `}</style>
+    <div className="hp-perfil-menu flex-shrink-0">
+
 
       <div className="dropdown">
         <button
           type="button"
           className="user-card dropdown-toggle d-flex align-items-center gap-3 text-start"
           id="dropdownMenuUser"
+          aria-label={`Menú de ${nombreCompleto}`}
           data-bs-toggle="dropdown"
           aria-expanded="false"
         >
