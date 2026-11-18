@@ -268,6 +268,17 @@ function AppLayout({ children, usuarioRol = null }) {
               Administración RRHH
             </small>
             <ul className="nav nav-pills flex-column gap-1">
+              <li className="nav-item">
+                <button
+                  type="button"
+                  className={`nav-link w-100 text-start border-0 d-flex align-items-center gap-3 py-2 px-3 rounded-2 sidebar-item-btn ${location.pathname === "/dashboard/rrhh" ? "is-active fw-semibold" : ""}`}
+                  aria-current={location.pathname === "/dashboard/rrhh" ? "page" : undefined}
+                  onClick={() => irA("/dashboard/rrhh")}
+                >
+                  <i className="bi bi-speedometer2 fs-5" aria-hidden="true"></i>
+                  <span>Dashboard RRHH</span>
+                </button>
+              </li>
               {/* GESTIÓN DE USUARIOS */}
               <li className="nav-item">
                 <button

@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 import AuthContainer from "../pages/AuthContainer";
 import Dashboard from "../pages/Dashboard";
+import DashboardRrhh from "../pages/DashboardRrhh";
 import GestionUsuarios from "../pages/GestionUsuarios";
 import MiPerfil from "../pages/usuario/MiPerfil";
 import MisVacaciones from "../pages/usuario/MisVacaciones";
@@ -26,6 +27,7 @@ function AppRoutes() {
           element={<Navigate to="/login" replace />}
         />
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/dashboard/rrhh" element={<AccesoEquipo rrhh><DashboardRrhh /></AccesoEquipo>} />
 
         {/* RRHH - Gestión de Usuarios */}
         <Route path="/gestion-usuarios" element={<GestionUsuarios />} />
